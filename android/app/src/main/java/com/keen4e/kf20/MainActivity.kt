@@ -969,6 +969,24 @@ private class ProjectStorage(context: Context) {
     }
 }
 
+private class FileStorage(context: Context) {
+    private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
+    fun read(): List<PrivateFile> = runCatching {
+        val array = JSONArray(SecureStore.decrypt(preferences.getString("private_files", null)) ?: "[]")
+        List(array.length()) { index ->
+            array.getJSONObject(index).let {
+                PrivateFile(it.getString("date"), it.getString("uri"), it.getString("name"), it.optString("mimeType", "application/octet-stream"))
+            }
+        }
+    }.getOrDefault(emptyList())
+    fun write(files: List<PrivateFile>) {
+        val array = JSONArray(); files.takeLast(200).forEach { file ->
+            array.put(JSONObject().put("date", file.date).put("uri", file.uri).put("name", file.name).put("mimeType", file.mimeType))
+        }
+        preferences.edit().putString("private_files", SecureStore.encrypt(array.toString())).apply()
+    }
+}
+
 private class TargetsStorage(context: Context) {
     private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
     fun read(): NutritionTargets = runCatching {
