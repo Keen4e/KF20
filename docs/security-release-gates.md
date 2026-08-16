@@ -7,7 +7,7 @@ Die aktuelle Codebasis ist **nicht** bereit für die öffentliche Veröffentlich
 3. **Geheimnisse:** `OPENAI_API_KEY` nur im Secret Store des Hosts; niemals in Git, APK, Build-Logs oder Supporttickets.
 4. **Missbrauchsschutz:** Rate Limits pro Nutzer, Größenlimits, Zeitlimits und Monitoring ohne Chat-Inhalte.
 5. **Datenspeicherung:** Definierte Aufbewahrungsfristen, Kontolöschung und ein Backup-/Restore-Konzept.
-6. **Client-Speicher:** Chatverlauf und Auth-Token verschlüsselt per Android Keystore/EncryptedSharedPreferences speichern.
+6. **Client-Speicher:** Der Chatverlauf wird mit einem AES-GCM-Schlüssel aus dem Android Keystore verschlüsselt gespeichert. Ein künftiger Auth-Token muss denselben Schutz erhalten.
 7. **Abhängigkeiten:** Android- und Server-Abhängigkeiten locken, prüfen und vor Release aktualisieren.
 8. **Tests:** API- und UI-Tests, manueller Test auf realem Gerät sowie Play-Pre-Launch-Report.
 
