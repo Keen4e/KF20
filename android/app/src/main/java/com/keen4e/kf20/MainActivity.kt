@@ -84,7 +84,8 @@ private data class ProgressPhoto(val date: String, val uri: String)
 private data class ApiSettings(val baseUrl: String, val token: String)
 private data class ReminderConfig(val enabled: Boolean, val hour: Int, val minute: Int)
 private data class UserMemory(val text: String)
-private enum class Workspace { CHAT, DAILY_LOG, PROGRESS, PHOTOS, TASKS }
+private data class ProjectEntry(val name: String, val notes: String, val status: String)
+private enum class Workspace { CHAT, DAILY_LOG, PROGRESS, PHOTOS, TASKS, PROJECTS }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -105,6 +106,7 @@ private fun Kf20App(context: Context) {
     val apiSettingsStorage = remember { ApiSettingsStorage(context) }
     val reminderStorage = remember { ReminderStorage(context) }
     val memoryStorage = remember { MemoryStorage(context) }
+    val projectStorage = remember { ProjectStorage(context) }
     var messages by remember { mutableStateOf(storage.read()) }
     var tasks by remember { mutableStateOf(taskStorage.read()) }
     var dailyEntries by remember { mutableStateOf(dailyLogStorage.read()) }
@@ -114,8 +116,11 @@ private fun Kf20App(context: Context) {
     var apiSettings by remember { mutableStateOf(apiSettingsStorage.read()) }
     var reminder by remember { mutableStateOf(reminderStorage.read()) }
     var memories by remember { mutableStateOf(memoryStorage.read()) }
+    var projects by remember { mutableStateOf(projectStorage.read()) }
     var draft by remember { mutableStateOf("") }
     var taskDraft by remember { mutableStateOf("") }
+    var projectNameDraft by remember { mutableStateOf("") }
+    var projectNotesDraft by remember { mutableStateOf("") }
     var logType by remember { mutableStateOf("Mahlzeit") }
     var logTitle by remember { mutableStateOf("") }
     var logCalories by remember { mutableStateOf("") }
@@ -223,6 +228,27 @@ private fun Kf20App(context: Context) {
                 onToggle = { index ->
                     tasks = tasks.mapIndexed { current, task -> if (current == index) task.copy(done = !task.done) else task }
                     taskStorage.write(tasks)
+                },
+                onOpenProjects = { workspace = Workspace.PROJECTS }
+            ) else if (workspace == Workspace.PROJECTS) ProjectsScreen(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+                projects = projects,
+                nameDraft = projectNameDraft,
+                notesDraft = projectNotesDraft,
+                onNameChange = { projectNameDraft = it },
+                onNotesChange = { projectNotesDraft = it },
+                onAdd = {
+                    val name = projectNameDraft.trim()
+                    if (name.isNotEmpty()) {
+                        projects = projects + ProjectEntry(name, projectNotesDraft.trim(), "Aktiv")
+                        projectStorage.write(projects)
+                        projectNameDraft = ""
+                        projectNotesDraft = ""
+                    }
+                },
+                onArchive = { index ->
+                    projects = projects.mapIndexed { current, project -> if (current == index) project.copy(status = "Archiviert") else project }
+                    projectStorage.write(projects)
                 }
             ) else if (workspace == Workspace.PROGRESS) ProgressScreen(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
@@ -403,10 +429,12 @@ private fun Kf20App(context: Context) {
     draft: String,
     onDraftChange: (String) -> Unit,
     onAdd: () -> Unit,
-    onToggle: (Int) -> Unit
+    onToggle: (Int) -> Unit,
+    onOpenProjects: () -> Unit
 ) = Column(modifier = modifier) {
     Text("Aufgaben", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp, bottom = 4.dp))
     Text("Was soll der Agent im Blick behalten?", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 12.dp))
+    TextButton(onClick = onOpenProjects) { Text("Projekt-Arbeitsbereich öffnen") }
     Row(verticalAlignment = Alignment.CenterVertically) {
         OutlinedTextField(value = draft, onValueChange = onDraftChange, modifier = Modifier.weight(1f), placeholder = { Text("Neue Aufgabe") }, singleLine = true)
         Spacer(Modifier.width(8.dp))
@@ -419,6 +447,36 @@ private fun Kf20App(context: Context) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
                     Checkbox(checked = task.done, onCheckedChange = { onToggle(index) })
                     Text(task.title, modifier = Modifier.padding(end = 8.dp), color = if (task.done) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSecondaryContainer)
+                }
+            }
+        }
+    }
+}
+
+@Composable private fun ProjectsScreen(
+    modifier: Modifier,
+    projects: List<ProjectEntry>,
+    nameDraft: String,
+    notesDraft: String,
+    onNameChange: (String) -> Unit,
+    onNotesChange: (String) -> Unit,
+    onAdd: () -> Unit,
+    onArchive: (Int) -> Unit
+) = Column(modifier = modifier) {
+    Text("Projekte", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp, bottom = 4.dp))
+    Text("Halte laufende Vorhaben, Kontext und Entscheidungen an einem Ort fest.", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 12.dp))
+    OutlinedTextField(value = nameDraft, onValueChange = onNameChange, modifier = Modifier.fillMaxWidth(), label = { Text("Projektname") }, singleLine = true)
+    OutlinedTextField(value = notesDraft, onValueChange = onNotesChange, modifier = Modifier.fillMaxWidth().padding(top = 8.dp), label = { Text("Kontext oder nächste Schritte") }, minLines = 2, maxLines = 4)
+    Button(onClick = onAdd, enabled = nameDraft.isNotBlank(), modifier = Modifier.padding(top = 8.dp)) { Text("Projekt anlegen") }
+    LazyColumn(modifier = Modifier.weight(1f).padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(projects.indices.toList()) { index ->
+            val project = projects[index]
+            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(project.status, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(project.name, fontWeight = FontWeight.Medium)
+                    if (project.notes.isNotBlank()) Text(project.notes, color = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.padding(top = 4.dp))
+                    if (project.status == "Aktiv") TextButton(onClick = { onArchive(index) }) { Text("Archivieren") }
                 }
             }
         }
@@ -699,6 +757,22 @@ private class MemoryStorage(context: Context) {
     fun write(memories: List<UserMemory>) {
         val array = JSONArray(); memories.forEach { array.put(it.text) }
         preferences.edit().putString("memories", SecureStore.encrypt(array.toString())).apply()
+    }
+}
+
+private class ProjectStorage(context: Context) {
+    private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
+    fun read(): List<ProjectEntry> = runCatching {
+        val array = JSONArray(SecureStore.decrypt(preferences.getString("projects", null)) ?: "[]")
+        List(array.length()) { index ->
+            array.getJSONObject(index).let { ProjectEntry(it.getString("name"), it.optString("notes"), it.optString("status", "Aktiv")) }
+        }
+    }.getOrDefault(emptyList())
+    fun write(projects: List<ProjectEntry>) {
+        val array = JSONArray(); projects.takeLast(100).forEach { project ->
+            array.put(JSONObject().put("name", project.name).put("notes", project.notes).put("status", project.status))
+        }
+        preferences.edit().putString("projects", SecureStore.encrypt(array.toString())).apply()
     }
 }
 
