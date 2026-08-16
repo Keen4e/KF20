@@ -57,13 +57,14 @@ import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.KeyStore
+import java.time.LocalDate
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 
 private data class ChatMessage(val role: String, val content: String)
 private data class AgentTask(val title: String, val done: Boolean)
-private data class DailyLogEntry(val type: String, val title: String, val calories: Int, val protein: Double)
+private data class DailyLogEntry(val date: String, val type: String, val title: String, val calories: Int, val protein: Double)
 private enum class Workspace { CHAT, DAILY_LOG, TASKS }
 
 class MainActivity : ComponentActivity() {
@@ -88,6 +89,7 @@ private fun Kf20App(context: Context) {
     var logTitle by remember { mutableStateOf("") }
     var logCalories by remember { mutableStateOf("") }
     var logProtein by remember { mutableStateOf("") }
+    var selectedDate by remember { mutableStateOf(todayKey()) }
     var workspace by remember { mutableStateOf(Workspace.CHAT) }
     var isSending by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -178,7 +180,8 @@ private fun Kf20App(context: Context) {
                 }
             ) else DailyLogScreen(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
-                entries = dailyEntries,
+                entries = dailyEntries.filter { it.date == selectedDate },
+                selectedDate = selectedDate,
                 type = logType,
                 title = logTitle,
                 calories = logCalories,
@@ -187,10 +190,13 @@ private fun Kf20App(context: Context) {
                 onTitleChange = { logTitle = it },
                 onCaloriesChange = { logCalories = it },
                 onProteinChange = { logProtein = it },
+                onPreviousDay = { selectedDate = LocalDate.parse(selectedDate).minusDays(1).toString() },
+                onToday = { selectedDate = todayKey() },
+                onNextDay = { selectedDate = LocalDate.parse(selectedDate).plusDays(1).toString() },
                 onAdd = {
                     val title = logTitle.trim()
                     if (title.isNotEmpty()) {
-                        val entry = DailyLogEntry(logType, title, logCalories.toIntOrNull() ?: 0, logProtein.replace(',', '.').toDoubleOrNull() ?: 0.0)
+                        val entry = DailyLogEntry(selectedDate, logType, title, logCalories.toIntOrNull() ?: 0, logProtein.replace(',', '.').toDoubleOrNull() ?: 0.0)
                         dailyEntries = dailyEntries + entry
                         dailyLogStorage.write(dailyEntries)
                         logTitle = ""; logCalories = ""; logProtein = ""
@@ -247,6 +253,7 @@ private fun Kf20App(context: Context) {
 @Composable private fun DailyLogScreen(
     modifier: Modifier,
     entries: List<DailyLogEntry>,
+    selectedDate: String,
     type: String,
     title: String,
     calories: String,
@@ -255,12 +262,21 @@ private fun Kf20App(context: Context) {
     onTitleChange: (String) -> Unit,
     onCaloriesChange: (String) -> Unit,
     onProteinChange: (String) -> Unit,
+    onPreviousDay: () -> Unit,
+    onToday: () -> Unit,
+    onNextDay: () -> Unit,
     onAdd: () -> Unit
 ) = Column(modifier = modifier) {
     val intake = entries.filter { it.type == "Mahlzeit" }.sumOf { it.calories }
     val burned = entries.filter { it.type == "Sport" }.sumOf { it.calories }
     val proteinTotal = entries.sumOf { it.protein }
     Text("Tageslog", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp, bottom = 4.dp))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        TextButton(onClick = onPreviousDay) { Text("‹") }
+        Text(selectedDate, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
+        TextButton(onClick = onToday, enabled = selectedDate != todayKey()) { Text("Heute") }
+        TextButton(onClick = onNextDay) { Text("›") }
+    }
     Text("Aufnahme $intake kcal · Sport $burned kcal · Bilanz ${intake - burned} kcal · Protein ${"%.0f".format(proteinTotal)} g", color = MaterialTheme.colorScheme.onSurfaceVariant)
     Row(modifier = Modifier.padding(top = 12.dp)) {
         listOf("Mahlzeit", "Sport", "Messung").forEach { choice ->
@@ -332,16 +348,20 @@ private class DailyLogStorage(context: Context) {
     fun read(): List<DailyLogEntry> = runCatching {
         val array = JSONArray(SecureStore.decrypt(preferences.getString("daily_entries", null)) ?: "[]")
         List(array.length()) { index ->
-            array.getJSONObject(index).let { DailyLogEntry(it.getString("type"), it.getString("title"), it.getInt("calories"), it.getDouble("protein")) }
+            array.getJSONObject(index).let {
+                DailyLogEntry(it.optString("date", todayKey()), it.getString("type"), it.getString("title"), it.getInt("calories"), it.getDouble("protein"))
+            }
         }
     }.getOrDefault(emptyList())
     fun write(entries: List<DailyLogEntry>) {
         val array = JSONArray(); entries.takeLast(500).forEach { entry ->
-            array.put(JSONObject().put("type", entry.type).put("title", entry.title).put("calories", entry.calories).put("protein", entry.protein))
+            array.put(JSONObject().put("date", entry.date).put("type", entry.type).put("title", entry.title).put("calories", entry.calories).put("protein", entry.protein))
         }
         preferences.edit().putString("daily_entries", SecureStore.encrypt(array.toString())).apply()
     }
 }
+
+private fun todayKey(): String = LocalDate.now().toString()
 
 private class TaskStorage(context: Context) {
     private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
