@@ -73,6 +73,7 @@ private data class DailyLogEntry(val date: String, val type: String, val title: 
 private data class DailyRoutine(val title: String, val calories: Int, val protein: Double)
 private data class WeightEntry(val date: String, val kilograms: Double)
 private data class ProgressPhoto(val date: String, val uri: String)
+private data class ApiSettings(val baseUrl: String, val token: String)
 private enum class Workspace { CHAT, DAILY_LOG, PROGRESS, PHOTOS, TASKS }
 
 class MainActivity : ComponentActivity() {
@@ -91,12 +92,14 @@ private fun Kf20App(context: Context) {
     val routineStorage = remember { RoutineStorage(context) }
     val weightStorage = remember { WeightStorage(context) }
     val photoStorage = remember { PhotoStorage(context) }
+    val apiSettingsStorage = remember { ApiSettingsStorage(context) }
     var messages by remember { mutableStateOf(storage.read()) }
     var tasks by remember { mutableStateOf(taskStorage.read()) }
     var dailyEntries by remember { mutableStateOf(dailyLogStorage.read()) }
     var routines by remember { mutableStateOf(routineStorage.read()) }
     var weightEntries by remember { mutableStateOf(weightStorage.read()) }
     var photos by remember { mutableStateOf(photoStorage.read()) }
+    var apiSettings by remember { mutableStateOf(apiSettingsStorage.read()) }
     var draft by remember { mutableStateOf("") }
     var taskDraft by remember { mutableStateOf("") }
     var logType by remember { mutableStateOf("Mahlzeit") }
@@ -109,6 +112,9 @@ private fun Kf20App(context: Context) {
     var isSending by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showServerSettings by remember { mutableStateOf(false) }
+    var serverUrlDraft by remember { mutableStateOf(apiSettings.baseUrl) }
+    var serverTokenDraft by remember { mutableStateOf(apiSettings.token) }
     val listState = rememberLazyListState()
 
     LaunchedEffect(messages.size) {
@@ -163,7 +169,7 @@ private fun Kf20App(context: Context) {
                             storage.write(updated)
                             isSending = true
                             Thread {
-                                val result = runCatching { Kf20Api.send(updated.takeLast(30)) }
+                                val result = runCatching { Kf20Api.send(updated.takeLast(30), apiSettings) }
                                 Handler(Looper.getMainLooper()).post {
                                     isSending = false
                                     result.onSuccess { reply ->
@@ -177,6 +183,7 @@ private fun Kf20App(context: Context) {
                         shape = RoundedCornerShape(14.dp)
                     ) { Text("Senden") }
                 }
+                TextButton(onClick = { showServerSettings = true }, modifier = Modifier.align(Alignment.End)) { Text("Serververbindung") }
             } else if (workspace == Workspace.TASKS) TasksScreen(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
                 tasks = tasks,
@@ -270,6 +277,27 @@ private fun Kf20App(context: Context) {
                     }) { Text("Endgültig löschen") }
                 },
                 dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("Abbrechen") } }
+            )
+        }
+        if (showServerSettings) {
+            AlertDialog(
+                onDismissRequest = { showServerSettings = false },
+                title = { Text("Serververbindung") },
+                text = {
+                    Column {
+                        Text("Die Zugangsdaten bleiben verschlüsselt auf diesem Gerät. Für eine Veröffentlichung wird diese Testverbindung durch eine echte Anmeldung ersetzt.")
+                        OutlinedTextField(value = serverUrlDraft, onValueChange = { serverUrlDraft = it }, label = { Text("HTTPS-Serveradresse") }, singleLine = true)
+                        OutlinedTextField(value = serverTokenDraft, onValueChange = { serverTokenDraft = it }, label = { Text("Zugangstoken") }, singleLine = true)
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        apiSettings = ApiSettings(serverUrlDraft.trim().trimEnd('/'), serverTokenDraft.trim())
+                        apiSettingsStorage.write(apiSettings)
+                        showServerSettings = false
+                    }, enabled = serverUrlDraft.startsWith("http") && serverTokenDraft.isNotBlank()) { Text("Speichern") }
+                },
+                dismissButton = { TextButton(onClick = { showServerSettings = false }) { Text("Abbrechen") } }
             )
         }
     }
@@ -542,6 +570,18 @@ private class PhotoStorage(context: Context) {
     }
 }
 
+private class ApiSettingsStorage(context: Context) {
+    private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
+    fun read(): ApiSettings = runCatching {
+        val data = JSONObject(SecureStore.decrypt(preferences.getString("api_settings", null)) ?: "{}")
+        ApiSettings(data.optString("baseUrl"), data.optString("token"))
+    }.getOrDefault(ApiSettings("", ""))
+    fun write(settings: ApiSettings) {
+        val data = JSONObject().put("baseUrl", settings.baseUrl).put("token", settings.token)
+        preferences.edit().putString("api_settings", SecureStore.encrypt(data.toString())).apply()
+    }
+}
+
 private class TaskStorage(context: Context) {
     private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
     fun read(): List<AgentTask> = runCatching {
@@ -593,11 +633,14 @@ private object SecureStore {
 }
 
 private object Kf20Api {
-    fun send(messages: List<ChatMessage>): String {
-        require(!BuildConfig.KF20_API_BASE_URL.contains("REPLACE_WITH")) { "Die KF20-Serveradresse wurde noch nicht eingerichtet." }
+    fun send(messages: List<ChatMessage>, settings: ApiSettings): String {
+        val baseUrl = settings.baseUrl.ifBlank { BuildConfig.KF20_API_BASE_URL }
+        require(!baseUrl.contains("REPLACE_WITH") && settings.token.isNotBlank()) { "Bitte richte zuerst die Serververbindung ein." }
         val request = JSONObject().put("messages", JSONArray().apply { messages.forEach { put(JSONObject().put("role", it.role).put("content", it.content)) } })
-        val connection = (URL("${BuildConfig.KF20_API_BASE_URL}/v1/chat").openConnection() as HttpURLConnection).apply {
-            requestMethod = "POST"; connectTimeout = 20_000; readTimeout = 90_000; doOutput = true; setRequestProperty("Content-Type", "application/json")
+        val connection = (URL("$baseUrl/v1/chat").openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"; connectTimeout = 20_000; readTimeout = 90_000; doOutput = true
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Authorization", "Bearer ${settings.token}")
         }
         connection.outputStream.use { OutputStreamWriter(it).use { writer -> writer.write(request.toString()) } }
         val body = (if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream).bufferedReader().use(BufferedReader::readText)
