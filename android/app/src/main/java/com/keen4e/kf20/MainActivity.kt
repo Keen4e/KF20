@@ -1,9 +1,16 @@
 package com.keen4e.kf20
 
 import android.content.Context
+import android.content.BroadcastReceiver
+import android.content.Intent
+import android.app.AlarmManager
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.security.keystore.KeyGenParameterSpec
@@ -63,6 +70,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.security.KeyStore
 import java.time.LocalDate
+import java.util.Calendar
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -74,6 +82,7 @@ private data class DailyRoutine(val title: String, val calories: Int, val protei
 private data class WeightEntry(val date: String, val kilograms: Double)
 private data class ProgressPhoto(val date: String, val uri: String)
 private data class ApiSettings(val baseUrl: String, val token: String)
+private data class ReminderConfig(val enabled: Boolean, val hour: Int, val minute: Int)
 private enum class Workspace { CHAT, DAILY_LOG, PROGRESS, PHOTOS, TASKS }
 
 class MainActivity : ComponentActivity() {
@@ -93,6 +102,7 @@ private fun Kf20App(context: Context) {
     val weightStorage = remember { WeightStorage(context) }
     val photoStorage = remember { PhotoStorage(context) }
     val apiSettingsStorage = remember { ApiSettingsStorage(context) }
+    val reminderStorage = remember { ReminderStorage(context) }
     var messages by remember { mutableStateOf(storage.read()) }
     var tasks by remember { mutableStateOf(taskStorage.read()) }
     var dailyEntries by remember { mutableStateOf(dailyLogStorage.read()) }
@@ -100,6 +110,7 @@ private fun Kf20App(context: Context) {
     var weightEntries by remember { mutableStateOf(weightStorage.read()) }
     var photos by remember { mutableStateOf(photoStorage.read()) }
     var apiSettings by remember { mutableStateOf(apiSettingsStorage.read()) }
+    var reminder by remember { mutableStateOf(reminderStorage.read()) }
     var draft by remember { mutableStateOf("") }
     var taskDraft by remember { mutableStateOf("") }
     var logType by remember { mutableStateOf("Mahlzeit") }
@@ -115,6 +126,10 @@ private fun Kf20App(context: Context) {
     var showServerSettings by remember { mutableStateOf(false) }
     var serverUrlDraft by remember { mutableStateOf(apiSettings.baseUrl) }
     var serverTokenDraft by remember { mutableStateOf(apiSettings.token) }
+    var showReminderSettings by remember { mutableStateOf(false) }
+    var reminderHourDraft by remember { mutableStateOf(reminder.hour.toString()) }
+    var reminderMinuteDraft by remember { mutableStateOf(reminder.minute.toString().padStart(2, '0')) }
+    val notificationPermission = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val listState = rememberLazyListState()
 
     LaunchedEffect(messages.size) {
@@ -237,6 +252,7 @@ private fun Kf20App(context: Context) {
                 onTitleChange = { logTitle = it },
                 onCaloriesChange = { logCalories = it },
                 onProteinChange = { logProtein = it },
+                onReminderSettings = { showReminderSettings = true },
                 onPreviousDay = { selectedDate = LocalDate.parse(selectedDate).minusDays(1).toString() },
                 onToday = { selectedDate = todayKey() },
                 onNextDay = { selectedDate = LocalDate.parse(selectedDate).plusDays(1).toString() },
@@ -298,6 +314,43 @@ private fun Kf20App(context: Context) {
                     }, enabled = serverUrlDraft.startsWith("http") && serverTokenDraft.isNotBlank()) { Text("Speichern") }
                 },
                 dismissButton = { TextButton(onClick = { showServerSettings = false }) { Text("Abbrechen") } }
+            )
+        }
+        if (showReminderSettings) {
+            AlertDialog(
+                onDismissRequest = { showReminderSettings = false },
+                title = { Text("Tägliche Erinnerung") },
+                text = {
+                    Column {
+                        Text("KF20 erinnert dich täglich an dein Tageslog. Android fragt gegebenenfalls nach der Benachrichtigungsfreigabe.")
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            OutlinedTextField(value = reminderHourDraft, onValueChange = { reminderHourDraft = it }, label = { Text("Stunde") }, modifier = Modifier.weight(1f), singleLine = true)
+                            Text(":", modifier = Modifier.padding(horizontal = 8.dp))
+                            OutlinedTextField(value = reminderMinuteDraft, onValueChange = { reminderMinuteDraft = it }, label = { Text("Minute") }, modifier = Modifier.weight(1f), singleLine = true)
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val hour = reminderHourDraft.toIntOrNull()
+                        val minute = reminderMinuteDraft.toIntOrNull()
+                        if (hour != null && minute != null && hour in 0..23 && minute in 0..59) {
+                            reminder = ReminderConfig(true, hour, minute)
+                            reminderStorage.write(reminder)
+                            DailyReminder.schedule(context, reminder)
+                            if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission("android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED) notificationPermission.launch("android.permission.POST_NOTIFICATIONS")
+                            showReminderSettings = false
+                        }
+                    }, enabled = (reminderHourDraft.toIntOrNull()?.let { it in 0..23 } == true) && (reminderMinuteDraft.toIntOrNull()?.let { it in 0..59 } == true)) { Text("Aktivieren") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        reminder = reminder.copy(enabled = false)
+                        reminderStorage.write(reminder)
+                        DailyReminder.cancel(context)
+                        showReminderSettings = false
+                    }) { Text("Deaktivieren") }
+                }
             )
         }
     }
@@ -410,6 +463,7 @@ private fun Kf20App(context: Context) {
     onTitleChange: (String) -> Unit,
     onCaloriesChange: (String) -> Unit,
     onProteinChange: (String) -> Unit,
+    onReminderSettings: () -> Unit,
     onPreviousDay: () -> Unit,
     onToday: () -> Unit,
     onNextDay: () -> Unit,
@@ -421,6 +475,7 @@ private fun Kf20App(context: Context) {
     val burned = entries.filter { it.type == "Sport" }.sumOf { it.calories }
     val proteinTotal = entries.sumOf { it.protein }
     Text("Tageslog", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp, bottom = 4.dp))
+    TextButton(onClick = onReminderSettings) { Text("Tägliche Erinnerung") }
     Row(verticalAlignment = Alignment.CenterVertically) {
         TextButton(onClick = onPreviousDay) { Text("‹") }
         Text(selectedDate, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
@@ -582,6 +637,18 @@ private class ApiSettingsStorage(context: Context) {
     }
 }
 
+private class ReminderStorage(context: Context) {
+    private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
+    fun read(): ReminderConfig = runCatching {
+        val data = JSONObject(SecureStore.decrypt(preferences.getString("daily_reminder", null)) ?: "{}")
+        ReminderConfig(data.optBoolean("enabled", false), data.optInt("hour", 20), data.optInt("minute", 0))
+    }.getOrDefault(ReminderConfig(false, 20, 0))
+    fun write(config: ReminderConfig) {
+        val data = JSONObject().put("enabled", config.enabled).put("hour", config.hour).put("minute", config.minute)
+        preferences.edit().putString("daily_reminder", SecureStore.encrypt(data.toString())).apply()
+    }
+}
+
 private class TaskStorage(context: Context) {
     private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
     fun read(): List<AgentTask> = runCatching {
@@ -629,6 +696,54 @@ private object SecureStore {
                     .build()
             )
         }.generateKey()
+    }
+}
+
+private object DailyReminder {
+    private const val REQUEST_CODE = 20
+    private fun pendingIntent(context: Context): PendingIntent = PendingIntent.getBroadcast(
+        context,
+        REQUEST_CODE,
+        Intent(context, ReminderReceiver::class.java),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    fun schedule(context: Context, config: ReminderConfig) {
+        val time = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, config.hour)
+            set(Calendar.MINUTE, config.minute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            if (before(Calendar.getInstance())) add(Calendar.DAY_OF_YEAR, 1)
+        }
+        (context.getSystemService(Context.ALARM_SERVICE) as AlarmManager).setInexactRepeating(
+            AlarmManager.RTC_WAKEUP,
+            time.timeInMillis,
+            AlarmManager.INTERVAL_DAY,
+            pendingIntent(context)
+        )
+    }
+    fun cancel(context: Context) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        alarmManager.cancel(pendingIntent(context))
+    }
+}
+
+class ReminderReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent?) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channelId = "daily_reminder"
+        if (Build.VERSION.SDK_INT >= 26) {
+            notificationManager.createNotificationChannel(NotificationChannel(channelId, "Tägliche Erinnerung", NotificationManager.IMPORTANCE_DEFAULT))
+        }
+        val openApp = PendingIntent.getActivity(context, 0, Intent(context, MainActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val notification = androidx.core.app.NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(com.keen4e.kf20.R.drawable.ic_kf20)
+            .setContentTitle("KF20 Tagescheck")
+            .setContentText("Zeit für dein Tageslog: Mahlzeiten, Bewegung und Fortschritt.")
+            .setContentIntent(openApp)
+            .setAutoCancel(true)
+            .build()
+        notificationManager.notify(20, notification)
     }
 }
 
