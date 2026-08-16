@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -61,6 +62,9 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 
 private data class ChatMessage(val role: String, val content: String)
+private data class AgentTask(val title: String, val done: Boolean)
+private data class DailyLogEntry(val type: String, val title: String, val calories: Int, val protein: Double)
+private enum class Workspace { CHAT, DAILY_LOG, TASKS }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,8 +77,18 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun Kf20App(context: Context) {
     val storage = remember { ChatStorage(context) }
+    val taskStorage = remember { TaskStorage(context) }
+    val dailyLogStorage = remember { DailyLogStorage(context) }
     var messages by remember { mutableStateOf(storage.read()) }
+    var tasks by remember { mutableStateOf(taskStorage.read()) }
+    var dailyEntries by remember { mutableStateOf(dailyLogStorage.read()) }
     var draft by remember { mutableStateOf("") }
+    var taskDraft by remember { mutableStateOf("") }
+    var logType by remember { mutableStateOf("Mahlzeit") }
+    var logTitle by remember { mutableStateOf("") }
+    var logCalories by remember { mutableStateOf("") }
+    var logProtein by remember { mutableStateOf("") }
+    var workspace by remember { mutableStateOf(Workspace.CHAT) }
     var isSending by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -90,15 +104,16 @@ private fun Kf20App(context: Context) {
                 TopAppBar(
                     title = { Column { Text("KF20", fontWeight = FontWeight.Bold); Text("Dein täglicher Agent", style = MaterialTheme.typography.labelSmall) } },
                     actions = {
-                        TextButton(onClick = { showDeleteDialog = true }, enabled = messages.isNotEmpty() && !isSending) {
-                            Text("Löschen")
-                        }
+                        TextButton(onClick = { workspace = Workspace.CHAT }) { Text("Chat") }
+                        TextButton(onClick = { workspace = Workspace.DAILY_LOG }) { Text("Tag") }
+                        TextButton(onClick = { workspace = Workspace.TASKS }) { Text("Aufgaben") }
+                        if (workspace == Workspace.CHAT) TextButton(onClick = { showDeleteDialog = true }, enabled = messages.isNotEmpty() && !isSending) { Text("Löschen") }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
                 )
             }
         ) { padding ->
-            Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
+            if (workspace == Workspace.CHAT) Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
                 if (messages.isEmpty()) Welcome()
                 LazyColumn(
                     modifier = Modifier.weight(1f),
@@ -144,7 +159,44 @@ private fun Kf20App(context: Context) {
                         shape = RoundedCornerShape(14.dp)
                     ) { Text("Senden") }
                 }
-            }
+            } else if (workspace == Workspace.TASKS) TasksScreen(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+                tasks = tasks,
+                draft = taskDraft,
+                onDraftChange = { taskDraft = it },
+                onAdd = {
+                    val title = taskDraft.trim()
+                    if (title.isNotEmpty()) {
+                        tasks = tasks + AgentTask(title, false)
+                        taskStorage.write(tasks)
+                        taskDraft = ""
+                    }
+                },
+                onToggle = { index ->
+                    tasks = tasks.mapIndexed { current, task -> if (current == index) task.copy(done = !task.done) else task }
+                    taskStorage.write(tasks)
+                }
+            ) else DailyLogScreen(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+                entries = dailyEntries,
+                type = logType,
+                title = logTitle,
+                calories = logCalories,
+                protein = logProtein,
+                onTypeChange = { logType = it },
+                onTitleChange = { logTitle = it },
+                onCaloriesChange = { logCalories = it },
+                onProteinChange = { logProtein = it },
+                onAdd = {
+                    val title = logTitle.trim()
+                    if (title.isNotEmpty()) {
+                        val entry = DailyLogEntry(logType, title, logCalories.toIntOrNull() ?: 0, logProtein.replace(',', '.').toDoubleOrNull() ?: 0.0)
+                        dailyEntries = dailyEntries + entry
+                        dailyLogStorage.write(dailyEntries)
+                        logTitle = ""; logCalories = ""; logProtein = ""
+                    }
+                }
+            )
         }
         if (showDeleteDialog) {
             AlertDialog(
@@ -160,6 +212,78 @@ private fun Kf20App(context: Context) {
                 },
                 dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("Abbrechen") } }
             )
+        }
+    }
+}
+
+@Composable private fun TasksScreen(
+    modifier: Modifier,
+    tasks: List<AgentTask>,
+    draft: String,
+    onDraftChange: (String) -> Unit,
+    onAdd: () -> Unit,
+    onToggle: (Int) -> Unit
+) = Column(modifier = modifier) {
+    Text("Aufgaben", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp, bottom = 4.dp))
+    Text("Was soll der Agent im Blick behalten?", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 12.dp))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        OutlinedTextField(value = draft, onValueChange = onDraftChange, modifier = Modifier.weight(1f), placeholder = { Text("Neue Aufgabe") }, singleLine = true)
+        Spacer(Modifier.width(8.dp))
+        Button(onClick = onAdd, enabled = draft.isNotBlank()) { Text("Hinzufügen") }
+    }
+    LazyColumn(modifier = Modifier.weight(1f).padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        items(tasks.indices.toList()) { index ->
+            val task = tasks[index]
+            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
+                    Checkbox(checked = task.done, onCheckedChange = { onToggle(index) })
+                    Text(task.title, modifier = Modifier.padding(end = 8.dp), color = if (task.done) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSecondaryContainer)
+                }
+            }
+        }
+    }
+}
+
+@Composable private fun DailyLogScreen(
+    modifier: Modifier,
+    entries: List<DailyLogEntry>,
+    type: String,
+    title: String,
+    calories: String,
+    protein: String,
+    onTypeChange: (String) -> Unit,
+    onTitleChange: (String) -> Unit,
+    onCaloriesChange: (String) -> Unit,
+    onProteinChange: (String) -> Unit,
+    onAdd: () -> Unit
+) = Column(modifier = modifier) {
+    val intake = entries.filter { it.type == "Mahlzeit" }.sumOf { it.calories }
+    val burned = entries.filter { it.type == "Sport" }.sumOf { it.calories }
+    val proteinTotal = entries.sumOf { it.protein }
+    Text("Tageslog", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp, bottom = 4.dp))
+    Text("Aufnahme $intake kcal · Sport $burned kcal · Bilanz ${intake - burned} kcal · Protein ${"%.0f".format(proteinTotal)} g", color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Row(modifier = Modifier.padding(top = 12.dp)) {
+        listOf("Mahlzeit", "Sport", "Messung").forEach { choice ->
+            TextButton(onClick = { onTypeChange(choice) }, enabled = type != choice) { Text(choice) }
+        }
+    }
+    OutlinedTextField(value = title, onValueChange = onTitleChange, modifier = Modifier.fillMaxWidth(), placeholder = { Text("${type}: Bezeichnung") }, singleLine = true)
+    Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        OutlinedTextField(value = calories, onValueChange = onCaloriesChange, modifier = Modifier.weight(1f), placeholder = { Text(if (type == "Sport") "Verbrauch kcal" else "Kalorien") }, singleLine = true)
+        Spacer(Modifier.width(8.dp))
+        OutlinedTextField(value = protein, onValueChange = onProteinChange, modifier = Modifier.weight(1f), placeholder = { Text("Protein g") }, singleLine = true)
+        Spacer(Modifier.width(8.dp))
+        Button(onClick = onAdd, enabled = title.isNotBlank()) { Text("Loggen") }
+    }
+    LazyColumn(modifier = Modifier.weight(1f).padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        items(entries.reversed()) { entry ->
+            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(entry.type, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(entry.title, fontWeight = FontWeight.Medium)
+                    if (entry.calories != 0 || entry.protein != 0.0) Text("${entry.calories} kcal · ${"%.0f".format(entry.protein)} g Protein", color = MaterialTheme.colorScheme.onSecondaryContainer)
+                }
+            }
         }
     }
 }
@@ -201,6 +325,38 @@ private class ChatStorage(context: Context) {
         preferences.edit().putString("messages", SecureStore.encrypt(array.toString())).apply()
     }
     fun clear() = preferences.edit().remove("messages").apply()
+}
+
+private class DailyLogStorage(context: Context) {
+    private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
+    fun read(): List<DailyLogEntry> = runCatching {
+        val array = JSONArray(SecureStore.decrypt(preferences.getString("daily_entries", null)) ?: "[]")
+        List(array.length()) { index ->
+            array.getJSONObject(index).let { DailyLogEntry(it.getString("type"), it.getString("title"), it.getInt("calories"), it.getDouble("protein")) }
+        }
+    }.getOrDefault(emptyList())
+    fun write(entries: List<DailyLogEntry>) {
+        val array = JSONArray(); entries.takeLast(500).forEach { entry ->
+            array.put(JSONObject().put("type", entry.type).put("title", entry.title).put("calories", entry.calories).put("protein", entry.protein))
+        }
+        preferences.edit().putString("daily_entries", SecureStore.encrypt(array.toString())).apply()
+    }
+}
+
+private class TaskStorage(context: Context) {
+    private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
+    fun read(): List<AgentTask> = runCatching {
+        val array = JSONArray(SecureStore.decrypt(preferences.getString("tasks", null)) ?: "[]")
+        List(array.length()) { index ->
+            array.getJSONObject(index).let { AgentTask(it.getString("title"), it.getBoolean("done")) }
+        }
+    }.getOrDefault(emptyList())
+    fun write(tasks: List<AgentTask>) {
+        val array = JSONArray(); tasks.takeLast(500).forEach { task ->
+            array.put(JSONObject().put("title", task.title).put("done", task.done))
+        }
+        preferences.edit().putString("tasks", SecureStore.encrypt(array.toString())).apply()
+    }
 }
 
 private object SecureStore {
