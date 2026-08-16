@@ -8,7 +8,9 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.graphics.BitmapFactory
+import android.graphics.Bitmap
 import android.net.Uri
+import android.provider.OpenableColumns
 import android.os.Bundle
 import android.os.Build
 import android.os.Handler
@@ -66,6 +68,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.OutputStreamWriter
+import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.KeyStore
@@ -77,15 +80,18 @@ import javax.crypto.SecretKey
 
 private data class ChatMessage(val role: String, val content: String)
 private data class AgentTask(val title: String, val done: Boolean)
-private data class DailyLogEntry(val date: String, val type: String, val title: String, val calories: Int, val protein: Double)
-private data class DailyRoutine(val title: String, val calories: Int, val protein: Double)
+private data class DailyLogEntry(val date: String, val type: String, val title: String, val calories: Int, val protein: Double, val fat: Double, val carbs: Double)
+private data class DailyRoutine(val title: String, val calories: Int, val protein: Double, val fat: Double, val carbs: Double)
 private data class WeightEntry(val date: String, val kilograms: Double)
 private data class ProgressPhoto(val date: String, val uri: String)
 private data class ApiSettings(val baseUrl: String, val token: String)
 private data class ReminderConfig(val enabled: Boolean, val hour: Int, val minute: Int)
 private data class UserMemory(val text: String)
 private data class ProjectEntry(val name: String, val notes: String, val status: String)
-private enum class Workspace { CHAT, DAILY_LOG, PROGRESS, PHOTOS, TASKS, PROJECTS }
+private data class PrivateFile(val date: String, val uri: String, val name: String, val mimeType: String)
+private data class NutritionEstimate(val name: String, val calories: Int, val protein: Double, val fat: Double, val carbs: Double, val confidence: String, val note: String)
+private data class NutritionTargets(val calories: Int, val protein: Double, val fat: Double, val carbs: Double)
+private enum class Workspace { CHAT, DAILY_LOG, PROGRESS, PHOTOS, TASKS, PROJECTS, FILES }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -107,6 +113,8 @@ private fun Kf20App(context: Context) {
     val reminderStorage = remember { ReminderStorage(context) }
     val memoryStorage = remember { MemoryStorage(context) }
     val projectStorage = remember { ProjectStorage(context) }
+    val fileStorage = remember { FileStorage(context) }
+    val targetsStorage = remember { TargetsStorage(context) }
     var messages by remember { mutableStateOf(storage.read()) }
     var tasks by remember { mutableStateOf(taskStorage.read()) }
     var dailyEntries by remember { mutableStateOf(dailyLogStorage.read()) }
@@ -117,6 +125,8 @@ private fun Kf20App(context: Context) {
     var reminder by remember { mutableStateOf(reminderStorage.read()) }
     var memories by remember { mutableStateOf(memoryStorage.read()) }
     var projects by remember { mutableStateOf(projectStorage.read()) }
+    var privateFiles by remember { mutableStateOf(fileStorage.read()) }
+    var targets by remember { mutableStateOf(targetsStorage.read()) }
     var draft by remember { mutableStateOf("") }
     var taskDraft by remember { mutableStateOf("") }
     var projectNameDraft by remember { mutableStateOf("") }
@@ -125,6 +135,8 @@ private fun Kf20App(context: Context) {
     var logTitle by remember { mutableStateOf("") }
     var logCalories by remember { mutableStateOf("") }
     var logProtein by remember { mutableStateOf("") }
+    var logFat by remember { mutableStateOf("") }
+    var logCarbs by remember { mutableStateOf("") }
     var weightDraft by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf(todayKey()) }
     var workspace by remember { mutableStateOf(Workspace.CHAT) }
@@ -139,6 +151,14 @@ private fun Kf20App(context: Context) {
     var reminderMinuteDraft by remember { mutableStateOf(reminder.minute.toString().padStart(2, '0')) }
     var showMemories by remember { mutableStateOf(false) }
     var memoryDraft by remember { mutableStateOf("") }
+    var mealPhotoUri by remember { mutableStateOf<String?>(null) }
+    var isEstimatingNutrition by remember { mutableStateOf(false) }
+    var nutritionHint by remember { mutableStateOf<String?>(null) }
+    var showTargetSettings by remember { mutableStateOf(false) }
+    var targetCaloriesDraft by remember { mutableStateOf(targets.calories.toString()) }
+    var targetProteinDraft by remember { mutableStateOf(targets.protein.toString()) }
+    var targetFatDraft by remember { mutableStateOf(targets.fat.toString()) }
+    var targetCarbsDraft by remember { mutableStateOf(targets.carbs.toString()) }
     val notificationPermission = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val listState = rememberLazyListState()
 
@@ -249,6 +269,21 @@ private fun Kf20App(context: Context) {
                 onArchive = { index ->
                     projects = projects.mapIndexed { current, project -> if (current == index) project.copy(status = "Archiviert") else project }
                     projectStorage.write(projects)
+                },
+                onOpenFiles = { workspace = Workspace.FILES }
+            ) else if (workspace == Workspace.FILES) FilesScreen(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+                context = context,
+                files = privateFiles,
+                onAdd = { uri ->
+                    runCatching { context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                    val mimeType = context.contentResolver.getType(uri) ?: "application/octet-stream"
+                    privateFiles = (privateFiles + PrivateFile(todayKey(), uri.toString(), displayName(context, uri), mimeType)).takeLast(200)
+                    fileStorage.write(privateFiles)
+                },
+                onRemove = { index ->
+                    privateFiles = privateFiles.filterIndexed { current, _ -> current != index }
+                    fileStorage.write(privateFiles)
                 }
             ) else if (workspace == Workspace.PROGRESS) ProgressScreen(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
@@ -277,28 +312,59 @@ private fun Kf20App(context: Context) {
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
                 entries = dailyEntries.filter { it.date == selectedDate },
                 routines = routines,
+                targets = targets,
                 selectedDate = selectedDate,
                 type = logType,
                 title = logTitle,
                 calories = logCalories,
                 protein = logProtein,
+                fat = logFat,
+                carbs = logCarbs,
                 onTypeChange = { logType = it },
                 onTitleChange = { logTitle = it },
                 onCaloriesChange = { logCalories = it },
                 onProteinChange = { logProtein = it },
+                onFatChange = { logFat = it },
+                onCarbsChange = { logCarbs = it },
+                photoUri = mealPhotoUri,
+                isEstimating = isEstimatingNutrition,
+                nutritionHint = nutritionHint,
+                onPhotoChange = { mealPhotoUri = it },
+                onEstimate = {
+                    val description = logTitle.trim()
+                    if (description.isNotEmpty() || mealPhotoUri != null) {
+                        isEstimatingNutrition = true
+                        nutritionHint = null
+                        Thread {
+                            val result = runCatching { NutritionApi.estimate(description, mealPhotoUri, context, apiSettings) }
+                            Handler(Looper.getMainLooper()).post {
+                                isEstimatingNutrition = false
+                                result.onSuccess { estimate ->
+                                    logTitle = estimate.name
+                                    logCalories = estimate.calories.toString()
+                                    logProtein = "%.1f".format(estimate.protein)
+                                    logFat = "%.1f".format(estimate.fat)
+                                    logCarbs = "%.1f".format(estimate.carbs)
+                                    nutritionHint = "KI-Schätzung (${estimate.confidence}): ${estimate.note} Bitte vor dem Loggen prüfen."
+                                }.onFailure { failure -> nutritionHint = failure.message ?: "Die Nährwert-Schätzung konnte nicht geladen werden." }
+                            }
+                        }.start()
+                    }
+                },
                 onReminderSettings = { showReminderSettings = true },
+                onTargetSettings = { showTargetSettings = true },
                 onPreviousDay = { selectedDate = LocalDate.parse(selectedDate).minusDays(1).toString() },
                 onToday = { selectedDate = todayKey() },
                 onNextDay = { selectedDate = LocalDate.parse(selectedDate).plusDays(1).toString() },
                 onUseRoutine = { routine ->
-                    val entry = DailyLogEntry(selectedDate, "Mahlzeit", routine.title, routine.calories, routine.protein)
+                    val entry = DailyLogEntry(selectedDate, "Mahlzeit", routine.title, routine.calories, routine.protein, routine.fat, routine.carbs)
                     dailyEntries = dailyEntries + entry
                     dailyLogStorage.write(dailyEntries)
                 },
                 onSaveRoutine = {
                     val title = logTitle.trim()
                     if (logType == "Mahlzeit" && title.isNotEmpty()) {
-                        val routine = DailyRoutine(title, logCalories.toIntOrNull() ?: 0, logProtein.replace(',', '.').toDoubleOrNull() ?: 0.0)
+                        val routine = DailyRoutine(title, logCalories.toIntOrNull() ?: 0, logProtein.replace(',', '.').toDoubleOrNull() ?: 0.0, logFat.replace(',', '.').toDoubleOrNull() ?: 0.0, logCarbs.replace(',', '.').toDoubleOrNull() ?: 0.0)
                         routines = (routines.filterNot { it.title.equals(routine.title, ignoreCase = true) } + routine).takeLast(20)
                         routineStorage.write(routines)
                     }
@@ -306,10 +372,10 @@ private fun Kf20App(context: Context) {
                 onAdd = {
                     val title = logTitle.trim()
                     if (title.isNotEmpty()) {
-                        val entry = DailyLogEntry(selectedDate, logType, title, logCalories.toIntOrNull() ?: 0, logProtein.replace(',', '.').toDoubleOrNull() ?: 0.0)
+                        val entry = DailyLogEntry(selectedDate, logType, title, logCalories.toIntOrNull() ?: 0, logProtein.replace(',', '.').toDoubleOrNull() ?: 0.0, logFat.replace(',', '.').toDoubleOrNull() ?: 0.0, logCarbs.replace(',', '.').toDoubleOrNull() ?: 0.0)
                         dailyEntries = dailyEntries + entry
                         dailyLogStorage.write(dailyEntries)
-                        logTitle = ""; logCalories = ""; logProtein = ""
+                        logTitle = ""; logCalories = ""; logProtein = ""; logFat = ""; logCarbs = ""; mealPhotoUri = null; nutritionHint = null
                     }
                 }
             )
@@ -381,6 +447,38 @@ private fun Kf20App(context: Context) {
                     }, enabled = memoryDraft.isNotBlank()) { Text("Speichern") }
                 },
                 dismissButton = { TextButton(onClick = { showMemories = false }) { Text("Schließen") } }
+            )
+        }
+        if (showTargetSettings) {
+            AlertDialog(
+                onDismissRequest = { showTargetSettings = false },
+                title = { Text("Tagesziele") },
+                text = {
+                    Column {
+                        Text("Passe die Tagesziele an. Sie dienen als Orientierung, nicht als medizinische Empfehlung.")
+                        OutlinedTextField(value = targetCaloriesDraft, onValueChange = { targetCaloriesDraft = it }, label = { Text("Kalorien (kcal)") }, singleLine = true)
+                        Row {
+                            OutlinedTextField(value = targetProteinDraft, onValueChange = { targetProteinDraft = it }, label = { Text("Protein (g)") }, modifier = Modifier.weight(1f), singleLine = true)
+                            Spacer(Modifier.width(8.dp))
+                            OutlinedTextField(value = targetFatDraft, onValueChange = { targetFatDraft = it }, label = { Text("Fett (g)") }, modifier = Modifier.weight(1f), singleLine = true)
+                        }
+                        OutlinedTextField(value = targetCarbsDraft, onValueChange = { targetCarbsDraft = it }, label = { Text("Carbs (g)") }, singleLine = true)
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val calories = targetCaloriesDraft.toIntOrNull()
+                        val protein = targetProteinDraft.replace(',', '.').toDoubleOrNull()
+                        val fat = targetFatDraft.replace(',', '.').toDoubleOrNull()
+                        val carbs = targetCarbsDraft.replace(',', '.').toDoubleOrNull()
+                        if (calories != null && protein != null && fat != null && carbs != null) {
+                            targets = NutritionTargets(calories, protein, fat, carbs)
+                            targetsStorage.write(targets)
+                            showTargetSettings = false
+                        }
+                    }) { Text("Speichern") }
+                },
+                dismissButton = { TextButton(onClick = { showTargetSettings = false }) { Text("Abbrechen") } }
             )
         }
         if (showReminderSettings) {
@@ -461,10 +559,12 @@ private fun Kf20App(context: Context) {
     onNameChange: (String) -> Unit,
     onNotesChange: (String) -> Unit,
     onAdd: () -> Unit,
-    onArchive: (Int) -> Unit
+    onArchive: (Int) -> Unit,
+    onOpenFiles: () -> Unit
 ) = Column(modifier = modifier) {
     Text("Projekte", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp, bottom = 4.dp))
     Text("Halte laufende Vorhaben, Kontext und Entscheidungen an einem Ort fest.", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 12.dp))
+    TextButton(onClick = onOpenFiles) { Text("Private Dateien öffnen") }
     OutlinedTextField(value = nameDraft, onValueChange = onNameChange, modifier = Modifier.fillMaxWidth(), label = { Text("Projektname") }, singleLine = true)
     OutlinedTextField(value = notesDraft, onValueChange = onNotesChange, modifier = Modifier.fillMaxWidth().padding(top = 8.dp), label = { Text("Kontext oder nächste Schritte") }, minLines = 2, maxLines = 4)
     Button(onClick = onAdd, enabled = nameDraft.isNotBlank(), modifier = Modifier.padding(top = 8.dp)) { Text("Projekt anlegen") }
@@ -477,6 +577,38 @@ private fun Kf20App(context: Context) {
                     Text(project.name, fontWeight = FontWeight.Medium)
                     if (project.notes.isNotBlank()) Text(project.notes, color = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.padding(top = 4.dp))
                     if (project.status == "Aktiv") TextButton(onClick = { onArchive(index) }) { Text("Archivieren") }
+                }
+            }
+        }
+    }
+}
+
+@Composable private fun FilesScreen(
+    modifier: Modifier,
+    context: Context,
+    files: List<PrivateFile>,
+    onAdd: (Uri) -> Unit,
+    onRemove: (Int) -> Unit
+) {
+    val picker = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri -> if (uri != null) onAdd(uri) }
+    )
+    Column(modifier = modifier) {
+        Text("Private Dateien", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp, bottom = 4.dp))
+        Text("Die Datei bleibt auf deinem Gerät bzw. in deinem gewählten Speicher. KF20 merkt sich nur den privaten Android-Zugriff.", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 12.dp))
+        Button(onClick = { picker.launch(arrayOf("*/*")) }) { Text("Datei auswählen") }
+        LazyColumn(modifier = Modifier.weight(1f).padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(files.indices.toList()) { index ->
+                val file = files[index]
+                Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
+                    Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(file.name, fontWeight = FontWeight.Medium)
+                            Text("${file.date} · ${file.mimeType}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        TextButton(onClick = { onRemove(index) }) { Text("Entfernen") }
+                    }
                 }
             }
         }
@@ -553,16 +685,27 @@ private fun Kf20App(context: Context) {
     modifier: Modifier,
     entries: List<DailyLogEntry>,
     routines: List<DailyRoutine>,
+    targets: NutritionTargets,
     selectedDate: String,
     type: String,
     title: String,
     calories: String,
     protein: String,
+    fat: String,
+    carbs: String,
     onTypeChange: (String) -> Unit,
     onTitleChange: (String) -> Unit,
     onCaloriesChange: (String) -> Unit,
     onProteinChange: (String) -> Unit,
+    onFatChange: (String) -> Unit,
+    onCarbsChange: (String) -> Unit,
+    photoUri: String?,
+    isEstimating: Boolean,
+    nutritionHint: String?,
+    onPhotoChange: (String?) -> Unit,
+    onEstimate: () -> Unit,
     onReminderSettings: () -> Unit,
+    onTargetSettings: () -> Unit,
     onPreviousDay: () -> Unit,
     onToday: () -> Unit,
     onNextDay: () -> Unit,
@@ -570,18 +713,38 @@ private fun Kf20App(context: Context) {
     onSaveRoutine: () -> Unit,
     onAdd: () -> Unit
 ) = Column(modifier = modifier) {
+    val mealPhotoPicker = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri -> onPhotoChange(uri?.toString()) }
+    )
     val intake = entries.filter { it.type == "Mahlzeit" }.sumOf { it.calories }
     val burned = entries.filter { it.type == "Sport" }.sumOf { it.calories }
     val proteinTotal = entries.sumOf { it.protein }
+    val fatTotal = entries.sumOf { it.fat }
+    val carbsTotal = entries.sumOf { it.carbs }
     Text("Tageslog", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp, bottom = 4.dp))
-    TextButton(onClick = onReminderSettings) { Text("Tägliche Erinnerung") }
+    Row {
+        TextButton(onClick = onTargetSettings) { Text("Ziele anpassen") }
+        TextButton(onClick = onReminderSettings) { Text("Erinnerung") }
+    }
     Row(verticalAlignment = Alignment.CenterVertically) {
         TextButton(onClick = onPreviousDay) { Text("‹") }
         Text(selectedDate, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
         TextButton(onClick = onToday, enabled = selectedDate != todayKey()) { Text("Heute") }
         TextButton(onClick = onNextDay) { Text("›") }
     }
-    Text("Aufnahme $intake kcal · Sport $burned kcal · Bilanz ${intake - burned} kcal · Protein ${"%.0f".format(proteinTotal)} g", color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text("Heute noch ${maxOf(0, targets.calories - (intake - burned))} kcal", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text("Aufnahme $intake · Sport $burned · Bilanz ${intake - burned} kcal", color = MaterialTheme.colorScheme.onPrimary)
+        }
+    }
+    Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        MacroCard("Kal", intake.toDouble(), targets.calories.toDouble(), "kcal", Modifier.weight(1f))
+        MacroCard("Protein", proteinTotal, targets.protein, "g", Modifier.weight(1f))
+        MacroCard("Fett", fatTotal, targets.fat, "g", Modifier.weight(1f))
+        MacroCard("Carbs", carbsTotal, targets.carbs, "g", Modifier.weight(1f))
+    }
     Row(modifier = Modifier.padding(top = 12.dp)) {
         listOf("Mahlzeit", "Sport", "Messung").forEach { choice ->
             TextButton(onClick = { onTypeChange(choice) }, enabled = type != choice) { Text(choice) }
@@ -595,11 +758,24 @@ private fun Kf20App(context: Context) {
             }
         }
     }
-    OutlinedTextField(value = title, onValueChange = onTitleChange, modifier = Modifier.fillMaxWidth(), placeholder = { Text("${type}: Bezeichnung") }, singleLine = true)
+    OutlinedTextField(value = title, onValueChange = onTitleChange, modifier = Modifier.fillMaxWidth(), placeholder = { Text(if (type == "Mahlzeit") "z. B. zwei Brötchen mit Ei und Käse" else "${type}: Bezeichnung") }, minLines = if (type == "Mahlzeit") 2 else 1, maxLines = 3)
+    if (type == "Mahlzeit") {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = { mealPhotoPicker.launch(arrayOf("image/*")) }) { Text(if (photoUri == null) "Foto hinzufügen" else "Foto gewählt") }
+            Button(onClick = onEstimate, enabled = !isEstimating && (title.isNotBlank() || photoUri != null)) { Text(if (isEstimating) "Schätze …" else "KI-Nährwerte schätzen") }
+        }
+        if (photoUri != null) Text("Das Foto wird nur für diese Schätzung an deinen eingerichteten KF20-Server gesendet und nicht im Tageslog gespeichert.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        nutritionHint?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
+    }
     Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         OutlinedTextField(value = calories, onValueChange = onCaloriesChange, modifier = Modifier.weight(1f), placeholder = { Text(if (type == "Sport") "Verbrauch kcal" else "Kalorien") }, singleLine = true)
         Spacer(Modifier.width(8.dp))
         OutlinedTextField(value = protein, onValueChange = onProteinChange, modifier = Modifier.weight(1f), placeholder = { Text("Protein g") }, singleLine = true)
+    }
+    Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        OutlinedTextField(value = fat, onValueChange = onFatChange, modifier = Modifier.weight(1f), placeholder = { Text("Fett g") }, singleLine = true)
+        Spacer(Modifier.width(8.dp))
+        OutlinedTextField(value = carbs, onValueChange = onCarbsChange, modifier = Modifier.weight(1f), placeholder = { Text("Carbs g") }, singleLine = true)
         Spacer(Modifier.width(8.dp))
         Button(onClick = onAdd, enabled = title.isNotBlank()) { Text("Loggen") }
     }
@@ -610,9 +786,20 @@ private fun Kf20App(context: Context) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text(entry.type, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(entry.title, fontWeight = FontWeight.Medium)
-                    if (entry.calories != 0 || entry.protein != 0.0) Text("${entry.calories} kcal · ${"%.0f".format(entry.protein)} g Protein", color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    if (entry.calories != 0 || entry.protein != 0.0 || entry.fat != 0.0 || entry.carbs != 0.0) Text("${entry.calories} kcal · P ${"%.0f".format(entry.protein)} g · F ${"%.0f".format(entry.fat)} g · C ${"%.0f".format(entry.carbs)} g", color = MaterialTheme.colorScheme.onSecondaryContainer)
                 }
             }
+        }
+    }
+}
+
+@Composable private fun MacroCard(label: String, value: Double, target: Double, unit: String, modifier: Modifier = Modifier) {
+    val percentage = if (target > 0) (value / target * 100).toInt() else 0
+    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = modifier) {
+        Column(modifier = Modifier.padding(9.dp)) {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("${"%.0f".format(value)}", fontWeight = FontWeight.Bold)
+            Text("/ ${"%.0f".format(target)} $unit · $percentage%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
         }
     }
 }
@@ -662,13 +849,13 @@ private class DailyLogStorage(context: Context) {
         val array = JSONArray(SecureStore.decrypt(preferences.getString("daily_entries", null)) ?: "[]")
         List(array.length()) { index ->
             array.getJSONObject(index).let {
-                DailyLogEntry(it.optString("date", todayKey()), it.getString("type"), it.getString("title"), it.getInt("calories"), it.getDouble("protein"))
+                DailyLogEntry(it.optString("date", todayKey()), it.getString("type"), it.getString("title"), it.getInt("calories"), it.getDouble("protein"), it.optDouble("fat", 0.0), it.optDouble("carbs", 0.0))
             }
         }
     }.getOrDefault(emptyList())
     fun write(entries: List<DailyLogEntry>) {
         val array = JSONArray(); entries.takeLast(500).forEach { entry ->
-            array.put(JSONObject().put("date", entry.date).put("type", entry.type).put("title", entry.title).put("calories", entry.calories).put("protein", entry.protein))
+            array.put(JSONObject().put("date", entry.date).put("type", entry.type).put("title", entry.title).put("calories", entry.calories).put("protein", entry.protein).put("fat", entry.fat).put("carbs", entry.carbs))
         }
         preferences.edit().putString("daily_entries", SecureStore.encrypt(array.toString())).apply()
     }
@@ -676,17 +863,23 @@ private class DailyLogStorage(context: Context) {
 
 private fun todayKey(): String = LocalDate.now().toString()
 
+private fun displayName(context: Context, uri: Uri): String = runCatching {
+    context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+        if (cursor.moveToFirst()) cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME)) else uri.lastPathSegment
+    }
+}.getOrNull() ?: uri.lastPathSegment ?: "Datei"
+
 private class RoutineStorage(context: Context) {
     private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
     fun read(): List<DailyRoutine> = runCatching {
         val array = JSONArray(SecureStore.decrypt(preferences.getString("routines", null)) ?: "[]")
         List(array.length()) { index ->
-            array.getJSONObject(index).let { DailyRoutine(it.getString("title"), it.getInt("calories"), it.getDouble("protein")) }
+            array.getJSONObject(index).let { DailyRoutine(it.getString("title"), it.getInt("calories"), it.getDouble("protein"), it.optDouble("fat", 0.0), it.optDouble("carbs", 0.0)) }
         }
     }.getOrDefault(emptyList())
     fun write(routines: List<DailyRoutine>) {
         val array = JSONArray(); routines.forEach { routine ->
-            array.put(JSONObject().put("title", routine.title).put("calories", routine.calories).put("protein", routine.protein))
+            array.put(JSONObject().put("title", routine.title).put("calories", routine.calories).put("protein", routine.protein).put("fat", routine.fat).put("carbs", routine.carbs))
         }
         preferences.edit().putString("routines", SecureStore.encrypt(array.toString())).apply()
     }
@@ -773,6 +966,18 @@ private class ProjectStorage(context: Context) {
             array.put(JSONObject().put("name", project.name).put("notes", project.notes).put("status", project.status))
         }
         preferences.edit().putString("projects", SecureStore.encrypt(array.toString())).apply()
+    }
+}
+
+private class TargetsStorage(context: Context) {
+    private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
+    fun read(): NutritionTargets = runCatching {
+        val data = JSONObject(SecureStore.decrypt(preferences.getString("nutrition_targets", null)) ?: "{}")
+        NutritionTargets(data.optInt("calories", 2_000), data.optDouble("protein", 150.0), data.optDouble("fat", 70.0), data.optDouble("carbs", 200.0))
+    }.getOrDefault(NutritionTargets(2_000, 150.0, 70.0, 200.0))
+    fun write(targets: NutritionTargets) {
+        val data = JSONObject().put("calories", targets.calories).put("protein", targets.protein).put("fat", targets.fat).put("carbs", targets.carbs)
+        preferences.edit().putString("nutrition_targets", SecureStore.encrypt(data.toString())).apply()
     }
 }
 
@@ -890,6 +1095,41 @@ private object Kf20Api {
         val body = (if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream).bufferedReader().use(BufferedReader::readText)
         if (connection.responseCode !in 200..299) throw IllegalStateException(JSONObject(body).optString("error", "Der Server hat die Anfrage abgelehnt."))
         return JSONObject(body).getString("text").ifBlank { "Ich konnte gerade keine Textantwort erzeugen." }
+    }
+}
+
+private object NutritionApi {
+    fun estimate(description: String, photoUri: String?, context: Context, settings: ApiSettings): NutritionEstimate {
+        val baseUrl = settings.baseUrl.ifBlank { BuildConfig.KF20_API_BASE_URL }
+        require(!baseUrl.contains("REPLACE_WITH") && settings.token.isNotBlank()) { "Bitte richte zuerst die Serververbindung ein." }
+        val request = JSONObject().put("description", description)
+        photoUri?.let { request.put("imageDataUrl", resizedImageDataUrl(context, Uri.parse(it))) }
+        val connection = (URL("$baseUrl/v1/nutrition/analyze").openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"; connectTimeout = 20_000; readTimeout = 90_000; doOutput = true
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Authorization", "Bearer ${settings.token}")
+        }
+        connection.outputStream.use { OutputStreamWriter(it).use { writer -> writer.write(request.toString()) } }
+        val body = (if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream).bufferedReader().use(BufferedReader::readText)
+        if (connection.responseCode !in 200..299) throw IllegalStateException(JSONObject(body).optString("error", "Die Nährwert-Schätzung wurde abgelehnt."))
+        val estimate = JSONObject(body).getJSONObject("estimate")
+        return NutritionEstimate(estimate.getString("name"), estimate.getInt("calories"), estimate.getDouble("protein"), estimate.getDouble("fat"), estimate.getDouble("carbs"), estimate.getString("confidence"), estimate.getString("note"))
+    }
+
+    private fun resizedImageDataUrl(context: Context, uri: Uri): String {
+        val source = context.contentResolver.openInputStream(uri)?.use(BitmapFactory::decodeStream) ?: throw IllegalArgumentException("Das Bild konnte nicht gelesen werden.")
+        val largestSide = maxOf(source.width, source.height)
+        val bitmap: Bitmap = if (largestSide > 1280) {
+            val scale = 1280.0 / largestSide
+            Bitmap.createScaledBitmap(source, (source.width * scale).toInt(), (source.height * scale).toInt(), true)
+        } else source
+        val output = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 82, output)
+        if (bitmap !== source) bitmap.recycle()
+        source.recycle()
+        val bytes = output.toByteArray()
+        require(bytes.size <= 1_000_000) { "Das Bild ist zu groß. Bitte wähle ein kleineres Foto." }
+        return "data:image/jpeg;base64,${Base64.encodeToString(bytes, Base64.NO_WRAP)}"
     }
 }
 
