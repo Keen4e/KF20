@@ -65,6 +65,7 @@ import javax.crypto.SecretKey
 private data class ChatMessage(val role: String, val content: String)
 private data class AgentTask(val title: String, val done: Boolean)
 private data class DailyLogEntry(val date: String, val type: String, val title: String, val calories: Int, val protein: Double)
+private data class DailyRoutine(val title: String, val calories: Int, val protein: Double)
 private enum class Workspace { CHAT, DAILY_LOG, TASKS }
 
 class MainActivity : ComponentActivity() {
@@ -80,9 +81,11 @@ private fun Kf20App(context: Context) {
     val storage = remember { ChatStorage(context) }
     val taskStorage = remember { TaskStorage(context) }
     val dailyLogStorage = remember { DailyLogStorage(context) }
+    val routineStorage = remember { RoutineStorage(context) }
     var messages by remember { mutableStateOf(storage.read()) }
     var tasks by remember { mutableStateOf(taskStorage.read()) }
     var dailyEntries by remember { mutableStateOf(dailyLogStorage.read()) }
+    var routines by remember { mutableStateOf(routineStorage.read()) }
     var draft by remember { mutableStateOf("") }
     var taskDraft by remember { mutableStateOf("") }
     var logType by remember { mutableStateOf("Mahlzeit") }
@@ -181,6 +184,7 @@ private fun Kf20App(context: Context) {
             ) else DailyLogScreen(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
                 entries = dailyEntries.filter { it.date == selectedDate },
+                routines = routines,
                 selectedDate = selectedDate,
                 type = logType,
                 title = logTitle,
@@ -193,6 +197,19 @@ private fun Kf20App(context: Context) {
                 onPreviousDay = { selectedDate = LocalDate.parse(selectedDate).minusDays(1).toString() },
                 onToday = { selectedDate = todayKey() },
                 onNextDay = { selectedDate = LocalDate.parse(selectedDate).plusDays(1).toString() },
+                onUseRoutine = { routine ->
+                    val entry = DailyLogEntry(selectedDate, "Mahlzeit", routine.title, routine.calories, routine.protein)
+                    dailyEntries = dailyEntries + entry
+                    dailyLogStorage.write(dailyEntries)
+                },
+                onSaveRoutine = {
+                    val title = logTitle.trim()
+                    if (logType == "Mahlzeit" && title.isNotEmpty()) {
+                        val routine = DailyRoutine(title, logCalories.toIntOrNull() ?: 0, logProtein.replace(',', '.').toDoubleOrNull() ?: 0.0)
+                        routines = (routines.filterNot { it.title.equals(routine.title, ignoreCase = true) } + routine).takeLast(20)
+                        routineStorage.write(routines)
+                    }
+                },
                 onAdd = {
                     val title = logTitle.trim()
                     if (title.isNotEmpty()) {
@@ -253,6 +270,7 @@ private fun Kf20App(context: Context) {
 @Composable private fun DailyLogScreen(
     modifier: Modifier,
     entries: List<DailyLogEntry>,
+    routines: List<DailyRoutine>,
     selectedDate: String,
     type: String,
     title: String,
@@ -265,6 +283,8 @@ private fun Kf20App(context: Context) {
     onPreviousDay: () -> Unit,
     onToday: () -> Unit,
     onNextDay: () -> Unit,
+    onUseRoutine: (DailyRoutine) -> Unit,
+    onSaveRoutine: () -> Unit,
     onAdd: () -> Unit
 ) = Column(modifier = modifier) {
     val intake = entries.filter { it.type == "Mahlzeit" }.sumOf { it.calories }
@@ -283,6 +303,14 @@ private fun Kf20App(context: Context) {
             TextButton(onClick = { onTypeChange(choice) }, enabled = type != choice) { Text(choice) }
         }
     }
+    if (routines.isNotEmpty()) {
+        Text("Routinen", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
+        Row {
+            routines.takeLast(3).forEach { routine ->
+                TextButton(onClick = { onUseRoutine(routine) }) { Text(routine.title) }
+            }
+        }
+    }
     OutlinedTextField(value = title, onValueChange = onTitleChange, modifier = Modifier.fillMaxWidth(), placeholder = { Text("${type}: Bezeichnung") }, singleLine = true)
     Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         OutlinedTextField(value = calories, onValueChange = onCaloriesChange, modifier = Modifier.weight(1f), placeholder = { Text(if (type == "Sport") "Verbrauch kcal" else "Kalorien") }, singleLine = true)
@@ -291,6 +319,7 @@ private fun Kf20App(context: Context) {
         Spacer(Modifier.width(8.dp))
         Button(onClick = onAdd, enabled = title.isNotBlank()) { Text("Loggen") }
     }
+    if (type == "Mahlzeit") TextButton(onClick = onSaveRoutine, enabled = title.isNotBlank()) { Text("Als Routine speichern") }
     LazyColumn(modifier = Modifier.weight(1f).padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         items(entries.reversed()) { entry ->
             Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
@@ -362,6 +391,22 @@ private class DailyLogStorage(context: Context) {
 }
 
 private fun todayKey(): String = LocalDate.now().toString()
+
+private class RoutineStorage(context: Context) {
+    private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
+    fun read(): List<DailyRoutine> = runCatching {
+        val array = JSONArray(SecureStore.decrypt(preferences.getString("routines", null)) ?: "[]")
+        List(array.length()) { index ->
+            array.getJSONObject(index).let { DailyRoutine(it.getString("title"), it.getInt("calories"), it.getDouble("protein")) }
+        }
+    }.getOrDefault(emptyList())
+    fun write(routines: List<DailyRoutine>) {
+        val array = JSONArray(); routines.forEach { routine ->
+            array.put(JSONObject().put("title", routine.title).put("calories", routine.calories).put("protein", routine.protein))
+        }
+        preferences.edit().putString("routines", SecureStore.encrypt(array.toString())).apply()
+    }
+}
 
 private class TaskStorage(context: Context) {
     private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
