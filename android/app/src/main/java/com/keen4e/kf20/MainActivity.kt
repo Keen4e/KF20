@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,6 +32,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -68,6 +70,7 @@ private fun Kf20App(context: Context) {
     var draft by remember { mutableStateOf("") }
     var isSending by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
     LaunchedEffect(messages.size) {
@@ -79,6 +82,11 @@ private fun Kf20App(context: Context) {
             topBar = {
                 TopAppBar(
                     title = { Column { Text("KF20", fontWeight = FontWeight.Bold); Text("Dein täglicher Agent", style = MaterialTheme.typography.labelSmall) } },
+                    actions = {
+                        TextButton(onClick = { showDeleteDialog = true }, enabled = messages.isNotEmpty() && !isSending) {
+                            Text("Löschen")
+                        }
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
                 )
             }
@@ -131,6 +139,21 @@ private fun Kf20App(context: Context) {
                 }
             }
         }
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("Verlauf löschen?") },
+                text = { Text("Alle lokal gespeicherten Nachrichten auf diesem Gerät werden entfernt.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        messages = emptyList()
+                        storage.clear()
+                        showDeleteDialog = false
+                    }) { Text("Endgültig löschen") }
+                },
+                dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("Abbrechen") } }
+            )
+        }
     }
 }
 
@@ -170,6 +193,7 @@ private class ChatStorage(context: Context) {
         val array = JSONArray(); messages.takeLast(500).forEach { array.put(JSONObject().put("role", it.role).put("content", it.content)) }
         preferences.edit().putString("messages", array.toString()).apply()
     }
+    fun clear() = preferences.edit().remove("messages").apply()
 }
 
 private object Kf20Api {
