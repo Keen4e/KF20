@@ -1,6 +1,8 @@
 package com.keen4e.kf20
 
 import android.content.Context
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -9,7 +11,9 @@ import android.security.keystore.KeyProperties
 import android.util.Base64
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.json.JSONArray
@@ -67,7 +72,8 @@ private data class AgentTask(val title: String, val done: Boolean)
 private data class DailyLogEntry(val date: String, val type: String, val title: String, val calories: Int, val protein: Double)
 private data class DailyRoutine(val title: String, val calories: Int, val protein: Double)
 private data class WeightEntry(val date: String, val kilograms: Double)
-private enum class Workspace { CHAT, DAILY_LOG, PROGRESS, TASKS }
+private data class ProgressPhoto(val date: String, val uri: String)
+private enum class Workspace { CHAT, DAILY_LOG, PROGRESS, PHOTOS, TASKS }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,11 +90,13 @@ private fun Kf20App(context: Context) {
     val dailyLogStorage = remember { DailyLogStorage(context) }
     val routineStorage = remember { RoutineStorage(context) }
     val weightStorage = remember { WeightStorage(context) }
+    val photoStorage = remember { PhotoStorage(context) }
     var messages by remember { mutableStateOf(storage.read()) }
     var tasks by remember { mutableStateOf(taskStorage.read()) }
     var dailyEntries by remember { mutableStateOf(dailyLogStorage.read()) }
     var routines by remember { mutableStateOf(routineStorage.read()) }
     var weightEntries by remember { mutableStateOf(weightStorage.read()) }
+    var photos by remember { mutableStateOf(photoStorage.read()) }
     var draft by remember { mutableStateOf("") }
     var taskDraft by remember { mutableStateOf("") }
     var logType by remember { mutableStateOf("Mahlzeit") }
@@ -191,6 +199,7 @@ private fun Kf20App(context: Context) {
                 entries = weightEntries,
                 draft = weightDraft,
                 onDraftChange = { weightDraft = it },
+                onOpenPhotos = { workspace = Workspace.PHOTOS },
                 onAdd = {
                     val kilograms = weightDraft.replace(',', '.').toDoubleOrNull()
                     if (kilograms != null && kilograms in 25.0..500.0) {
@@ -198,6 +207,15 @@ private fun Kf20App(context: Context) {
                         weightStorage.write(weightEntries)
                         weightDraft = ""
                     }
+                }
+            ) else if (workspace == Workspace.PHOTOS) PhotosScreen(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+                context = context,
+                photos = photos,
+                onAdd = { uri ->
+                    runCatching { context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                    photos = (photos + ProgressPhoto(todayKey(), uri.toString())).takeLast(200)
+                    photoStorage.write(photos)
                 }
             ) else DailyLogScreen(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
@@ -290,6 +308,7 @@ private fun Kf20App(context: Context) {
     entries: List<WeightEntry>,
     draft: String,
     onDraftChange: (String) -> Unit,
+    onOpenPhotos: () -> Unit,
     onAdd: () -> Unit
 ) = Column(modifier = modifier) {
     val ordered = entries.sortedBy { it.date }
@@ -301,6 +320,7 @@ private fun Kf20App(context: Context) {
     } else {
         Text("Aktuell ${"%.1f".format(latest.kilograms)} kg · seit Start ${if (difference > 0) "+" else ""}${"%.1f".format(difference)} kg", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 12.dp))
     }
+    TextButton(onClick = onOpenPhotos) { Text("Fortschrittsfotos öffnen") }
     Row(verticalAlignment = Alignment.CenterVertically) {
         OutlinedTextField(value = draft, onValueChange = onDraftChange, modifier = Modifier.weight(1f), placeholder = { Text("Heutiges Gewicht in kg") }, singleLine = true)
         Spacer(Modifier.width(8.dp))
@@ -312,6 +332,37 @@ private fun Kf20App(context: Context) {
                 Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(entry.date, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("${"%.1f".format(entry.kilograms)} kg", fontWeight = FontWeight.Medium)
+                }
+            }
+        }
+    }
+}
+
+@Composable private fun PhotosScreen(
+    modifier: Modifier,
+    context: Context,
+    photos: List<ProgressPhoto>,
+    onAdd: (Uri) -> Unit
+) {
+    val picker = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri -> if (uri != null) onAdd(uri) }
+    )
+    Column(modifier = modifier) {
+        Text("Fortschrittsfotos", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp, bottom = 4.dp))
+        Text("Wähle ein Bild vom Gerät. Es bleibt über den Android-Systemzugriff privat verknüpft.", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 12.dp))
+        Button(onClick = { picker.launch(arrayOf("image/*")) }) { Text("Foto auswählen") }
+        LazyColumn(modifier = Modifier.weight(1f).padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            items(photos.reversed()) { photo ->
+                Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(photo.date, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        val bitmap = remember(photo.uri) {
+                            runCatching { context.contentResolver.openInputStream(Uri.parse(photo.uri))?.use(BitmapFactory::decodeStream) }.getOrNull()
+                        }
+                        if (bitmap != null) Image(bitmap = bitmap.asImageBitmap(), contentDescription = "Fortschrittsfoto vom ${photo.date}", modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+                        else Text("Bild nicht mehr verfügbar. Bitte erneut auswählen.", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+                    }
                 }
             }
         }
@@ -472,6 +523,22 @@ private class WeightStorage(context: Context) {
             array.put(JSONObject().put("date", entry.date).put("kilograms", entry.kilograms))
         }
         preferences.edit().putString("weight_entries", SecureStore.encrypt(array.toString())).apply()
+    }
+}
+
+private class PhotoStorage(context: Context) {
+    private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
+    fun read(): List<ProgressPhoto> = runCatching {
+        val array = JSONArray(SecureStore.decrypt(preferences.getString("progress_photos", null)) ?: "[]")
+        List(array.length()) { index ->
+            array.getJSONObject(index).let { ProgressPhoto(it.getString("date"), it.getString("uri")) }
+        }
+    }.getOrDefault(emptyList())
+    fun write(photos: List<ProgressPhoto>) {
+        val array = JSONArray(); photos.forEach { photo ->
+            array.put(JSONObject().put("date", photo.date).put("uri", photo.uri))
+        }
+        preferences.edit().putString("progress_photos", SecureStore.encrypt(array.toString())).apply()
     }
 }
 
