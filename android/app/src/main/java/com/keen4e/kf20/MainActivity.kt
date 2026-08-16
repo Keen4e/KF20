@@ -66,7 +66,8 @@ private data class ChatMessage(val role: String, val content: String)
 private data class AgentTask(val title: String, val done: Boolean)
 private data class DailyLogEntry(val date: String, val type: String, val title: String, val calories: Int, val protein: Double)
 private data class DailyRoutine(val title: String, val calories: Int, val protein: Double)
-private enum class Workspace { CHAT, DAILY_LOG, TASKS }
+private data class WeightEntry(val date: String, val kilograms: Double)
+private enum class Workspace { CHAT, DAILY_LOG, PROGRESS, TASKS }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,16 +83,19 @@ private fun Kf20App(context: Context) {
     val taskStorage = remember { TaskStorage(context) }
     val dailyLogStorage = remember { DailyLogStorage(context) }
     val routineStorage = remember { RoutineStorage(context) }
+    val weightStorage = remember { WeightStorage(context) }
     var messages by remember { mutableStateOf(storage.read()) }
     var tasks by remember { mutableStateOf(taskStorage.read()) }
     var dailyEntries by remember { mutableStateOf(dailyLogStorage.read()) }
     var routines by remember { mutableStateOf(routineStorage.read()) }
+    var weightEntries by remember { mutableStateOf(weightStorage.read()) }
     var draft by remember { mutableStateOf("") }
     var taskDraft by remember { mutableStateOf("") }
     var logType by remember { mutableStateOf("Mahlzeit") }
     var logTitle by remember { mutableStateOf("") }
     var logCalories by remember { mutableStateOf("") }
     var logProtein by remember { mutableStateOf("") }
+    var weightDraft by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf(todayKey()) }
     var workspace by remember { mutableStateOf(Workspace.CHAT) }
     var isSending by remember { mutableStateOf(false) }
@@ -111,6 +115,7 @@ private fun Kf20App(context: Context) {
                     actions = {
                         TextButton(onClick = { workspace = Workspace.CHAT }) { Text("Chat") }
                         TextButton(onClick = { workspace = Workspace.DAILY_LOG }) { Text("Tag") }
+                        TextButton(onClick = { workspace = Workspace.PROGRESS }) { Text("Verlauf") }
                         TextButton(onClick = { workspace = Workspace.TASKS }) { Text("Aufgaben") }
                         if (workspace == Workspace.CHAT) TextButton(onClick = { showDeleteDialog = true }, enabled = messages.isNotEmpty() && !isSending) { Text("Löschen") }
                     },
@@ -180,6 +185,19 @@ private fun Kf20App(context: Context) {
                 onToggle = { index ->
                     tasks = tasks.mapIndexed { current, task -> if (current == index) task.copy(done = !task.done) else task }
                     taskStorage.write(tasks)
+                }
+            ) else if (workspace == Workspace.PROGRESS) ProgressScreen(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+                entries = weightEntries,
+                draft = weightDraft,
+                onDraftChange = { weightDraft = it },
+                onAdd = {
+                    val kilograms = weightDraft.replace(',', '.').toDoubleOrNull()
+                    if (kilograms != null && kilograms in 25.0..500.0) {
+                        weightEntries = (weightEntries.filterNot { it.date == todayKey() } + WeightEntry(todayKey(), kilograms)).sortedBy { it.date }
+                        weightStorage.write(weightEntries)
+                        weightDraft = ""
+                    }
                 }
             ) else DailyLogScreen(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
@@ -261,6 +279,39 @@ private fun Kf20App(context: Context) {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
                     Checkbox(checked = task.done, onCheckedChange = { onToggle(index) })
                     Text(task.title, modifier = Modifier.padding(end = 8.dp), color = if (task.done) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSecondaryContainer)
+                }
+            }
+        }
+    }
+}
+
+@Composable private fun ProgressScreen(
+    modifier: Modifier,
+    entries: List<WeightEntry>,
+    draft: String,
+    onDraftChange: (String) -> Unit,
+    onAdd: () -> Unit
+) = Column(modifier = modifier) {
+    val ordered = entries.sortedBy { it.date }
+    val latest = ordered.lastOrNull()
+    val difference = latest?.let { it.kilograms - (ordered.firstOrNull()?.kilograms ?: it.kilograms) } ?: 0.0
+    Text("Fortschritt", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp, bottom = 4.dp))
+    if (latest == null) {
+        Text("Erfasse dein Gewicht, um deinen Verlauf zu sehen.", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 12.dp))
+    } else {
+        Text("Aktuell ${"%.1f".format(latest.kilograms)} kg · seit Start ${if (difference > 0) "+" else ""}${"%.1f".format(difference)} kg", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 12.dp))
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        OutlinedTextField(value = draft, onValueChange = onDraftChange, modifier = Modifier.weight(1f), placeholder = { Text("Heutiges Gewicht in kg") }, singleLine = true)
+        Spacer(Modifier.width(8.dp))
+        Button(onClick = onAdd, enabled = draft.replace(',', '.').toDoubleOrNull() != null) { Text("Speichern") }
+    }
+    LazyColumn(modifier = Modifier.weight(1f).padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        items(ordered.reversed()) { entry ->
+            Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
+                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(entry.date, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${"%.1f".format(entry.kilograms)} kg", fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -405,6 +456,22 @@ private class RoutineStorage(context: Context) {
             array.put(JSONObject().put("title", routine.title).put("calories", routine.calories).put("protein", routine.protein))
         }
         preferences.edit().putString("routines", SecureStore.encrypt(array.toString())).apply()
+    }
+}
+
+private class WeightStorage(context: Context) {
+    private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
+    fun read(): List<WeightEntry> = runCatching {
+        val array = JSONArray(SecureStore.decrypt(preferences.getString("weight_entries", null)) ?: "[]")
+        List(array.length()) { index ->
+            array.getJSONObject(index).let { WeightEntry(it.getString("date"), it.getDouble("kilograms")) }
+        }.sortedBy { it.date }
+    }.getOrDefault(emptyList())
+    fun write(entries: List<WeightEntry>) {
+        val array = JSONArray(); entries.takeLast(1_000).forEach { entry ->
+            array.put(JSONObject().put("date", entry.date).put("kilograms", entry.kilograms))
+        }
+        preferences.edit().putString("weight_entries", SecureStore.encrypt(array.toString())).apply()
     }
 }
 
