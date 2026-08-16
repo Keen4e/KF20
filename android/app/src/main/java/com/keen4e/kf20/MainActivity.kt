@@ -83,6 +83,7 @@ private data class WeightEntry(val date: String, val kilograms: Double)
 private data class ProgressPhoto(val date: String, val uri: String)
 private data class ApiSettings(val baseUrl: String, val token: String)
 private data class ReminderConfig(val enabled: Boolean, val hour: Int, val minute: Int)
+private data class UserMemory(val text: String)
 private enum class Workspace { CHAT, DAILY_LOG, PROGRESS, PHOTOS, TASKS }
 
 class MainActivity : ComponentActivity() {
@@ -103,6 +104,7 @@ private fun Kf20App(context: Context) {
     val photoStorage = remember { PhotoStorage(context) }
     val apiSettingsStorage = remember { ApiSettingsStorage(context) }
     val reminderStorage = remember { ReminderStorage(context) }
+    val memoryStorage = remember { MemoryStorage(context) }
     var messages by remember { mutableStateOf(storage.read()) }
     var tasks by remember { mutableStateOf(taskStorage.read()) }
     var dailyEntries by remember { mutableStateOf(dailyLogStorage.read()) }
@@ -111,6 +113,7 @@ private fun Kf20App(context: Context) {
     var photos by remember { mutableStateOf(photoStorage.read()) }
     var apiSettings by remember { mutableStateOf(apiSettingsStorage.read()) }
     var reminder by remember { mutableStateOf(reminderStorage.read()) }
+    var memories by remember { mutableStateOf(memoryStorage.read()) }
     var draft by remember { mutableStateOf("") }
     var taskDraft by remember { mutableStateOf("") }
     var logType by remember { mutableStateOf("Mahlzeit") }
@@ -129,6 +132,8 @@ private fun Kf20App(context: Context) {
     var showReminderSettings by remember { mutableStateOf(false) }
     var reminderHourDraft by remember { mutableStateOf(reminder.hour.toString()) }
     var reminderMinuteDraft by remember { mutableStateOf(reminder.minute.toString().padStart(2, '0')) }
+    var showMemories by remember { mutableStateOf(false) }
+    var memoryDraft by remember { mutableStateOf("") }
     val notificationPermission = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val listState = rememberLazyListState()
 
@@ -184,7 +189,7 @@ private fun Kf20App(context: Context) {
                             storage.write(updated)
                             isSending = true
                             Thread {
-                                val result = runCatching { Kf20Api.send(updated.takeLast(30), apiSettings) }
+                                val result = runCatching { Kf20Api.send(updated.takeLast(30), apiSettings, memories.map { it.text }) }
                                 Handler(Looper.getMainLooper()).post {
                                     isSending = false
                                     result.onSuccess { reply ->
@@ -198,7 +203,10 @@ private fun Kf20App(context: Context) {
                         shape = RoundedCornerShape(14.dp)
                     ) { Text("Senden") }
                 }
-                TextButton(onClick = { showServerSettings = true }, modifier = Modifier.align(Alignment.End)) { Text("Serververbindung") }
+                Row(modifier = Modifier.align(Alignment.End)) {
+                    TextButton(onClick = { showMemories = true }) { Text("Erinnerungen") }
+                    TextButton(onClick = { showServerSettings = true }) { Text("Serververbindung") }
+                }
             } else if (workspace == Workspace.TASKS) TasksScreen(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
                 tasks = tasks,
@@ -314,6 +322,39 @@ private fun Kf20App(context: Context) {
                     }, enabled = serverUrlDraft.startsWith("http") && serverTokenDraft.isNotBlank()) { Text("Speichern") }
                 },
                 dismissButton = { TextButton(onClick = { showServerSettings = false }) { Text("Abbrechen") } }
+            )
+        }
+        if (showMemories) {
+            AlertDialog(
+                onDismissRequest = { showMemories = false },
+                title = { Text("Langzeit-Erinnerungen") },
+                text = {
+                    Column {
+                        Text("Nur Dinge eintragen, die KF20 bei künftigen Gesprächen berücksichtigen soll. Du kannst sie jederzeit entfernen.")
+                        OutlinedTextField(value = memoryDraft, onValueChange = { memoryDraft = it }, label = { Text("Neue Erinnerung") }, modifier = Modifier.fillMaxWidth())
+                        memories.forEachIndexed { index, memory ->
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                Text(memory.text, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+                                TextButton(onClick = {
+                                    memories = memories.filterIndexed { current, _ -> current != index }
+                                    memoryStorage.write(memories)
+                                }) { Text("Entfernen") }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val text = memoryDraft.trim()
+                        if (text.isNotEmpty()) {
+                            memories = (memories + UserMemory(text)).takeLast(20)
+                            memoryStorage.write(memories)
+                        }
+                        memoryDraft = ""
+                        showMemories = false
+                    }, enabled = memoryDraft.isNotBlank()) { Text("Speichern") }
+                },
+                dismissButton = { TextButton(onClick = { showMemories = false }) { Text("Schließen") } }
             )
         }
         if (showReminderSettings) {
@@ -649,6 +690,18 @@ private class ReminderStorage(context: Context) {
     }
 }
 
+private class MemoryStorage(context: Context) {
+    private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
+    fun read(): List<UserMemory> = runCatching {
+        val array = JSONArray(SecureStore.decrypt(preferences.getString("memories", null)) ?: "[]")
+        List(array.length()) { index -> UserMemory(array.getString(index)) }
+    }.getOrDefault(emptyList())
+    fun write(memories: List<UserMemory>) {
+        val array = JSONArray(); memories.forEach { array.put(it.text) }
+        preferences.edit().putString("memories", SecureStore.encrypt(array.toString())).apply()
+    }
+}
+
 private class TaskStorage(context: Context) {
     private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
     fun read(): List<AgentTask> = runCatching {
@@ -748,10 +801,12 @@ class ReminderReceiver : BroadcastReceiver() {
 }
 
 private object Kf20Api {
-    fun send(messages: List<ChatMessage>, settings: ApiSettings): String {
+    fun send(messages: List<ChatMessage>, settings: ApiSettings, memories: List<String>): String {
         val baseUrl = settings.baseUrl.ifBlank { BuildConfig.KF20_API_BASE_URL }
         require(!baseUrl.contains("REPLACE_WITH") && settings.token.isNotBlank()) { "Bitte richte zuerst die Serververbindung ein." }
-        val request = JSONObject().put("messages", JSONArray().apply { messages.forEach { put(JSONObject().put("role", it.role).put("content", it.content)) } })
+        val request = JSONObject()
+            .put("messages", JSONArray().apply { messages.forEach { put(JSONObject().put("role", it.role).put("content", it.content)) } })
+            .put("memories", JSONArray().apply { memories.take(20).forEach { put(it) } })
         val connection = (URL("$baseUrl/v1/chat").openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"; connectTimeout = 20_000; readTimeout = 90_000; doOutput = true
             setRequestProperty("Content-Type", "application/json")
