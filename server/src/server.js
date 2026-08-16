@@ -28,11 +28,11 @@ function sendJson(request, response, status, body) {
   response.end(JSON.stringify(body));
 }
 
-async function readJson(request) {
+async function readJson(request, maximumBytes = 128_000) {
   let raw = "";
   for await (const chunk of request) {
     raw += chunk;
-    if (raw.length > 128_000) throw new Error("Request too large");
+    if (raw.length > maximumBytes) throw new Error("Request too large");
   }
   return JSON.parse(raw);
 }
@@ -44,6 +44,12 @@ function validateMessages(messages) {
 
 function validateMemories(memories) {
   return Array.isArray(memories) && memories.length <= 20 && memories.every((memory) => typeof memory === "string" && memory.length <= 1_000);
+}
+
+function validateNutritionRequest(description, imageDataUrl) {
+  const hasDescription = typeof description === "string" && description.length <= 4_000;
+  const hasImage = typeof imageDataUrl === "string" && /^data:image\/(jpeg|png|webp);base64,/.test(imageDataUrl) && imageDataUrl.length <= 1_500_000;
+  return (hasDescription || hasImage) && (!imageDataUrl || hasImage);
 }
 
 function receivedToken(request) {
@@ -85,7 +91,7 @@ const server = http.createServer(async (request, response) => {
     sendJson(request, response, apiKey && apiToken ? 200 : 503, { status: apiKey && apiToken ? "ok" : "not_configured" });
     return;
   }
-  if (request.method !== "POST" || request.url !== "/v1/chat") {
+  if (request.method !== "POST" || !["/v1/chat", "/v1/nutrition/analyze"].includes(request.url)) {
     sendJson(request, response, 404, { error: "Not found" });
     return;
   }
@@ -101,6 +107,45 @@ const server = http.createServer(async (request, response) => {
   }
 
   try {
+    if (request.url === "/v1/nutrition/analyze") {
+      const { description = "", imageDataUrl = "" } = await readJson(request, 1_500_000);
+      if (!validateNutritionRequest(description, imageDataUrl)) {
+        sendJson(request, response, 400, { error: "Invalid nutrition request" });
+        return;
+      }
+      if (!apiKey) {
+        sendJson(request, response, 503, { error: "The AI service is not configured" });
+        return;
+      }
+      const content = [
+        { type: "input_text", text: `Estimate the nutrition for this food. Description: ${description || "No description; use the image."} Return a cautious best estimate, not medical advice.` },
+        ...(imageDataUrl ? [{ type: "input_image", image_url: imageDataUrl, detail: "low" }] : [])
+      ];
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 75_000);
+      const upstream = await fetch("https://api.openai.com/v1/responses", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model,
+          instructions: "You estimate food nutrition. Give calories, protein, fat and carbohydrates in grams for the described portion. Use uncertainty honestly. Return only the required schema.",
+          input: [{ role: "user", content }],
+          text: { format: { type: "json_schema", name: "nutrition_estimate", strict: true, schema: { type: "object", additionalProperties: false, properties: { name: { type: "string" }, calories: { type: "integer", minimum: 0 }, protein: { type: "number", minimum: 0 }, fat: { type: "number", minimum: 0 }, carbs: { type: "number", minimum: 0 }, confidence: { type: "string", enum: ["niedrig", "mittel", "hoch"] }, note: { type: "string" } }, required: ["name", "calories", "protein", "fat", "carbs", "confidence", "note"] } } },
+          store: false
+        })
+      });
+      clearTimeout(timeout);
+      const payload = await upstream.json();
+      if (!upstream.ok) {
+        console.error("Nutrition request failed", upstream.status, payload?.error?.type);
+        sendJson(request, response, 502, { error: "The AI service could not analyze this food" });
+        return;
+      }
+      const estimate = JSON.parse(payload.output_text ?? "{}");
+      sendJson(request, response, 200, { estimate });
+      return;
+    }
     const { messages, memories = [] } = await readJson(request);
     if (!validateMessages(messages) || !validateMemories(memories)) {
       sendJson(request, response, 400, { error: "Invalid chat request" });
