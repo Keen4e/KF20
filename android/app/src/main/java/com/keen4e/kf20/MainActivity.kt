@@ -45,6 +45,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -172,14 +175,18 @@ private fun Kf20App(context: Context) {
                 TopAppBar(
                     title = { Column { Text("KF20", fontWeight = FontWeight.Bold); Text("Dein täglicher Agent", style = MaterialTheme.typography.labelSmall) } },
                     actions = {
-                        TextButton(onClick = { workspace = Workspace.CHAT }) { Text("Chat") }
-                        TextButton(onClick = { workspace = Workspace.DAILY_LOG }) { Text("Tag") }
-                        TextButton(onClick = { workspace = Workspace.PROGRESS }) { Text("Verlauf") }
-                        TextButton(onClick = { workspace = Workspace.TASKS }) { Text("Aufgaben") }
                         if (workspace == Workspace.CHAT) TextButton(onClick = { showDeleteDialog = true }, enabled = messages.isNotEmpty() && !isSending) { Text("Löschen") }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
                 )
+            },
+            bottomBar = {
+                NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+                    NavigationBarItem(selected = workspace == Workspace.CHAT, onClick = { workspace = Workspace.CHAT }, icon = { Text("◉") }, label = { Text("Chat") })
+                    NavigationBarItem(selected = workspace == Workspace.DAILY_LOG, onClick = { workspace = Workspace.DAILY_LOG }, icon = { Text("▣") }, label = { Text("Tag") })
+                    NavigationBarItem(selected = workspace == Workspace.PROGRESS || workspace == Workspace.PHOTOS, onClick = { workspace = Workspace.PROGRESS }, icon = { Text("▥") }, label = { Text("Verlauf") })
+                    NavigationBarItem(selected = workspace == Workspace.TASKS || workspace == Workspace.PROJECTS || workspace == Workspace.FILES, onClick = { workspace = Workspace.TASKS }, icon = { Text("✓") }, label = { Text("Aufgaben") })
+                }
             }
         ) { padding ->
             if (workspace == Workspace.CHAT) Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
@@ -794,12 +801,14 @@ private fun Kf20App(context: Context) {
 }
 
 @Composable private fun MacroCard(label: String, value: Double, target: Double, unit: String, modifier: Modifier = Modifier) {
+    val progress = if (target > 0) (value / target).coerceIn(0.0, 1.0).toFloat() else 0f
     val percentage = if (target > 0) (value / target * 100).toInt() else 0
     Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = modifier) {
         Column(modifier = Modifier.padding(9.dp)) {
             Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("${"%.0f".format(value)}", fontWeight = FontWeight.Bold)
             Text("/ ${"%.0f".format(target)} $unit · $percentage%", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+            LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().padding(top = 6.dp), color = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -827,7 +836,14 @@ private fun Kf20App(context: Context) {
 }
 
 private fun kf20Colors(): ColorScheme = androidx.compose.material3.lightColorScheme(
-    primary = Color(0xFF315D4B), onPrimary = Color.White, secondaryContainer = Color(0xFFE5F1E8), surface = Color(0xFFFDFBF7)
+    primary = Color(0xFF0E4B36),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFB7F1D2),
+    onPrimaryContainer = Color(0xFF002116),
+    secondaryContainer = Color(0xFFE4EFE5),
+    onSecondaryContainer = Color(0xFF16382B),
+    surface = Color(0xFFFFFBF5),
+    background = Color(0xFFFFFBF5)
 )
 
 private class ChatStorage(context: Context) {
