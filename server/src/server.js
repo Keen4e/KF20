@@ -46,6 +46,23 @@ function validateMemories(memories) {
   return Array.isArray(memories) && memories.length <= 20 && memories.every((memory) => typeof memory === "string" && memory.length <= 1_000);
 }
 
+function extractSources(payload) {
+  const sources = [];
+  const seen = new Set();
+  for (const output of payload?.output ?? []) {
+    for (const content of output?.content ?? []) {
+      for (const annotation of content?.annotations ?? []) {
+        if (annotation?.type !== "url_citation") continue;
+        const citation = annotation.url_citation ?? annotation;
+        if (typeof citation.url !== "string" || !citation.url.startsWith("http") || seen.has(citation.url)) continue;
+        seen.add(citation.url);
+        sources.push({ title: typeof citation.title === "string" && citation.title ? citation.title : "Quelle", url: citation.url });
+      }
+    }
+  }
+  return sources.slice(0, 8);
+}
+
 function validateNutritionRequest(description, imageDataUrl) {
   const hasDescription = typeof description === "string" && description.length <= 4_000;
   const hasImage = typeof imageDataUrl === "string" && /^data:image\/(jpeg|png|webp);base64,/.test(imageDataUrl) && imageDataUrl.length <= 1_500_000;
@@ -146,8 +163,8 @@ const server = http.createServer(async (request, response) => {
       sendJson(request, response, 200, { estimate });
       return;
     }
-    const { messages, memories = [] } = await readJson(request);
-    if (!validateMessages(messages) || !validateMemories(memories)) {
+    const { messages, memories = [], webSearch = false } = await readJson(request);
+    if (!validateMessages(messages) || !validateMemories(memories) || typeof webSearch !== "boolean") {
       sendJson(request, response, 400, { error: "Invalid chat request" });
       return;
     }
@@ -168,7 +185,13 @@ const server = http.createServer(async (request, response) => {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       signal: controller.signal,
-      body: JSON.stringify({ model, instructions, input: messages.map(({ role, content }) => ({ role, content })), store: false })
+      body: JSON.stringify({
+        model,
+        instructions,
+        input: messages.map(({ role, content }) => ({ role, content })),
+        ...(webSearch ? { tools: [{ type: "web_search" }] } : {}),
+        store: false
+      })
     });
     clearTimeout(timeout);
     const payload = await upstream.json();
@@ -177,7 +200,7 @@ const server = http.createServer(async (request, response) => {
       sendJson(request, response, 502, { error: "The AI service could not complete this request" });
       return;
     }
-    sendJson(request, response, 200, { text: payload.output_text ?? "" });
+    sendJson(request, response, 200, { text: payload.output_text ?? "", sources: extractSources(payload) });
   } catch (error) {
     console.error("Chat request failed", error instanceof Error ? error.name : "unknown");
     sendJson(request, response, 400, { error: "Invalid request" });
