@@ -109,7 +109,7 @@ import javax.crypto.SecretKey
 
 private data class ChatMessage(val role: String, val content: String)
 private data class AgentTask(val title: String, val done: Boolean)
-private data class DailyLogEntry(val date: String, val type: String, val title: String, val calories: Int, val protein: Double, val fat: Double, val carbs: Double)
+private data class DailyLogEntry(val date: String, val type: String, val title: String, val calories: Int, val protein: Double, val fat: Double, val carbs: Double, val planned: Boolean = false)
 private data class DailyRoutine(val title: String, val calories: Int, val protein: Double, val fat: Double, val carbs: Double)
 private data class WeightEntry(val date: String, val kilograms: Double)
 private data class ProgressPhoto(val date: String, val uri: String)
@@ -561,8 +561,8 @@ private fun Kf20App(context: Context) {
                 onPreviousDay = { selectedDate = LocalDate.parse(selectedDate).minusDays(1).toString() },
                 onToday = { selectedDate = todayKey() },
                 onNextDay = { selectedDate = LocalDate.parse(selectedDate).plusDays(1).toString() },
-                onUseRoutine = { routine ->
-                    val entry = DailyLogEntry(selectedDate, "Mahlzeit", routine.title, routine.calories, routine.protein, routine.fat, routine.carbs)
+                onUseRoutine = { routine, planned ->
+                    val entry = DailyLogEntry(selectedDate, "Mahlzeit", routine.title, routine.calories, routine.protein, routine.fat, routine.carbs, planned)
                     dailyEntries = dailyEntries + entry
                     dailyLogStorage.write(dailyEntries)
                 },
@@ -578,6 +578,13 @@ private fun Kf20App(context: Context) {
                     val index = dailyEntries.indexOfLast { it == entry }
                     if (index >= 0) {
                         dailyEntries = dailyEntries.toMutableList().apply { removeAt(index) }
+                        dailyLogStorage.write(dailyEntries)
+                    }
+                },
+                onMarkConsumed = { entry ->
+                    val index = dailyEntries.indexOfLast { it == entry }
+                    if (index >= 0) {
+                        dailyEntries = dailyEntries.toMutableList().apply { this[index] = entry.copy(planned = false) }
                         dailyLogStorage.write(dailyEntries)
                     }
                 },
@@ -603,10 +610,10 @@ private fun Kf20App(context: Context) {
                         weightStorage.write(weightEntries)
                     }
                 },
-                onAdd = {
+                onAdd = { planned ->
                     val title = logTitle.trim()
                     if (title.isNotEmpty() && nutritionAnalysisReady) {
-                        val entry = DailyLogEntry(selectedDate, "Mahlzeit", title, logCalories.toIntOrNull() ?: 0, logProtein.replace(',', '.').toDoubleOrNull() ?: 0.0, logFat.replace(',', '.').toDoubleOrNull() ?: 0.0, logCarbs.replace(',', '.').toDoubleOrNull() ?: 0.0)
+                        val entry = DailyLogEntry(selectedDate, "Mahlzeit", title, logCalories.toIntOrNull() ?: 0, logProtein.replace(',', '.').toDoubleOrNull() ?: 0.0, logFat.replace(',', '.').toDoubleOrNull() ?: 0.0, logCarbs.replace(',', '.').toDoubleOrNull() ?: 0.0, planned)
                         dailyEntries = dailyEntries + entry
                         dailyLogStorage.write(dailyEntries)
                         mealDescription = ""; logTitle = ""; logCalories = ""; logProtein = ""; logFat = ""; logCarbs = ""; mealPhotoDataUrl = null; nutritionHint = null; nutritionAnalysisReady = false
@@ -968,21 +975,22 @@ private fun Kf20App(context: Context) {
     val cutoff = LocalDate.now().minusDays(rangeDays.toLong() - 1)
     val inRange: (String) -> Boolean = { date -> runCatching { !LocalDate.parse(date).isBefore(cutoff) }.getOrDefault(false) }
     val todayEntries = dailyEntries.filter { it.date == todayKey() }
-    val todayIntake = todayEntries.filter { it.type == "Mahlzeit" }.sumOf { it.calories }
+    val todayFoods = todayEntries.filter { it.type == "Mahlzeit" && !it.planned }
+    val todayIntake = todayFoods.sumOf { it.calories }
     val todayBurned = todayEntries.filter { it.type == "Sport" }.sumOf { it.calories }
-    val todayProtein = todayEntries.sumOf { it.protein }
-    val todayFat = todayEntries.sumOf { it.fat }
-    val todayCarbs = todayEntries.sumOf { it.carbs }
+    val todayProtein = todayFoods.sumOf { it.protein }
+    val todayFat = todayFoods.sumOf { it.fat }
+    val todayCarbs = todayFoods.sumOf { it.carbs }
     val dates = (rangeDays - 1 downTo 0).map { LocalDate.now().minusDays(it.toLong()) }
     val dailyCalories = dates.map { date ->
         val day = dailyEntries.filter { it.date == date.toString() }
-        val intake = day.filter { it.type == "Mahlzeit" }.sumOf { it.calories }
+        val intake = day.filter { it.type == "Mahlzeit" && !it.planned }.sumOf { it.calories }
         val sport = day.filter { it.type == "Sport" }.sumOf { it.calories }
         maxOf(0, intake - sport).toDouble()
     }
-    val dailyProtein = dates.map { date -> dailyEntries.filter { it.date == date.toString() }.sumOf { it.protein } }
-    val dailyFat = dates.map { date -> dailyEntries.filter { it.date == date.toString() }.sumOf { it.fat } }
-    val dailyCarbs = dates.map { date -> dailyEntries.filter { it.date == date.toString() }.sumOf { it.carbs } }
+    val dailyProtein = dates.map { date -> dailyEntries.filter { it.date == date.toString() && it.type == "Mahlzeit" && !it.planned }.sumOf { it.protein } }
+    val dailyFat = dates.map { date -> dailyEntries.filter { it.date == date.toString() && it.type == "Mahlzeit" && !it.planned }.sumOf { it.fat } }
+    val dailyCarbs = dates.map { date -> dailyEntries.filter { it.date == date.toString() && it.type == "Mahlzeit" && !it.planned }.sumOf { it.carbs } }
     val rangedMeasurements = measurements.filter { inRange(it.date) }
     val weights = rangedMeasurements.mapNotNull { item -> item.weight?.let { item.date to it } }
     val scaleKf = rangedMeasurements.mapNotNull { item -> item.scaleBodyFat?.let { item.date to it } }
@@ -1668,12 +1676,13 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
     onPreviousDay: () -> Unit,
     onToday: () -> Unit,
     onNextDay: () -> Unit,
-    onUseRoutine: (DailyRoutine) -> Unit,
+    onUseRoutine: (DailyRoutine, Boolean) -> Unit,
     onSaveRoutine: () -> Unit,
     onDeleteEntry: (DailyLogEntry) -> Unit,
+    onMarkConsumed: (DailyLogEntry) -> Unit,
     onDeleteSport: (SportSession) -> Unit,
     onDeleteMeasurement: (BodyMeasurement) -> Unit,
-    onAdd: () -> Unit
+    onAdd: (Boolean) -> Unit
 ) {
     var captureError by remember { mutableStateOf<String?>(null) }
     var showMealComposer by remember { mutableStateOf(false) }
@@ -1692,11 +1701,13 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
             }
         }
     }
-    val intake = entries.filter { it.type == "Mahlzeit" }.sumOf { it.calories }
+    val consumedFoods = entries.filter { it.type == "Mahlzeit" && !it.planned }
+    val plannedFoods = entries.filter { it.type == "Mahlzeit" && it.planned }
+    val intake = consumedFoods.sumOf { it.calories }
     val burned = entries.filter { it.type == "Sport" }.sumOf { it.calories }
-    val proteinTotal = entries.sumOf { it.protein }
-    val fatTotal = entries.sumOf { it.fat }
-    val carbsTotal = entries.sumOf { it.carbs }
+    val proteinTotal = consumedFoods.sumOf { it.protein }
+    val fatTotal = consumedFoods.sumOf { it.fat }
+    val carbsTotal = consumedFoods.sumOf { it.carbs }
     val isToday = selectedDate == todayKey()
     val composerVisible = showMealComposer || description.isNotBlank() || isEstimating || analysisReady || hasPhoto
     val foodEntries = entries.filter { it.type == "Mahlzeit" }
@@ -1724,6 +1735,9 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
                     }
                 }
             }
+        }
+        if (plannedFoods.isNotEmpty()) item {
+            PlannedNutritionCard(plannedFoods = plannedFoods, intake = intake, burned = burned, targets = targets)
         }
         item {
             Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
@@ -1760,7 +1774,11 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
                     Column(modifier = Modifier.padding(14.dp)) {
                         Text("Deine Standards", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
                         routines.takeLast(3).forEach { routine ->
-                            TextButton(onClick = { onUseRoutine(routine) }, modifier = Modifier.fillMaxWidth()) { Text("+ ${routine.title}") }
+                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Text(routine.title, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
+                                TextButton(onClick = { onUseRoutine(routine, false); showMealComposer = false }) { Text("Jetzt") }
+                                TextButton(onClick = { onUseRoutine(routine, true); showMealComposer = false }) { Text("Planen") }
+                            }
                         }
                     }
                 }
@@ -1814,7 +1832,10 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
                             OutlinedTextField(value = fat, onValueChange = onFatChange, label = { Text("Fett g") }, modifier = Modifier.weight(1f), singleLine = true)
                             OutlinedTextField(value = carbs, onValueChange = onCarbsChange, label = { Text("Carbs g") }, modifier = Modifier.weight(1f), singleLine = true)
                         }
-                        Button(onClick = onAdd, enabled = title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Mahlzeit speichern") }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(onClick = { onAdd(false); showMealComposer = false }, enabled = title.isNotBlank(), modifier = Modifier.weight(1f)) { Text("Jetzt gegessen") }
+                            OutlinedButton(onClick = { onAdd(true); showMealComposer = false }, enabled = title.isNotBlank(), modifier = Modifier.weight(1f)) { Text("Später planen") }
+                        }
                         TextButton(onClick = onSaveRoutine, enabled = title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Auch als Standard speichern") }
                     }
                 }
@@ -1859,9 +1880,11 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
         }
         items(foodEntries.reversed()) { entry ->
             DailyEntryCard(
-                type = "Nahrung",
+                type = if (entry.planned) "Nahrung · geplant" else "Nahrung",
                 title = entry.title,
                 details = "${entry.calories} kcal · P ${"%.0f".format(entry.protein)} g · F ${"%.0f".format(entry.fat)} g · C ${"%.0f".format(entry.carbs)} g",
+                actionLabel = if (entry.planned) "Als gegessen" else null,
+                onAction = if (entry.planned) ({ onMarkConsumed(entry) }) else null,
                 onDelete = { onDeleteEntry(entry) }
             )
         }
@@ -1869,7 +1892,7 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
     }
 }
 
-@Composable private fun DailyEntryCard(type: String, title: String, details: String, onDelete: () -> Unit) {
+@Composable private fun DailyEntryCard(type: String, title: String, details: String, actionLabel: String? = null, onAction: (() -> Unit)? = null, onDelete: () -> Unit) {
     Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
@@ -1877,7 +1900,30 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
                 Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 if (details.isNotBlank()) Text(details, color = MaterialTheme.colorScheme.onSecondaryContainer)
             }
-            TextButton(onClick = onDelete) { Text("Entfernen") }
+            Column(horizontalAlignment = Alignment.End) {
+                if (actionLabel != null && onAction != null) TextButton(onClick = onAction) { Text(actionLabel) }
+                TextButton(onClick = onDelete) { Text("Entfernen") }
+            }
+        }
+    }
+}
+
+@Composable private fun PlannedNutritionCard(plannedFoods: List<DailyLogEntry>, intake: Int, burned: Int, targets: NutritionTargets) {
+    val plannedCalories = plannedFoods.sumOf { it.calories }
+    val plannedProtein = plannedFoods.sumOf { it.protein }
+    val plannedFat = plannedFoods.sumOf { it.fat }
+    val plannedCarbs = plannedFoods.sumOf { it.carbs }
+    val forecastRemaining = targets.calories - (intake + plannedCalories - burned)
+    Surface(shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Für später geplant", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text("${plannedFoods.size} ${if (plannedFoods.size == 1) "Eintrag" else "Einträge"} · $plannedCalories kcal", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+                Text(if (forecastRemaining >= 0) "$forecastRemaining kcal frei" else "${-forecastRemaining} kcal darüber", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            }
+            Text("Prognose mit Planung · P ${plannedProtein.de1()} g · F ${plannedFat.de1()} g · C ${plannedCarbs.de1()} g", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
         }
     }
 }
@@ -2046,13 +2092,13 @@ private class DailyLogStorage(context: Context) {
         val array = JSONArray(SecureStore.decrypt(preferences.getString("daily_entries", null)) ?: "[]")
         List(array.length()) { index ->
             array.getJSONObject(index).let {
-                DailyLogEntry(it.optString("date", todayKey()), it.getString("type"), it.getString("title"), it.getInt("calories"), it.getDouble("protein"), it.optDouble("fat", 0.0), it.optDouble("carbs", 0.0))
+                DailyLogEntry(it.optString("date", todayKey()), it.getString("type"), it.getString("title"), it.getInt("calories"), it.getDouble("protein"), it.optDouble("fat", 0.0), it.optDouble("carbs", 0.0), it.optBoolean("planned", false))
             }
         }
     }.getOrDefault(emptyList())
     fun write(entries: List<DailyLogEntry>) {
         val array = JSONArray(); entries.takeLast(500).forEach { entry ->
-            array.put(JSONObject().put("date", entry.date).put("type", entry.type).put("title", entry.title).put("calories", entry.calories).put("protein", entry.protein).put("fat", entry.fat).put("carbs", entry.carbs))
+            array.put(JSONObject().put("date", entry.date).put("type", entry.type).put("title", entry.title).put("calories", entry.calories).put("protein", entry.protein).put("fat", entry.fat).put("carbs", entry.carbs).put("planned", entry.planned))
         }
         preferences.edit().putString("daily_entries", SecureStore.encrypt(array.toString())).apply()
     }
