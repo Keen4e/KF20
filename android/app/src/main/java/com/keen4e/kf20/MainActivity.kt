@@ -376,6 +376,13 @@ private fun Kf20App(context: Context) {
                         routineStorage.write(routines)
                     }
                 },
+                onDeleteEntry = { entry ->
+                    val index = dailyEntries.indexOfLast { it == entry }
+                    if (index >= 0) {
+                        dailyEntries = dailyEntries.toMutableList().apply { removeAt(index) }
+                        dailyLogStorage.write(dailyEntries)
+                    }
+                },
                 onAdd = {
                     val title = logTitle.trim()
                     if (title.isNotEmpty()) {
@@ -718,6 +725,7 @@ private fun Kf20App(context: Context) {
     onNextDay: () -> Unit,
     onUseRoutine: (DailyRoutine) -> Unit,
     onSaveRoutine: () -> Unit,
+    onDeleteEntry: (DailyLogEntry) -> Unit,
     onAdd: () -> Unit
 ) = Column(modifier = modifier) {
     val mealPhotoPicker = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -794,6 +802,7 @@ private fun Kf20App(context: Context) {
                     Text(entry.type, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(entry.title, fontWeight = FontWeight.Medium)
                     if (entry.calories != 0 || entry.protein != 0.0 || entry.fat != 0.0 || entry.carbs != 0.0) Text("${entry.calories} kcal · P ${"%.0f".format(entry.protein)} g · F ${"%.0f".format(entry.fat)} g · C ${"%.0f".format(entry.carbs)} g", color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    TextButton(onClick = { onDeleteEntry(entry) }) { Text("Eintrag entfernen") }
                 }
             }
         }
