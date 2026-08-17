@@ -16,6 +16,8 @@ Der Android-Client enthält keine Provider-SDKs, API-Schlüssel oder providerspe
 - Bildaufnahme als temporäre JPEG-Data-URL nur für eine Analyse
 - freie Textbeschreibung direkt in der App; optionale Spracheingabe über Android Speech Recognizer wird lokal in denselben Texteingabekanal überführt
 - Nährwertwerte bleiben nach der KI-Antwort editierbar
+- lokaler, nutzerinitiierter JSON-Export schließt Server-Token aus; die Datei selbst ist unverschlüsselt und wird nur an einen vom Nutzer gewählten Android-Speicherort geschrieben
+- bestätigte lokale Gesamtlöschung entfernt verschlüsselte Preferences, persistierte URI-Freigaben, Erinnerungsalarm und Android-Keystore-Schlüssel
 
 ## Stabile KF20-API
 
