@@ -85,6 +85,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
@@ -128,6 +129,11 @@ private data class SportSession(val date: String, val activity: String, val calo
 private data class BodyMeasurement(val date: String, val weight: Double?, val scaleBodyFat: Double?, val neck: Double?, val abdomen: Double?, val hunger: Int?, val energy: Int?)
 private data class HealthProfile(val startWeight: Double?, val heightCm: Double?, val goalWeight: Double?, val goalBodyFat: Double?)
 private enum class Workspace { CHAT, DAILY_LOG, STATISTICS, STANDARDS, PROGRESS, PHOTOS, TASKS, PROJECTS, FILES }
+private enum class AppStyle(val label: String, val description: String) {
+    PERFORMANCE_DARK("Performance Dark", "Dunkel, sportlich und nah an der Morgen-Check-Referenz"),
+    HEALTH_LIGHT("Health Light", "Hell, ruhig und mit viel visuellem Freiraum"),
+    DATA_ATHLETE("Data Athlete", "Dunkelblau, technisch und diagrammorientiert")
+}
 
 private val CaloriesGreen = Color(0xFF0E5A42)
 private val ProteinBlue = Color(0xFF4B70D6)
@@ -161,6 +167,7 @@ private fun Kf20App(context: Context) {
     val sportStorage = remember { SportStorage(context) }
     val measurementStorage = remember { MeasurementStorage(context) }
     val healthProfileStorage = remember { HealthProfileStorage(context) }
+    val uiPreferencesStorage = remember { UiPreferencesStorage(context) }
     var messages by remember { mutableStateOf(storage.read()) }
     var tasks by remember { mutableStateOf(taskStorage.read()) }
     var dailyEntries by remember { mutableStateOf(dailyLogStorage.read()) }
@@ -182,6 +189,7 @@ private fun Kf20App(context: Context) {
         )
     }
     var healthProfile by remember { mutableStateOf(healthProfileStorage.read()) }
+    var appStyle by remember { mutableStateOf(uiPreferencesStorage.read()) }
     var draft by remember { mutableStateOf("") }
     var taskDraft by remember { mutableStateOf("") }
     var projectNameDraft by remember { mutableStateOf("") }
@@ -234,7 +242,7 @@ private fun Kf20App(context: Context) {
             runCatching {
                 val export = LocalDataExport.createJson(
                     messages, tasks, dailyEntries, routines, weightEntries, photos, reminder,
-                    memories, projects, privateFiles, targets, sportSessions, measurements, healthProfile
+                    memories, projects, privateFiles, targets, sportSessions, measurements, healthProfile, appStyle
                 )
                 context.contentResolver.openOutputStream(uri, "wt")?.bufferedWriter()?.use { it.write(export) }
                     ?: error("Die Exportdatei konnte nicht geöffnet werden.")
@@ -334,7 +342,7 @@ private fun Kf20App(context: Context) {
         workspace = Workspace.DAILY_LOG
     }
 
-    MaterialTheme(colorScheme = kf20Colors()) {
+    MaterialTheme(colorScheme = kf20Colors(appStyle)) {
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -343,7 +351,7 @@ private fun Kf20App(context: Context) {
                             Image(
                                 painter = painterResource(R.drawable.kf20_wordmark),
                                 contentDescription = "KF20",
-                                modifier = Modifier.width(112.dp).height(48.dp),
+                                modifier = Modifier.width(112.dp).height(48.dp).clip(RoundedCornerShape(10.dp)),
                                 contentScale = ContentScale.Crop
                             )
                             Spacer(Modifier.width(10.dp))
@@ -485,6 +493,11 @@ private fun Kf20App(context: Context) {
                 targets = targets,
                 profile = healthProfile,
                 reminder = reminder,
+                appStyle = appStyle,
+                onAppStyleChange = { style ->
+                    appStyle = style
+                    uiPreferencesStorage.write(style)
+                },
                 title = standardTitleDraft,
                 calories = standardCaloriesDraft,
                 protein = standardProteinDraft,
@@ -694,6 +707,7 @@ private fun Kf20App(context: Context) {
                         sportSessions = emptyList(); measurements = emptyList(); apiSettings = ApiSettings("", "")
                         reminder = ReminderConfig(false, 20, 0); targets = NutritionTargets(2_000, 150.0, 70.0, 200.0)
                         healthProfile = HealthProfile(null, null, null, null)
+                        appStyle = AppStyle.PERFORMANCE_DARK
                         serverUrlDraft = ""; serverTokenDraft = ""; selectedDate = todayKey()
                         dataStatus = "Alle lokalen KF20-Daten wurden gelöscht."
                         showDeleteAllData = false
@@ -1087,6 +1101,8 @@ private fun Kf20App(context: Context) {
     targets: NutritionTargets,
     profile: HealthProfile,
     reminder: ReminderConfig,
+    appStyle: AppStyle,
+    onAppStyleChange: (AppStyle) -> Unit,
     title: String,
     calories: String,
     protein: String,
@@ -1113,6 +1129,31 @@ private fun Kf20App(context: Context) {
         item {
             Text("Standards", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp))
             Text("Wiederkehrende Mahlzeiten und persönliche Einstellungen.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        item {
+            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Design", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Wähle den Styleguide für die gesamte App. Die Einstellung wird auf diesem Gerät gespeichert.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    AppStyle.entries.forEach { style ->
+                        if (style == appStyle) {
+                            Button(onClick = { onAppStyleChange(style) }, modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    Text("✓ ${style.label}", fontWeight = FontWeight.Bold)
+                                    Text(style.description, style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        } else {
+                            OutlinedButton(onClick = { onAppStyleChange(style) }, modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.fillMaxWidth()) {
+                                    Text(style.label, fontWeight = FontWeight.Bold)
+                                    Text(style.description, style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         item {
             Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
@@ -2228,25 +2269,81 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
     Spacer(Modifier.width(8.dp)); Text("KF20 denkt nach …", color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
-private fun kf20Colors(): ColorScheme = androidx.compose.material3.lightColorScheme(
-    primary = CaloriesGreen,
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFD8F2E5),
-    onPrimaryContainer = Color(0xFF002116),
-    secondary = ProteinBlue,
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE5ECFA),
-    onSecondaryContainer = Color(0xFF172A54),
-    tertiary = CarbsCoral,
-    onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFFFE2DC),
-    onTertiaryContainer = Color(0xFF4D1711),
-    surface = Color(0xFFFFFBF5),
-    surfaceVariant = Color(0xFFF1EFE9),
-    onSurfaceVariant = Color(0xFF5D625F),
-    outline = Color(0xFF7A817D),
-    background = Color(0xFFF8F6F1)
-)
+private fun kf20Colors(style: AppStyle): ColorScheme = when (style) {
+    AppStyle.HEALTH_LIGHT -> androidx.compose.material3.lightColorScheme(
+        primary = CaloriesGreen,
+        onPrimary = Color.White,
+        primaryContainer = Color(0xFFD8F2E5),
+        onPrimaryContainer = Color(0xFF002116),
+        secondary = ProteinBlue,
+        onSecondary = Color.White,
+        secondaryContainer = Color(0xFFE5ECFA),
+        onSecondaryContainer = Color(0xFF172A54),
+        tertiary = CarbsCoral,
+        onTertiary = Color.White,
+        tertiaryContainer = Color(0xFFFFE2DC),
+        onTertiaryContainer = Color(0xFF4D1711),
+        surface = Color(0xFFFFFBF5),
+        onSurface = Color(0xFF1A1C1B),
+        surfaceVariant = Color(0xFFF1EFE9),
+        onSurfaceVariant = Color(0xFF5D625F),
+        outline = Color(0xFF7A817D),
+        background = Color(0xFFF8F6F1),
+        onBackground = Color(0xFF1A1C1B)
+    )
+    AppStyle.PERFORMANCE_DARK -> androidx.compose.material3.darkColorScheme(
+        primary = Color(0xFF4ADE80),
+        onPrimary = Color(0xFF00210D),
+        primaryContainer = Color(0xFF123D28),
+        onPrimaryContainer = Color(0xFFC2F5D0),
+        secondary = Color(0xFF8EAAFF),
+        onSecondary = Color(0xFF10245B),
+        secondaryContainer = Color(0xFF22345C),
+        onSecondaryContainer = Color(0xFFDCE3FF),
+        tertiary = Color(0xFFFF8B7D),
+        onTertiary = Color(0xFF53140E),
+        tertiaryContainer = Color(0xFF5D2924),
+        onTertiaryContainer = Color(0xFFFFDAD5),
+        surface = Color(0xFF151A1F),
+        onSurface = Color(0xFFE8ECE9),
+        surfaceVariant = Color(0xFF20272D),
+        onSurfaceVariant = Color(0xFFBEC8C2),
+        outline = Color(0xFF85918A),
+        background = Color(0xFF0D1115),
+        onBackground = Color(0xFFE8ECE9)
+    )
+    AppStyle.DATA_ATHLETE -> androidx.compose.material3.darkColorScheme(
+        primary = Color(0xFF54D6E8),
+        onPrimary = Color(0xFF00363D),
+        primaryContainer = Color(0xFF10414B),
+        onPrimaryContainer = Color(0xFFB6F2FA),
+        secondary = Color(0xFFA8CBFF),
+        onSecondary = Color(0xFF07315B),
+        secondaryContainer = Color(0xFF193C60),
+        onSecondaryContainer = Color(0xFFD5E5FF),
+        tertiary = Color(0xFFFFB86B),
+        onTertiary = Color(0xFF4A2800),
+        tertiaryContainer = Color(0xFF5B3610),
+        onTertiaryContainer = Color(0xFFFFDDB9),
+        surface = Color(0xFF101E2A),
+        onSurface = Color(0xFFE1ECF5),
+        surfaceVariant = Color(0xFF182B3B),
+        onSurfaceVariant = Color(0xFFBAC9D5),
+        outline = Color(0xFF7C909F),
+        background = Color(0xFF07131E),
+        onBackground = Color(0xFFE1ECF5)
+    )
+}
+
+private class UiPreferencesStorage(context: Context) {
+    private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
+    fun read(): AppStyle = runCatching {
+        AppStyle.valueOf(preferences.getString("app_style", AppStyle.PERFORMANCE_DARK.name) ?: AppStyle.PERFORMANCE_DARK.name)
+    }.getOrDefault(AppStyle.PERFORMANCE_DARK)
+    fun write(style: AppStyle) {
+        preferences.edit().putString("app_style", style.name).apply()
+    }
+}
 
 private class ChatStorage(context: Context) {
     private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
@@ -2561,10 +2658,11 @@ private object LocalDataExport {
         targets: NutritionTargets,
         sessions: List<SportSession>,
         measurements: List<BodyMeasurement>,
-        profile: HealthProfile
+        profile: HealthProfile,
+        appStyle: AppStyle
     ): String {
         val root = JSONObject()
-            .put("schemaVersion", 1)
+            .put("schemaVersion", 2)
             .put("exportedAt", Instant.now().toString())
             .put("notice", "Sensible KF20-Gesundheitsdaten. Serverzugang und Provider-Schlüssel sind ausgeschlossen.")
         root.put("messages", JSONArray().apply { messages.forEach { put(JSONObject().put("role", it.role).put("content", it.content)) } })
@@ -2599,6 +2697,7 @@ private object LocalDataExport {
         })
         root.put("profile", JSONObject().put("startWeight", profile.startWeight ?: JSONObject.NULL).put("heightCm", profile.heightCm ?: JSONObject.NULL)
             .put("goalWeight", profile.goalWeight ?: JSONObject.NULL).put("goalBodyFat", profile.goalBodyFat ?: JSONObject.NULL))
+        root.put("uiPreferences", JSONObject().put("appStyle", appStyle.name))
         return root.toString(2)
     }
 }
