@@ -128,6 +128,9 @@ Einzelwerte und KI-Schätzungen dürfen nicht als medizinische Diagnose dargeste
 - optionale Ziele für Gewicht und Körperfett
 - tägliche Erinnerung
 - Zugriff auf ergänzende Aufgaben und private Dateien
+- gespeicherte Designauswahl für die gesamte App: Performance Dark, Health Light oder Data Athlete
+
+**Performance Dark** ist für neue Installationen der Standard und orientiert sich an der dunklen Morgen-Check-Referenz. **Health Light** bietet die helle bisherige Farbwelt. **Data Athlete** nutzt eine technischere dunkelblaue Oberfläche. Der Wechsel erfolgt sofort, bleibt nach einem Neustart erhalten und verändert keine fachlichen Daten oder Berechnungen.
 
 Zielwerte werden nicht ausgedacht. Nicht gesetzte Ziele bleiben leer.
 
@@ -155,7 +158,7 @@ Provider-Capabilities werden explizit ausgewiesen. Wird etwa Web-Recherche verla
 ## Datenschutz
 
 - Gesundheits- und Chatdaten lokal AES-GCM-verschlüsselt speichern.
-- Vollständigen lokalen JSON-Export auf ausdrückliche Nutzeraktion anbieten; der Export schließt Zugangstoken aus und warnt sichtbar, dass die erzeugte Datei selbst nicht verschlüsselt ist.
+- Vollständigen lokalen JSON-Export auf ausdrückliche Nutzeraktion anbieten; der Export enthält ab Schema 2 auch die Designauswahl, schließt Zugangstoken aus und warnt sichtbar, dass die erzeugte Datei selbst nicht verschlüsselt ist.
 - Alle lokalen KF20-Daten, gespeicherten Dateizugriffe und den Android-Keystore-Schlüssel nach einer eindeutigen Bestätigung vollständig löschen können.
 - Keine Provider-Schlüssel in App, Git oder Logs.
 - Keine Chat-Inhaltslogs im Serverbetrieb.
