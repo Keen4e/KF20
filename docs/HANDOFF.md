@@ -15,8 +15,10 @@ Stand: 2026-08-17
 - vier Haupttabs im aktuellen lokalen Stand: Tag, Statistik, Standards, Chat
 - vollständige KF20-Wortmarke im App-Kopf als echte Bildmarke statt der gestauchten ovalen Vektorvariante; vollständiges KF20-Launcher-Icon und echte Material-Icons in der Hauptnavigation
 - vereinfachter, gestufter Tagesablauf: Zielstand sehen, Mahlzeit beschreiben/fotografieren/einsprechen, KI-Ergebnis prüfen, speichern
-- grafisches Tagesdashboard mit Kalorienring, Makroringen und 7-Tage-Balkenverlauf
+- grafisches Tagesdashboard mit Kalorien- und Makroringen sowie schlanker Dreifach-Erfassung für Nahrung, Sport und Messwerte
+- gemeinsame Tagesliste für Nahrung, Sport und Messwerte einschließlich gezielter Löschaktionen
 - grafischer Statistikbereich für Kalorien, Makros, Gewicht, Körperfett, Sport sowie Hunger/Energie
+- der 7-Tage-Überblick liegt ausschließlich unter Statistik und ist dort die Voreinstellung
 - konsistente Farbcodierung und zunächst eingeklappte Mahlzeitenerfassung zur Reduktion visueller Komplexität
 - Tagesdashboard für Kalorien, Protein, Fett und Carbs
 - Mahlzeitenbeschreibung, Kameraaufnahme und optionales Mikrofon über geschützte Server-API; freie Einträge erfordern eine erfolgreiche KI-Auswertung
