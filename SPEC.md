@@ -56,7 +56,30 @@ Ein bereits bestätigter Standard darf ohne erneute KI-Auswertung übernommen we
 
 Nach der KI-Prüfung entscheidet der Nutzer ausdrücklich zwischen **Jetzt gegessen** und **Später planen**. Geplante Einträge zeigen eine Prognose für Restkalorien und Makros. Sie können in der gemeinsamen Tagesliste als gegessen bestätigt oder gelöscht werden. Dieselbe Auswahl steht für gespeicherte Standards zur Verfügung.
 
-### Sport erfassen
+### Morgen-Check: Sport und Tageswerte
+
+Sport und die täglichen Körper-/Befindenswerte werden nicht in getrennten Pop-ups erfasst. Die Tagesseite zeigt oberhalb des Kalorien-Dashboards eine klar sichtbare Karte **Morgen-Check offen/erledigt**. **Jetzt eintragen** beziehungsweise **Morgen-Check ändern** öffnet eine große, von unten kommende und scrollbar bleibende Erfassungsfläche im Stil eines zusammenhängenden Tagesstarts.
+
+Der primäre Morgen-Check enthält:
+
+- Sportverbrauch laut Tracker als Schieberegler
+- Energie von 1 bis 10 als Schieberegler
+- Hunger von 0 bis 10 als Schieberegler
+- Gewicht und Körperfett laut Waage als kompakte Eingabefelder
+- Hals- und Bauchumfang als optional einblendbare Zusatzfelder
+- eine live aktualisierte Vorschau für Kalorien-, Protein-, Fett- und Carbs-Ziel
+
+Der Nutzer bestätigt alle Werte gemeinsam mit **Tag starten** oder verlässt die Erfassung mit **Später**. Ein erneutes Öffnen aktualisiert denselben Morgen-Check des Tages, statt doppelte Sporteinträge zu erzeugen. Nahrung bleibt davon getrennt und wird weiterhin per Text, Foto oder Mikrofon mit KI ausgewertet.
+
+Der aus dem Chat belegte Refeed-Faktor wird aus dem Energiewert abgeleitet:
+
+- Energie 1–4: 30 Prozent
+- Energie 5–7: 50 Prozent
+- Energie 8–10: 70 Prozent
+
+Das dynamische Kalorienziel entspricht dem konfigurierten Basisziel plus Sportverbrauch mal Refeed-Faktor. Das Add-on wird im aktuellen Modell den Carbs zugerechnet; Protein- und Fettziel bleiben unverändert. Die Tagesansicht zeigt das so berechnete Ziel unmittelbar nach dem Speichern.
+
+### Weitere Sportdaten
 
 Belegte Felder aus dem Chat-Verlauf:
 
@@ -67,7 +90,7 @@ Belegte Felder aus dem Chat-Verlauf:
 
 Trainingskalorien fließen in die Tagesbilanz. Tracker-Gesamtverbrauch ist eine separate Statistik und darf nicht doppelt als Sportverbrauch gerechnet werden.
 
-### Tageswerte erfassen
+### Gespeicherte Tageswerte
 
 Belegte Felder aus dem Chat-Verlauf:
 
