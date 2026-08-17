@@ -23,6 +23,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -65,6 +67,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.json.JSONArray
@@ -94,7 +100,10 @@ private data class ProjectEntry(val name: String, val notes: String, val status:
 private data class PrivateFile(val date: String, val uri: String, val name: String, val mimeType: String)
 private data class NutritionEstimate(val name: String, val calories: Int, val protein: Double, val fat: Double, val carbs: Double, val confidence: String, val note: String)
 private data class NutritionTargets(val calories: Int, val protein: Double, val fat: Double, val carbs: Double)
-private enum class Workspace { CHAT, DAILY_LOG, PROGRESS, PHOTOS, TASKS, PROJECTS, FILES }
+private data class SportSession(val date: String, val activity: String, val calories: Int, val trackerCalories: Int?, val note: String)
+private data class BodyMeasurement(val date: String, val weight: Double?, val scaleBodyFat: Double?, val neck: Double?, val abdomen: Double?, val hunger: Int?, val energy: Int?)
+private data class HealthProfile(val startWeight: Double, val heightCm: Double, val goalWeight: Double?, val goalBodyFat: Double?)
+private enum class Workspace { CHAT, DAILY_LOG, STATISTICS, STANDARDS, PROGRESS, PHOTOS, TASKS, PROJECTS, FILES }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -118,6 +127,9 @@ private fun Kf20App(context: Context) {
     val projectStorage = remember { ProjectStorage(context) }
     val fileStorage = remember { FileStorage(context) }
     val targetsStorage = remember { TargetsStorage(context) }
+    val sportStorage = remember { SportStorage(context) }
+    val measurementStorage = remember { MeasurementStorage(context) }
+    val healthProfileStorage = remember { HealthProfileStorage(context) }
     var messages by remember { mutableStateOf(storage.read()) }
     var tasks by remember { mutableStateOf(taskStorage.read()) }
     var dailyEntries by remember { mutableStateOf(dailyLogStorage.read()) }
@@ -130,6 +142,15 @@ private fun Kf20App(context: Context) {
     var projects by remember { mutableStateOf(projectStorage.read()) }
     var privateFiles by remember { mutableStateOf(fileStorage.read()) }
     var targets by remember { mutableStateOf(targetsStorage.read()) }
+    var sportSessions by remember { mutableStateOf(sportStorage.read()) }
+    var measurements by remember {
+        mutableStateOf(
+            measurementStorage.read().ifEmpty {
+                weightStorage.read().map { BodyMeasurement(it.date, it.kilograms, null, null, null, null, null) }
+            }
+        )
+    }
+    var healthProfile by remember { mutableStateOf(healthProfileStorage.read()) }
     var draft by remember { mutableStateOf("") }
     var taskDraft by remember { mutableStateOf("") }
     var projectNameDraft by remember { mutableStateOf("") }
@@ -142,7 +163,7 @@ private fun Kf20App(context: Context) {
     var logCarbs by remember { mutableStateOf("") }
     var weightDraft by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf(todayKey()) }
-    var workspace by remember { mutableStateOf(Workspace.CHAT) }
+    var workspace by remember { mutableStateOf(Workspace.DAILY_LOG) }
     var isSending by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -157,11 +178,35 @@ private fun Kf20App(context: Context) {
     var mealPhotoUri by remember { mutableStateOf<String?>(null) }
     var isEstimatingNutrition by remember { mutableStateOf(false) }
     var nutritionHint by remember { mutableStateOf<String?>(null) }
+    var webSearchEnabled by remember { mutableStateOf(false) }
     var showTargetSettings by remember { mutableStateOf(false) }
     var targetCaloriesDraft by remember { mutableStateOf(targets.calories.toString()) }
     var targetProteinDraft by remember { mutableStateOf(targets.protein.toString()) }
     var targetFatDraft by remember { mutableStateOf(targets.fat.toString()) }
     var targetCarbsDraft by remember { mutableStateOf(targets.carbs.toString()) }
+    var sportActivity by remember { mutableStateOf("Kraft") }
+    var sportCaloriesDraft by remember { mutableStateOf("") }
+    var trackerCaloriesDraft by remember { mutableStateOf("") }
+    var sportNoteDraft by remember { mutableStateOf("") }
+    var measurementRangeDays by remember { mutableStateOf(14) }
+    var measurementWeightDraft by remember { mutableStateOf("") }
+    var measurementBodyFatDraft by remember { mutableStateOf("") }
+    var measurementWaistDraft by remember { mutableStateOf("") }
+    var measurementNeckDraft by remember { mutableStateOf("") }
+    var measurementHungerDraft by remember { mutableStateOf("") }
+    var measurementEnergyDraft by remember { mutableStateOf("") }
+    var showSportEntry by remember { mutableStateOf(false) }
+    var showMeasurementEntry by remember { mutableStateOf(false) }
+    var showProfileSettings by remember { mutableStateOf(false) }
+    var profileStartWeightDraft by remember { mutableStateOf(healthProfile.startWeight.toString()) }
+    var profileHeightDraft by remember { mutableStateOf(healthProfile.heightCm.toString()) }
+    var profileGoalWeightDraft by remember { mutableStateOf(healthProfile.goalWeight?.toString() ?: "") }
+    var profileGoalBodyFatDraft by remember { mutableStateOf(healthProfile.goalBodyFat?.toString() ?: "") }
+    var standardTitleDraft by remember { mutableStateOf("") }
+    var standardCaloriesDraft by remember { mutableStateOf("") }
+    var standardProteinDraft by remember { mutableStateOf("") }
+    var standardFatDraft by remember { mutableStateOf("") }
+    var standardCarbsDraft by remember { mutableStateOf("") }
     val notificationPermission = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val listState = rememberLazyListState()
 
@@ -182,10 +227,10 @@ private fun Kf20App(context: Context) {
             },
             bottomBar = {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-                    NavigationBarItem(selected = workspace == Workspace.CHAT, onClick = { workspace = Workspace.CHAT }, icon = { Text("◉") }, label = { Text("Chat") })
                     NavigationBarItem(selected = workspace == Workspace.DAILY_LOG, onClick = { workspace = Workspace.DAILY_LOG }, icon = { Text("▣") }, label = { Text("Tag") })
-                    NavigationBarItem(selected = workspace == Workspace.PROGRESS || workspace == Workspace.PHOTOS, onClick = { workspace = Workspace.PROGRESS }, icon = { Text("▥") }, label = { Text("Verlauf") })
-                    NavigationBarItem(selected = workspace == Workspace.TASKS || workspace == Workspace.PROJECTS || workspace == Workspace.FILES, onClick = { workspace = Workspace.TASKS }, icon = { Text("✓") }, label = { Text("Aufgaben") })
+                    NavigationBarItem(selected = workspace == Workspace.STATISTICS || workspace == Workspace.PROGRESS || workspace == Workspace.PHOTOS, onClick = { workspace = Workspace.STATISTICS }, icon = { Text("▥") }, label = { Text("Statistik") })
+                    NavigationBarItem(selected = workspace == Workspace.STANDARDS, onClick = { workspace = Workspace.STANDARDS }, icon = { Text("★") }, label = { Text("Standards") })
+                    NavigationBarItem(selected = workspace == Workspace.CHAT, onClick = { workspace = Workspace.CHAT }, icon = { Text("◉") }, label = { Text("Chat") })
                 }
             }
         ) { padding ->
@@ -221,7 +266,7 @@ private fun Kf20App(context: Context) {
                             storage.write(updated)
                             isSending = true
                             Thread {
-                                val result = runCatching { Kf20Api.send(updated.takeLast(30), apiSettings, memories.map { it.text }) }
+                                val result = runCatching { Kf20Api.send(updated.takeLast(30), apiSettings, memories.map { it.text }, webSearchEnabled) }
                                 Handler(Looper.getMainLooper()).post {
                                     isSending = false
                                     result.onSuccess { reply ->
@@ -236,6 +281,7 @@ private fun Kf20App(context: Context) {
                     ) { Text("Senden") }
                 }
                 Row(modifier = Modifier.align(Alignment.End)) {
+                    TextButton(onClick = { webSearchEnabled = !webSearchEnabled }) { Text(if (webSearchEnabled) "Recherche an" else "Recherche aus") }
                     TextButton(onClick = { showMemories = true }) { Text("Erinnerungen") }
                     TextButton(onClick = { showServerSettings = true }) { Text("Serververbindung") }
                 }
@@ -292,6 +338,47 @@ private fun Kf20App(context: Context) {
                     privateFiles = privateFiles.filterIndexed { current, _ -> current != index }
                     fileStorage.write(privateFiles)
                 }
+            ) else if (workspace == Workspace.STATISTICS) StatisticsScreen(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+                dailyEntries = dailyEntries,
+                sessions = sportSessions,
+                measurements = measurements,
+                targets = targets,
+                profile = healthProfile,
+                rangeDays = measurementRangeDays,
+                onRangeChange = { measurementRangeDays = it },
+                onOpenPhotos = { workspace = Workspace.PHOTOS }
+            ) else if (workspace == Workspace.STANDARDS) StandardsScreen(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+                routines = routines,
+                targets = targets,
+                profile = healthProfile,
+                reminder = reminder,
+                title = standardTitleDraft,
+                calories = standardCaloriesDraft,
+                protein = standardProteinDraft,
+                fat = standardFatDraft,
+                carbs = standardCarbsDraft,
+                onTitleChange = { standardTitleDraft = it },
+                onCaloriesChange = { standardCaloriesDraft = it.filter(Char::isDigit).take(4) },
+                onProteinChange = { standardProteinDraft = decimalInput(it) },
+                onFatChange = { standardFatDraft = decimalInput(it) },
+                onCarbsChange = { standardCarbsDraft = decimalInput(it) },
+                onAdd = {
+                    val title = standardTitleDraft.trim()
+                    if (title.isNotEmpty()) {
+                        val routine = DailyRoutine(title, standardCaloriesDraft.toIntOrNull() ?: 0, standardProteinDraft.toLocalizedDouble() ?: 0.0, standardFatDraft.toLocalizedDouble() ?: 0.0, standardCarbsDraft.toLocalizedDouble() ?: 0.0)
+                        routines = (routines.filterNot { it.title.equals(title, true) } + routine).takeLast(50)
+                        routineStorage.write(routines)
+                        standardTitleDraft = ""; standardCaloriesDraft = ""; standardProteinDraft = ""; standardFatDraft = ""; standardCarbsDraft = ""
+                    }
+                },
+                onDelete = { index -> routines = routines.filterIndexed { current, _ -> current != index }; routineStorage.write(routines) },
+                onTargetSettings = { showTargetSettings = true },
+                onProfileSettings = { showProfileSettings = true },
+                onReminderSettings = { showReminderSettings = true },
+                onOpenTasks = { workspace = Workspace.TASKS },
+                onOpenFiles = { workspace = Workspace.FILES }
             ) else if (workspace == Workspace.PROGRESS) ProgressScreen(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
                 entries = weightEntries,
@@ -358,8 +445,8 @@ private fun Kf20App(context: Context) {
                         }.start()
                     }
                 },
-                onReminderSettings = { showReminderSettings = true },
-                onTargetSettings = { showTargetSettings = true },
+                onSportEntry = { showSportEntry = true },
+                onMeasurementEntry = { showMeasurementEntry = true },
                 onPreviousDay = { selectedDate = LocalDate.parse(selectedDate).minusDays(1).toString() },
                 onToday = { selectedDate = todayKey() },
                 onNextDay = { selectedDate = LocalDate.parse(selectedDate).plusDays(1).toString() },
@@ -407,6 +494,84 @@ private fun Kf20App(context: Context) {
                     }) { Text("Endgültig löschen") }
                 },
                 dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("Abbrechen") } }
+            )
+        }
+        if (showSportEntry) {
+            AlertDialog(
+                onDismissRequest = { showSportEntry = false },
+                title = { Text("Sport heute") },
+                text = {
+                    Column {
+                        Text("Trainingsverbrauch und – falls vorhanden – den Tagesverbrauch des Fitness-Trackers erfassen.")
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            listOf("Morgensport", "Laufen", "Fahrrad", "Kein Training").forEach { choice ->
+                                TextButton(onClick = { sportActivity = choice }, modifier = Modifier.weight(1f)) { Text(if (sportActivity == choice) "● $choice" else choice, maxLines = 1) }
+                            }
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(value = sportCaloriesDraft, onValueChange = { sportCaloriesDraft = it.filter(Char::isDigit).take(4) }, label = { Text("Training kcal") }, modifier = Modifier.weight(1f), singleLine = true)
+                            OutlinedTextField(value = trackerCaloriesDraft, onValueChange = { trackerCaloriesDraft = it.filter(Char::isDigit).take(4) }, label = { Text("Tracker gesamt") }, modifier = Modifier.weight(1f), singleLine = true)
+                        }
+                        OutlinedTextField(value = sportNoteDraft, onValueChange = { sportNoteDraft = it.take(120) }, label = { Text("Notiz") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val trainingCalories = sportCaloriesDraft.toIntOrNull() ?: 0
+                        val trackerCalories = trackerCaloriesDraft.toIntOrNull()
+                        val session = SportSession(selectedDate, sportActivity, trainingCalories, trackerCalories, sportNoteDraft.trim())
+                        sportSessions = (sportSessions + session).takeLast(500)
+                        sportStorage.write(sportSessions)
+                        if (trainingCalories > 0) {
+                            dailyEntries = (dailyEntries + DailyLogEntry(selectedDate, "Sport", sportActivity, trainingCalories, 0.0, 0.0, 0.0)).takeLast(500)
+                            dailyLogStorage.write(dailyEntries)
+                        }
+                        sportCaloriesDraft = ""; trackerCaloriesDraft = ""; sportNoteDraft = ""; showSportEntry = false
+                    }, enabled = sportCaloriesDraft.toIntOrNull() != null || trackerCaloriesDraft.toIntOrNull() != null || sportActivity == "Kein Training") { Text("Speichern") }
+                },
+                dismissButton = { TextButton(onClick = { showSportEntry = false }) { Text("Abbrechen") } }
+            )
+        }
+        if (showMeasurementEntry) {
+            AlertDialog(
+                onDismissRequest = { showMeasurementEntry = false },
+                title = { Text("Tageswerte") },
+                text = {
+                    Column {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(value = measurementWeightDraft, onValueChange = { measurementWeightDraft = decimalInput(it) }, label = { Text("Gewicht kg") }, modifier = Modifier.weight(1f), singleLine = true)
+                            OutlinedTextField(value = measurementBodyFatDraft, onValueChange = { measurementBodyFatDraft = decimalInput(it) }, label = { Text("KF Waage %") }, modifier = Modifier.weight(1f), singleLine = true)
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(value = measurementNeckDraft, onValueChange = { measurementNeckDraft = decimalInput(it) }, label = { Text("Hals cm") }, modifier = Modifier.weight(1f), singleLine = true)
+                            OutlinedTextField(value = measurementWaistDraft, onValueChange = { measurementWaistDraft = decimalInput(it) }, label = { Text("Bauch cm") }, modifier = Modifier.weight(1f), singleLine = true)
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(value = measurementHungerDraft, onValueChange = { measurementHungerDraft = it.filter(Char::isDigit).take(2) }, label = { Text("Hunger 0–10") }, modifier = Modifier.weight(1f), singleLine = true)
+                            OutlinedTextField(value = measurementEnergyDraft, onValueChange = { measurementEnergyDraft = it.filter(Char::isDigit).take(2) }, label = { Text("Energie 0–10") }, modifier = Modifier.weight(1f), singleLine = true)
+                        }
+                        navyBodyFat(measurementNeckDraft.toLocalizedDouble(), measurementWaistDraft.toLocalizedDouble(), healthProfile.heightCm)?.let {
+                            Text("Navy-KFA: ${it.de1()} %", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val entry = BodyMeasurement(
+                            selectedDate,
+                            measurementWeightDraft.toLocalizedDouble(),
+                            measurementBodyFatDraft.toLocalizedDouble(),
+                            measurementNeckDraft.toLocalizedDouble(),
+                            measurementWaistDraft.toLocalizedDouble(),
+                            measurementHungerDraft.toIntOrNull()?.takeIf { it in 0..10 },
+                            measurementEnergyDraft.toIntOrNull()?.takeIf { it in 0..10 }
+                        )
+                        measurements = (measurements.filterNot { it.date == selectedDate } + entry).sortedBy { it.date }.takeLast(1000)
+                        measurementStorage.write(measurements)
+                        measurementWeightDraft = ""; measurementBodyFatDraft = ""; measurementWaistDraft = ""; measurementNeckDraft = ""; measurementHungerDraft = ""; measurementEnergyDraft = ""; showMeasurementEntry = false
+                    }, enabled = listOf(measurementWeightDraft, measurementBodyFatDraft, measurementNeckDraft, measurementWaistDraft, measurementHungerDraft, measurementEnergyDraft).any { it.isNotBlank() }) { Text("Speichern") }
+                },
+                dismissButton = { TextButton(onClick = { showMeasurementEntry = false }) { Text("Abbrechen") } }
             )
         }
         if (showServerSettings) {
@@ -493,6 +658,37 @@ private fun Kf20App(context: Context) {
                     }) { Text("Speichern") }
                 },
                 dismissButton = { TextButton(onClick = { showTargetSettings = false }) { Text("Abbrechen") } }
+            )
+        }
+        if (showProfileSettings) {
+            AlertDialog(
+                onDismissRequest = { showProfileSettings = false },
+                title = { Text("Startwerte und Ziele") },
+                text = {
+                    Column {
+                        Text("Die vorhandenen Startwerte stammen aus deinem Chat-Verlauf. Zielwerte bleiben leer, bis du sie selbst festlegst.")
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(value = profileStartWeightDraft, onValueChange = { profileStartWeightDraft = decimalInput(it) }, label = { Text("Startgewicht kg") }, modifier = Modifier.weight(1f), singleLine = true)
+                            OutlinedTextField(value = profileHeightDraft, onValueChange = { profileHeightDraft = decimalInput(it) }, label = { Text("Größe cm") }, modifier = Modifier.weight(1f), singleLine = true)
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(value = profileGoalWeightDraft, onValueChange = { profileGoalWeightDraft = decimalInput(it) }, label = { Text("Zielgewicht optional") }, modifier = Modifier.weight(1f), singleLine = true)
+                            OutlinedTextField(value = profileGoalBodyFatDraft, onValueChange = { profileGoalBodyFatDraft = decimalInput(it) }, label = { Text("Ziel-KF optional") }, modifier = Modifier.weight(1f), singleLine = true)
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val start = profileStartWeightDraft.toLocalizedDouble()
+                        val height = profileHeightDraft.toLocalizedDouble()
+                        if (start != null && height != null && start in 25.0..500.0 && height in 120.0..230.0) {
+                            healthProfile = HealthProfile(start, height, profileGoalWeightDraft.toLocalizedDouble(), profileGoalBodyFatDraft.toLocalizedDouble())
+                            healthProfileStorage.write(healthProfile)
+                            showProfileSettings = false
+                        }
+                    }) { Text("Speichern") }
+                },
+                dismissButton = { TextButton(onClick = { showProfileSettings = false }) { Text("Abbrechen") } }
             )
         }
         if (showReminderSettings) {
@@ -629,6 +825,438 @@ private fun Kf20App(context: Context) {
     }
 }
 
+@Composable private fun StatisticsScreen(
+    modifier: Modifier,
+    dailyEntries: List<DailyLogEntry>,
+    sessions: List<SportSession>,
+    measurements: List<BodyMeasurement>,
+    targets: NutritionTargets,
+    profile: HealthProfile,
+    rangeDays: Int,
+    onRangeChange: (Int) -> Unit,
+    onOpenPhotos: () -> Unit
+) {
+    val cutoff = LocalDate.now().minusDays(rangeDays.toLong() - 1)
+    val inRange: (String) -> Boolean = { date -> runCatching { !LocalDate.parse(date).isBefore(cutoff) }.getOrDefault(false) }
+    val todayEntries = dailyEntries.filter { it.date == todayKey() }
+    val todayIntake = todayEntries.filter { it.type == "Mahlzeit" }.sumOf { it.calories }
+    val todayBurned = todayEntries.filter { it.type == "Sport" }.sumOf { it.calories }
+    val todayProtein = todayEntries.sumOf { it.protein }
+    val todayFat = todayEntries.sumOf { it.fat }
+    val todayCarbs = todayEntries.sumOf { it.carbs }
+    val rangedMeasurements = measurements.filter { inRange(it.date) }
+    val weights = rangedMeasurements.mapNotNull { item -> item.weight?.let { item.date to it } }
+    val scaleKf = rangedMeasurements.mapNotNull { item -> item.scaleBodyFat?.let { item.date to it } }
+    val navyKf = rangedMeasurements.mapNotNull { item -> navyBodyFat(item.neck, item.abdomen, profile.heightCm)?.let { item.date to it } }
+    val rangedSessions = sessions.filter { inRange(it.date) }
+    val trainingCalories = rangedSessions.sumOf { it.calories }
+    val trackerReadings = rangedSessions.mapNotNull { it.trackerCalories }
+    val latest = measurements.lastOrNull()
+    LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item {
+            Text("Statistik", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf(7, 14, 30).forEach { days ->
+                    if (rangeDays == days) Button(onClick = { onRangeChange(days) }, modifier = Modifier.weight(1f)) { Text("$days Tage") }
+                    else TextButton(onClick = { onRangeChange(days) }, modifier = Modifier.weight(1f)) { Text("$days Tage") }
+                }
+            }
+        }
+        item {
+            Surface(shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Text("Heute noch ${maxOf(0, targets.calories - (todayIntake - todayBurned))} kcal", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text("Aufnahme $todayIntake · Sport $todayBurned · Bilanz ${todayIntake - todayBurned} kcal", color = MaterialTheme.colorScheme.onPrimary)
+                }
+            }
+        }
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                MacroCard("Kal", todayIntake.toDouble(), targets.calories.toDouble(), "kcal", Modifier.weight(1f))
+                MacroCard("Protein", todayProtein, targets.protein, "g", Modifier.weight(1f))
+                MacroCard("Fett", todayFat, targets.fat, "g", Modifier.weight(1f))
+                MacroCard("Carbs", todayCarbs, targets.carbs, "g", Modifier.weight(1f))
+            }
+        }
+        item {
+            Text("Gewicht", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(latest?.weight?.let { "${it.de1()} kg" } ?: "Noch kein Wert", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        profile.goalWeight?.let { Text("Ziel ${it.de1()} kg", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    }
+                    ValueChart(weights)
+                    if (weights.size < 2) Text("Mindestens zwei Werte ergeben eine Verlaufskurve.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+        item {
+            Text("Körperfett", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Waage${latest?.scaleBodyFat?.let { ": ${it.de1()} %" } ?: ""}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    ValueChart(scaleKf)
+                    Text("Navy aus Hals/Bauch${navyBodyFat(latest?.neck, latest?.abdomen, profile.heightCm)?.let { ": ${it.de1()} %" } ?: ""}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
+                    ValueChart(navyKf)
+                }
+            }
+        }
+        item {
+            Text("Sport & Tracker", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatCard("Training", "$trainingCalories kcal", Modifier.weight(1f))
+                StatCard("Trainingstage", "${rangedSessions.filter { it.calories > 0 }.map { it.date }.distinct().size}", Modifier.weight(1f))
+                StatCard("Tracker Ø", trackerReadings.takeIf { it.isNotEmpty() }?.average()?.toInt()?.let { "$it kcal" } ?: "–", Modifier.weight(1f))
+            }
+        }
+        item {
+            val latestHunger = measurements.lastOrNull { it.hunger != null }?.hunger
+            val latestEnergy = measurements.lastOrNull { it.energy != null }?.energy
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MetricCard("Hunger", latestHunger?.let { "$it / 10" } ?: "–", Modifier.weight(1f))
+                MetricCard("Energie", latestEnergy?.let { "$it / 10" } ?: "–", Modifier.weight(1f))
+            }
+            TextButton(onClick = onOpenPhotos, modifier = Modifier.fillMaxWidth()) { Text("Fortschrittsfotos ansehen") }
+        }
+        item { Spacer(Modifier.height(8.dp)) }
+    }
+}
+
+@Composable private fun StandardsScreen(
+    modifier: Modifier,
+    routines: List<DailyRoutine>,
+    targets: NutritionTargets,
+    profile: HealthProfile,
+    reminder: ReminderConfig,
+    title: String,
+    calories: String,
+    protein: String,
+    fat: String,
+    carbs: String,
+    onTitleChange: (String) -> Unit,
+    onCaloriesChange: (String) -> Unit,
+    onProteinChange: (String) -> Unit,
+    onFatChange: (String) -> Unit,
+    onCarbsChange: (String) -> Unit,
+    onAdd: () -> Unit,
+    onDelete: (Int) -> Unit,
+    onTargetSettings: () -> Unit,
+    onProfileSettings: () -> Unit,
+    onReminderSettings: () -> Unit,
+    onOpenTasks: () -> Unit,
+    onOpenFiles: () -> Unit
+) {
+    LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item {
+            Text("Standards", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp))
+            Text("Wiederkehrende Mahlzeiten und persönliche Einstellungen.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        item {
+            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Tagesziele", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("${targets.calories} kcal · Protein ${targets.protein.de1()} g · Fett ${targets.fat.de1()} g · Carbs ${targets.carbs.de1()} g")
+                    TextButton(onClick = onTargetSettings) { Text("Ziele anpassen") }
+                }
+            }
+        }
+        item {
+            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Startwerte & Profil", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Start ${profile.startWeight.de1()} kg · Größe ${profile.heightCm.de1()} cm")
+                    val goals = listOfNotNull(profile.goalWeight?.let { "Zielgewicht ${it.de1()} kg" }, profile.goalBodyFat?.let { "Ziel-KF ${it.de1()} %" })
+                    Text(if (goals.isEmpty()) "Noch keine Gewichts-/KF-Ziele gesetzt." else goals.joinToString(" · "), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    TextButton(onClick = onProfileSettings) { Text("Startwerte und Ziele bearbeiten") }
+                }
+            }
+        }
+        item {
+            Text("Mahlzeiten-Standards", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("Lege zum Beispiel dein Standardfrühstück einmal an und übernimm es im Tageslog mit einem Tipp.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedTextField(value = title, onValueChange = onTitleChange, label = { Text("Name, z. B. Standardfrühstück") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+            OutlinedTextField(value = calories, onValueChange = onCaloriesChange, label = { Text("Kalorien") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(value = protein, onValueChange = onProteinChange, label = { Text("Protein g") }, modifier = Modifier.weight(1f), singleLine = true)
+                OutlinedTextField(value = fat, onValueChange = onFatChange, label = { Text("Fett g") }, modifier = Modifier.weight(1f), singleLine = true)
+                OutlinedTextField(value = carbs, onValueChange = onCarbsChange, label = { Text("Carbs g") }, modifier = Modifier.weight(1f), singleLine = true)
+            }
+            Button(onClick = onAdd, enabled = title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Standard speichern") }
+        }
+        if (routines.isEmpty()) item { Text("Noch kein Mahlzeiten-Standard angelegt.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        items(routines.indices.toList()) { index ->
+            val routine = routines[index]
+            Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
+                Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(routine.title, fontWeight = FontWeight.Bold)
+                        Text("${routine.calories} kcal · P ${routine.protein.de1()} · F ${routine.fat.de1()} · C ${routine.carbs.de1()} g", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    }
+                    TextButton(onClick = { onDelete(index) }) { Text("Entfernen") }
+                }
+            }
+        }
+        item {
+            Text("Weitere Einstellungen", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            TextButton(onClick = onReminderSettings) { Text(if (reminder.enabled) "Tägliche Erinnerung: ${reminder.hour}:${reminder.minute.toString().padStart(2, '0')}" else "Tägliche Erinnerung einrichten") }
+            Row {
+                TextButton(onClick = onOpenTasks) { Text("Aufgaben") }
+                TextButton(onClick = onOpenFiles) { Text("Private Dateien") }
+            }
+        }
+        item { Spacer(Modifier.height(8.dp)) }
+    }
+}
+
+@Composable private fun SportScreen(
+    modifier: Modifier,
+    sessions: List<SportSession>,
+    activity: String,
+    calories: String,
+    trackerCalories: String,
+    note: String,
+    onActivityChange: (String) -> Unit,
+    onCaloriesChange: (String) -> Unit,
+    onTrackerCaloriesChange: (String) -> Unit,
+    onNoteChange: (String) -> Unit,
+    onAdd: () -> Unit,
+    onDelete: (Int) -> Unit
+) {
+    val today = LocalDate.now()
+    val weekStart = today.minusDays((today.dayOfWeek.value - 1).toLong())
+    val thisWeek = sessions.filter { runCatching { !LocalDate.parse(it.date).isBefore(weekStart) }.getOrDefault(false) }
+    val todaySessions = sessions.filter { it.date == todayKey() }
+    val todayTrainingCalories = todaySessions.sumOf { it.calories }
+    val todayTrackerCalories = todaySessions.lastOrNull { it.trackerCalories != null }?.trackerCalories
+    val weekTrainingCalories = thisWeek.sumOf { it.calories }
+    val trainingDays = thisWeek.filter { it.calories > 0 }.map { it.date }.distinct().size
+    val trackerValues = thisWeek.mapNotNull { it.trackerCalories }
+    LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item {
+            Text("Sport", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp))
+            Text("Trainingsverbrauch und Tagesverbrauch aus deinem Tracker.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        item {
+            Surface(shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Text("Heute", color = MaterialTheme.colorScheme.onPrimary)
+                    Text("$todayTrainingCalories kcal Training", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text(todayTrackerCalories?.let { "$it kcal Tagesverbrauch laut Tracker" } ?: "Tagesverbrauch noch nicht gemeldet", color = MaterialTheme.colorScheme.onPrimary)
+                }
+            }
+        }
+        item {
+            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Sportdaten eintragen", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("Morgendliche Kalorienwerte zählen als Trainingsverbrauch.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        listOf("Morgensport", "Laufen", "Fahrrad", "Kein Training").forEach { choice ->
+                            TextButton(onClick = { onActivityChange(choice) }, modifier = Modifier.weight(1f)) {
+                                Text(if (activity == choice) "● $choice" else choice, maxLines = 1)
+                            }
+                        }
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(value = calories, onValueChange = onCaloriesChange, label = { Text("Training kcal") }, modifier = Modifier.weight(1f), singleLine = true)
+                        OutlinedTextField(value = trackerCalories, onValueChange = onTrackerCaloriesChange, label = { Text("Tracker gesamt kcal") }, modifier = Modifier.weight(1f), singleLine = true)
+                    }
+                    OutlinedTextField(value = note, onValueChange = onNoteChange, label = { Text("Notiz, z. B. Hinweg – Rückweg folgt") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                    Button(onClick = onAdd, enabled = calories.toIntOrNull() != null || trackerCalories.toIntOrNull() != null || activity == "Kein Training", modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Sportdaten speichern") }
+                }
+            }
+        }
+        item {
+            Text("Diese Woche", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatCard("Training", "$weekTrainingCalories kcal", Modifier.weight(1f))
+                StatCard("Trainingstage", "$trainingDays", Modifier.weight(1f))
+                StatCard("Tracker Ø", trackerValues.takeIf { it.isNotEmpty() }?.average()?.toInt()?.let { "$it kcal" } ?: "–", Modifier.weight(1f))
+            }
+        }
+        item { Text("Letzte Aktivitäten", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold) }
+        if (sessions.isEmpty()) item { Text("Noch keine Einheit gespeichert.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        items(sessions.indices.reversed().toList()) { index ->
+            val session = sessions[index]
+            Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
+                Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(session.activity, fontWeight = FontWeight.Bold)
+                        val details = buildList {
+                            if (session.calories > 0) add("Training ${session.calories} kcal")
+                            session.trackerCalories?.let { add("Tracker gesamt $it kcal") }
+                            if (session.note.isNotBlank()) add(session.note)
+                        }.joinToString(" · ")
+                        Text("${session.date}${if (details.isNotBlank()) " · $details" else ""}", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    }
+                    TextButton(onClick = { onDelete(index) }) { Text("Entfernen") }
+                }
+            }
+        }
+        item { Spacer(Modifier.height(8.dp)) }
+    }
+}
+
+@Composable private fun MeasurementsScreen(
+    modifier: Modifier,
+    measurements: List<BodyMeasurement>,
+    rangeDays: Int,
+    weight: String,
+    bodyFat: String,
+    abdomen: String,
+    neck: String,
+    hunger: String,
+    energy: String,
+    onRangeChange: (Int) -> Unit,
+    onWeightChange: (String) -> Unit,
+    onBodyFatChange: (String) -> Unit,
+    onAbdomenChange: (String) -> Unit,
+    onNeckChange: (String) -> Unit,
+    onHungerChange: (String) -> Unit,
+    onEnergyChange: (String) -> Unit,
+    onOpenPhotos: () -> Unit,
+    onAdd: () -> Unit
+) {
+    val cutoff = LocalDate.now().minusDays(rangeDays.toLong() - 1)
+    val visible = measurements.filter { runCatching { !LocalDate.parse(it.date).isBefore(cutoff) }.getOrDefault(false) }
+    val weights = visible.mapNotNull { item -> item.weight?.let { item.date to it } }
+    val scaleBodyFatValues = visible.mapNotNull { item -> item.scaleBodyFat?.let { item.date to it } }
+    val navyValues = visible.mapNotNull { item -> navyBodyFat(item.neck, item.abdomen)?.let { item.date to it } }
+    val allWeights = measurements.mapNotNull { it.weight }
+    val currentWeight = measurements.lastOrNull { it.weight != null }?.weight
+    val startWeight = allWeights.firstOrNull()
+    val latestScaleBodyFat = measurements.lastOrNull { it.scaleBodyFat != null }?.scaleBodyFat
+    val latestNeck = measurements.lastOrNull { it.neck != null }?.neck
+    val latestAbdomen = measurements.lastOrNull { it.abdomen != null }?.abdomen
+    val latestNavy = measurements.asReversed().firstNotNullOfOrNull { navyBodyFat(it.neck, it.abdomen) }
+    val latestHunger = measurements.lastOrNull { it.hunger != null }?.hunger
+    val latestEnergy = measurements.lastOrNull { it.energy != null }?.energy
+    LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item {
+            Text("Messungen", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf(7, 14, 30).forEach { days ->
+                    if (rangeDays == days) Button(onClick = { onRangeChange(days) }, modifier = Modifier.weight(1f)) { Text("$days Tage") }
+                    else TextButton(onClick = { onRangeChange(days) }, modifier = Modifier.weight(1f)) { Text("$days Tage") }
+                }
+            }
+        }
+        item {
+            Surface(shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(18.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(currentWeight?.let { "${it.de1()} kg" } ?: "Noch kein Gewicht", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                            if (startWeight != null && currentWeight != null) Text("Seit Start ${signed1(currentWeight - startWeight)} kg", color = MaterialTheme.colorScheme.onPrimary)
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(latestScaleBodyFat?.let { "${it.de1()} % KF" } ?: "KF –", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                            Text(latestNavy?.let { "${it.de1()} % Navy" } ?: "Navy –", color = MaterialTheme.colorScheme.onPrimary)
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Gewichtsverlauf", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    ValueChart(weights)
+                    if (weights.isEmpty()) Text("Für diesen Zeitraum gibt es noch keine Gewichtswerte.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        item {
+            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Körperfettverlauf", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Waage", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+                    ValueChart(scaleBodyFatValues)
+                    Text("Navy-Methode (Hals/Bauch, Größe 194 cm)", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+                    ValueChart(navyValues)
+                    if (scaleBodyFatValues.isEmpty() && navyValues.isEmpty()) Text("Für diesen Zeitraum gibt es noch keine Körperfettwerte.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MetricCard("Hals", latestNeck?.let { "${it.de1()} cm" } ?: "–", Modifier.weight(1f))
+                MetricCard("Bauch", latestAbdomen?.let { "${it.de1()} cm" } ?: "–", Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MetricCard("Hunger", latestHunger?.let { "$it / 10" } ?: "–", Modifier.weight(1f))
+                MetricCard("Energie", latestEnergy?.let { "$it / 10" } ?: "–", Modifier.weight(1f))
+            }
+        }
+        item {
+            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Heutige Messung", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(value = weight, onValueChange = onWeightChange, label = { Text("Gewicht kg") }, modifier = Modifier.weight(1f), singleLine = true)
+                        OutlinedTextField(value = bodyFat, onValueChange = onBodyFatChange, label = { Text("KF Waage %") }, modifier = Modifier.weight(1f), singleLine = true)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(value = neck, onValueChange = onNeckChange, label = { Text("Hals cm") }, modifier = Modifier.weight(1f), singleLine = true)
+                        OutlinedTextField(value = abdomen, onValueChange = onAbdomenChange, label = { Text("Bauch cm") }, modifier = Modifier.weight(1f), singleLine = true)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(value = hunger, onValueChange = onHungerChange, label = { Text("Hunger 0–10") }, modifier = Modifier.weight(1f), singleLine = true)
+                        OutlinedTextField(value = energy, onValueChange = onEnergyChange, label = { Text("Energie 0–10") }, modifier = Modifier.weight(1f), singleLine = true)
+                    }
+                    val previewNavy = navyBodyFat(neck.toLocalizedDouble(), abdomen.toLocalizedDouble())
+                    if (previewNavy != null) Text("Navy-KFA wird als ${previewNavy.de1()} % gespeichert.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Button(onClick = onAdd, enabled = listOf(weight, bodyFat, abdomen, neck, hunger, energy).any { it.isNotBlank() }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Messung speichern") }
+                    TextButton(onClick = onOpenPhotos, modifier = Modifier.fillMaxWidth()) { Text("Fortschrittsfoto hinzufügen") }
+                }
+            }
+        }
+        item { Text("Die Werte dienen der persönlichen Übersicht und ersetzen keine medizinische Beurteilung.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 12.dp)) }
+    }
+}
+
+@Composable private fun StatCard(label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = modifier) {
+        Column(modifier = Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(value, fontWeight = FontWeight.Bold)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+        }
+    }
+}
+
+@Composable private fun MetricCard(label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = modifier) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable private fun ValueChart(weights: List<Pair<String, Double>>) {
+    if (weights.size < 2) return
+    val values = weights.map { it.second }
+    val minValue = values.minOrNull() ?: return
+    val maxValue = values.maxOrNull() ?: return
+    val span = (maxValue - minValue).coerceAtLeast(1.0)
+    val lineColor = MaterialTheme.colorScheme.primary
+    Canvas(modifier = Modifier.fillMaxWidth().height(150.dp).padding(top = 12.dp)) {
+        val stepX = if (values.size > 1) size.width / (values.size - 1) else size.width
+        values.forEachIndexed { index, value ->
+            val x = stepX * index
+            val y = size.height - (((value - minValue) / span).toFloat() * size.height * 0.75f + size.height * 0.1f)
+            if (index > 0) {
+                val previous = values[index - 1]
+                val previousY = size.height - (((previous - minValue) / span).toFloat() * size.height * 0.75f + size.height * 0.1f)
+                drawLine(lineColor, start = androidx.compose.ui.geometry.Offset(stepX * (index - 1), previousY), end = androidx.compose.ui.geometry.Offset(x, y), strokeWidth = 6f)
+            }
+            drawCircle(lineColor, radius = 8f, center = androidx.compose.ui.geometry.Offset(x, y))
+        }
+    }
+}
+
 @Composable private fun ProgressScreen(
     modifier: Modifier,
     entries: List<WeightEntry>,
@@ -718,8 +1346,8 @@ private fun Kf20App(context: Context) {
     nutritionHint: String?,
     onPhotoChange: (String?) -> Unit,
     onEstimate: () -> Unit,
-    onReminderSettings: () -> Unit,
-    onTargetSettings: () -> Unit,
+    onSportEntry: () -> Unit,
+    onMeasurementEntry: () -> Unit,
     onPreviousDay: () -> Unit,
     onToday: () -> Unit,
     onNextDay: () -> Unit,
@@ -739,8 +1367,9 @@ private fun Kf20App(context: Context) {
     val carbsTotal = entries.sumOf { it.carbs }
     Text("Tageslog", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp, bottom = 4.dp))
     Row {
-        TextButton(onClick = onTargetSettings) { Text("Ziele anpassen") }
-        TextButton(onClick = onReminderSettings) { Text("Erinnerung") }
+        Button(onClick = onSportEntry, modifier = Modifier.weight(1f)) { Text("Sport erfassen") }
+        Spacer(Modifier.width(8.dp))
+        Button(onClick = onMeasurementEntry, modifier = Modifier.weight(1f)) { Text("Messwerte") }
     }
     Row(verticalAlignment = Alignment.CenterVertically) {
         TextButton(onClick = onPreviousDay) { Text("‹") }
@@ -759,11 +1388,6 @@ private fun Kf20App(context: Context) {
         MacroCard("Protein", proteinTotal, targets.protein, "g", Modifier.weight(1f))
         MacroCard("Fett", fatTotal, targets.fat, "g", Modifier.weight(1f))
         MacroCard("Carbs", carbsTotal, targets.carbs, "g", Modifier.weight(1f))
-    }
-    Row(modifier = Modifier.padding(top = 12.dp)) {
-        listOf("Mahlzeit", "Sport", "Messung").forEach { choice ->
-            TextButton(onClick = { onTypeChange(choice) }, enabled = type != choice) { Text(choice) }
-        }
     }
     if (routines.isNotEmpty()) {
         Text("Routinen", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
@@ -830,12 +1454,28 @@ private fun Kf20App(context: Context) {
 
 @Composable private fun MessageBubble(message: ChatMessage) {
     val isUser = message.role == "user"
+    val uriHandler = LocalUriHandler.current
+    val linkColor = if (isUser) Color(0xFFD7E7B5) else MaterialTheme.colorScheme.primary
+    val annotated = buildAnnotatedString {
+        append(message.content)
+        Regex("https?://[^\\s)\\]}>،,]+", RegexOption.IGNORE_CASE).findAll(message.content).forEach { match ->
+            addStyle(SpanStyle(color = linkColor, textDecoration = TextDecoration.Underline), match.range.first, match.range.last + 1)
+            addStringAnnotation("URL", match.value.trimEnd('.', ';', ':'), match.range.first, match.range.last + 1)
+        }
+    }
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart) {
         Surface(
             color = if (isUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
             contentColor = if (isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer,
             shape = RoundedCornerShape(18.dp)
-        ) { Text(message.content, modifier = Modifier.padding(14.dp), style = MaterialTheme.typography.bodyLarge) }
+        ) {
+            ClickableText(
+                text = annotated,
+                modifier = Modifier.padding(14.dp),
+                style = MaterialTheme.typography.bodyLarge.copy(color = if (isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer),
+                onClick = { offset -> annotated.getStringAnnotations("URL", offset, offset).firstOrNull()?.let { runCatching { uriHandler.openUri(it.item) } } }
+            )
+        }
     }
 }
 
@@ -887,6 +1527,21 @@ private class DailyLogStorage(context: Context) {
 }
 
 private fun todayKey(): String = LocalDate.now().toString()
+
+private fun decimalInput(value: String): String {
+    val filtered = value.filter { it.isDigit() || it == ',' || it == '.' }.take(7)
+    val separator = filtered.indexOfFirst { it == ',' || it == '.' }
+    return if (separator < 0) filtered else filtered.take(separator + 1) + filtered.drop(separator + 1).filter(Char::isDigit)
+}
+
+private fun String.toLocalizedDouble(): Double? = replace(',', '.').toDoubleOrNull()
+private fun Double.de1(): String = "%.1f".format(this).replace('.', ',')
+private fun signed1(value: Double): String = "${if (value > 0) "+" else ""}${value.de1()}"
+private fun navyBodyFat(neck: Double?, abdomen: Double?, heightCm: Double = 194.0): Double? {
+    if (neck == null || abdomen == null || abdomen <= neck || heightCm <= 0) return null
+    val result = 495.0 / (1.0324 - 0.19077 * kotlin.math.log10(abdomen - neck) + 0.15456 * kotlin.math.log10(heightCm)) - 450.0
+    return result.takeIf { it in 2.0..70.0 }
+}
 
 private fun displayName(context: Context, uri: Uri): String = runCatching {
     context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
@@ -1024,6 +1679,82 @@ private class TargetsStorage(context: Context) {
     }
 }
 
+private class SportStorage(context: Context) {
+    private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
+    fun read(): List<SportSession> = runCatching {
+        val array = JSONArray(SecureStore.decrypt(preferences.getString("sport_sessions", null)) ?: "[]")
+        List(array.length()) { index ->
+            array.getJSONObject(index).let {
+                SportSession(it.getString("date"), it.getString("activity"), it.optInt("calories", 0), it.optionalInt("trackerCalories"), it.optString("note", ""))
+            }
+        }
+    }.getOrDefault(emptyList())
+    fun write(sessions: List<SportSession>) {
+        val array = JSONArray(); sessions.takeLast(500).forEach { session ->
+            array.put(JSONObject().put("date", session.date).put("activity", session.activity).put("calories", session.calories).put("trackerCalories", session.trackerCalories ?: JSONObject.NULL).put("note", session.note))
+        }
+        preferences.edit().putString("sport_sessions", SecureStore.encrypt(array.toString())).apply()
+    }
+}
+
+private class MeasurementStorage(context: Context) {
+    private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
+    fun read(): List<BodyMeasurement> = runCatching {
+        val array = JSONArray(SecureStore.decrypt(preferences.getString("body_measurements", null)) ?: "[]")
+        List(array.length()) { index ->
+            array.getJSONObject(index).let {
+                BodyMeasurement(
+                    date = it.getString("date"),
+                    weight = it.optionalDouble("weight"),
+                    scaleBodyFat = it.optionalDouble("scaleBodyFat") ?: it.optionalDouble("bodyFat"),
+                    neck = it.optionalDouble("neck"),
+                    abdomen = it.optionalDouble("abdomen") ?: it.optionalDouble("waist"),
+                    hunger = it.optionalInt("hunger"),
+                    energy = it.optionalInt("energy")
+                )
+            }
+        }
+    }.getOrDefault(emptyList())
+    fun write(measurements: List<BodyMeasurement>) {
+        val array = JSONArray(); measurements.takeLast(1000).forEach { item ->
+            array.put(
+                JSONObject().put("date", item.date)
+                    .put("weight", item.weight ?: JSONObject.NULL)
+                    .put("scaleBodyFat", item.scaleBodyFat ?: JSONObject.NULL)
+                    .put("neck", item.neck ?: JSONObject.NULL)
+                    .put("abdomen", item.abdomen ?: JSONObject.NULL)
+                    .put("hunger", item.hunger ?: JSONObject.NULL)
+                    .put("energy", item.energy ?: JSONObject.NULL)
+            )
+        }
+        preferences.edit().putString("body_measurements", SecureStore.encrypt(array.toString())).apply()
+    }
+}
+
+private class HealthProfileStorage(context: Context) {
+    private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
+    fun read(): HealthProfile = runCatching {
+        val data = JSONObject(SecureStore.decrypt(preferences.getString("health_profile", null)) ?: "{}")
+        HealthProfile(
+            startWeight = data.optDouble("startWeight", 90.4),
+            heightCm = data.optDouble("heightCm", 194.0),
+            goalWeight = data.optionalDouble("goalWeight"),
+            goalBodyFat = data.optionalDouble("goalBodyFat")
+        )
+    }.getOrDefault(HealthProfile(90.4, 194.0, null, null))
+    fun write(profile: HealthProfile) {
+        val data = JSONObject()
+            .put("startWeight", profile.startWeight)
+            .put("heightCm", profile.heightCm)
+            .put("goalWeight", profile.goalWeight ?: JSONObject.NULL)
+            .put("goalBodyFat", profile.goalBodyFat ?: JSONObject.NULL)
+        preferences.edit().putString("health_profile", SecureStore.encrypt(data.toString())).apply()
+    }
+}
+
+private fun JSONObject.optionalDouble(key: String): Double? = if (has(key) && !isNull(key)) optDouble(key).takeIf { !it.isNaN() } else null
+private fun JSONObject.optionalInt(key: String): Int? = if (has(key) && !isNull(key)) optInt(key) else null
+
 private class TaskStorage(context: Context) {
     private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
     fun read(): List<AgentTask> = runCatching {
@@ -1123,12 +1854,13 @@ class ReminderReceiver : BroadcastReceiver() {
 }
 
 private object Kf20Api {
-    fun send(messages: List<ChatMessage>, settings: ApiSettings, memories: List<String>): String {
+    fun send(messages: List<ChatMessage>, settings: ApiSettings, memories: List<String>, webSearch: Boolean): String {
         val baseUrl = settings.baseUrl.ifBlank { BuildConfig.KF20_API_BASE_URL }
         require(!baseUrl.contains("REPLACE_WITH") && settings.token.isNotBlank()) { "Bitte richte zuerst die Serververbindung ein." }
         val request = JSONObject()
             .put("messages", JSONArray().apply { messages.forEach { put(JSONObject().put("role", it.role).put("content", it.content)) } })
             .put("memories", JSONArray().apply { memories.take(20).forEach { put(it) } })
+            .put("webSearch", webSearch)
         val connection = (URL("$baseUrl/v1/chat").openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"; connectTimeout = 20_000; readTimeout = 90_000; doOutput = true
             setRequestProperty("Content-Type", "application/json")
@@ -1137,7 +1869,18 @@ private object Kf20Api {
         connection.outputStream.use { OutputStreamWriter(it).use { writer -> writer.write(request.toString()) } }
         val body = (if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream).bufferedReader().use(BufferedReader::readText)
         if (connection.responseCode !in 200..299) throw IllegalStateException(JSONObject(body).optString("error", "Der Server hat die Anfrage abgelehnt."))
-        return JSONObject(body).getString("text").ifBlank { "Ich konnte gerade keine Textantwort erzeugen." }
+        val payload = JSONObject(body)
+        val text = payload.getString("text").ifBlank { "Ich konnte gerade keine Textantwort erzeugen." }
+        val sources = payload.optJSONArray("sources") ?: JSONArray()
+        if (sources.length() == 0) return text
+        val sourceText = buildString {
+            append("\n\nQuellen:")
+            for (index in 0 until sources.length()) {
+                val source = sources.getJSONObject(index)
+                append("\n• ").append(source.optString("title", "Quelle")).append("\n").append(source.getString("url"))
+            }
+        }
+        return text + sourceText
     }
 }
 
