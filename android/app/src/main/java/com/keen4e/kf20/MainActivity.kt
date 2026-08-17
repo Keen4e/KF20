@@ -260,6 +260,66 @@ private fun Kf20App(context: Context) {
         }.start()
     }
 
+    fun loadChatDemoWeek() {
+        val dates = (6 downTo 0).map { LocalDate.now().minusDays(it.toLong()).toString() }
+        val totals = listOf(
+            listOf(2187.0, 177.0, 105.0, 123.0),
+            listOf(2186.0, 181.0, 57.0, 229.0),
+            listOf(2532.0, 189.0, 85.0, 217.0),
+            listOf(3049.0, 177.0, 121.0, 216.0),
+            listOf(1882.0, 163.0, 85.0, 187.0),
+            listOf(2672.0, 184.0, 125.0, 216.0),
+            listOf(2374.0, 165.0, 68.0, 207.0)
+        )
+        val chatMeals = dates.mapIndexed { index, date ->
+            val values = totals[index]
+            DailyLogEntry(date, "Mahlzeit", "Chat-Testtag ${index + 1}", values[0].toInt(), values[1], values[2], values[3])
+        }
+        val chatSport = listOf(
+            SportSession(dates[0], "Morgensport", 386, null, "Wert aus dem Chat-Export"),
+            SportSession(dates[1], "Morgensport", 370, null, "Wert aus dem Chat-Export"),
+            SportSession(dates[2], "Fahrrad", 0, null, "45 Minuten Arbeitsweg hin und zurück"),
+            SportSession(dates[3], "Morgensport", 367, 2600, "Werte aus dem Chat-Export"),
+            SportSession(dates[6], "Morgensport", 540, null, "Wert aus dem Chat-Export")
+        )
+        val chatSportEntries = chatSport.filter { it.calories > 0 }.map {
+            DailyLogEntry(it.date, "Sport", it.activity, it.calories, 0.0, 0.0, 0.0)
+        }
+        val weights = listOf(90.4, 90.9, 90.4, 89.95, 89.6, 90.0, 89.5)
+        val scaleBodyFat = listOf(24.3, 24.7, 24.2, 24.0, 23.2, 23.4, 23.8)
+        val hunger = listOf(null, 3, null, 1, 1, 1, 3)
+        val energy = listOf(null, 8, 7, 6, 7, 7, 6)
+        val chatMeasurements = dates.mapIndexed { index, date ->
+            BodyMeasurement(
+                date = date,
+                weight = weights[index],
+                scaleBodyFat = scaleBodyFat[index],
+                neck = if (index == 0) 37.0 else if (index == 6) 38.0 else null,
+                abdomen = if (index == 0) 94.0 else if (index == 6) 95.0 else null,
+                hunger = hunger[index],
+                energy = energy[index]
+            )
+        }
+        val demoDates = dates.toSet()
+        dailyEntries = (dailyEntries.filterNot { it.date in demoDates } + chatMeals + chatSportEntries).sortedBy { it.date }
+        sportSessions = (sportSessions.filterNot { it.date in demoDates } + chatSport).sortedBy { it.date }
+        measurements = (measurements.filterNot { it.date in demoDates } + chatMeasurements).sortedBy { it.date }
+        weightEntries = (weightEntries.filterNot { it.date in demoDates } + dates.mapIndexed { index, date -> WeightEntry(date, weights[index]) }).sortedBy { it.date }
+        targets = NutritionTargets(2484, 180.0, 70.0, 290.0)
+        healthProfile = HealthProfile(90.4, 194.0, null, null)
+        val breakfast = DailyRoutine("Standardfrühstück + 75 g Hafer", 600, 48.5, 17.5, 61.8)
+        routines = (routines.filterNot { it.title == breakfast.title } + breakfast).takeLast(50)
+        dailyLogStorage.write(dailyEntries)
+        sportStorage.write(sportSessions)
+        measurementStorage.write(measurements)
+        weightStorage.write(weightEntries)
+        targetsStorage.write(targets)
+        healthProfileStorage.write(healthProfile)
+        routineStorage.write(routines)
+        selectedDate = todayKey()
+        workspace = Workspace.DAILY_LOG
+    }
+
     MaterialTheme(colorScheme = kf20Colors()) {
         Scaffold(
             topBar = {
@@ -435,7 +495,8 @@ private fun Kf20App(context: Context) {
                 onProfileSettings = { showProfileSettings = true },
                 onReminderSettings = { showReminderSettings = true },
                 onOpenTasks = { workspace = Workspace.TASKS },
-                onOpenFiles = { workspace = Workspace.FILES }
+                onOpenFiles = { workspace = Workspace.FILES },
+                onLoadChatDemoData = { loadChatDemoWeek() }
             ) else if (workspace == Workspace.PROGRESS) ProgressScreen(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
                 entries = weightEntries,
@@ -1015,7 +1076,8 @@ private fun Kf20App(context: Context) {
     onProfileSettings: () -> Unit,
     onReminderSettings: () -> Unit,
     onOpenTasks: () -> Unit,
-    onOpenFiles: () -> Unit
+    onOpenFiles: () -> Unit,
+    onLoadChatDemoData: () -> Unit
 ) {
     LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
@@ -1064,6 +1126,15 @@ private fun Kf20App(context: Context) {
                         Text("${routine.calories} kcal · P ${routine.protein.de1()} · F ${routine.fat.de1()} · C ${routine.carbs.de1()} g", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     }
                     TextButton(onClick = { onDelete(index) }) { Text("Entfernen") }
+                }
+            }
+        }
+        if (BuildConfig.DEBUG) item {
+            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Testdaten aus dem Chat", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Lädt die belegte 7-Tage-Reihe, Messwerte, Sportwerte und ein Standardfrühstück. Die Originaldaten werden für die Diagrammprüfung auf die letzten sieben Tage gelegt.", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Button(onClick = onLoadChatDemoData, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Chat-Testwoche laden") }
                 }
             }
         }
