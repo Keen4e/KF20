@@ -113,6 +113,7 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 
 private data class ChatMessage(val role: String, val content: String)
+private data class ChatConversation(val id: String, val title: String, val messages: List<ChatMessage>, val updatedAt: Long)
 private data class AgentTask(val title: String, val done: Boolean)
 private data class DailyLogEntry(val date: String, val type: String, val title: String, val calories: Int, val protein: Double, val fat: Double, val carbs: Double, val planned: Boolean = false)
 private data class DailyRoutine(val title: String, val calories: Int, val protein: Double, val fat: Double, val carbs: Double)
@@ -168,7 +169,12 @@ private fun Kf20App(context: Context) {
     val measurementStorage = remember { MeasurementStorage(context) }
     val healthProfileStorage = remember { HealthProfileStorage(context) }
     val uiPreferencesStorage = remember { UiPreferencesStorage(context) }
-    var messages by remember { mutableStateOf(storage.read()) }
+    val initialConversations = remember { storage.read() }
+    var conversations by remember { mutableStateOf(initialConversations) }
+    var activeConversationId by remember {
+        mutableStateOf(storage.readActiveId().takeIf { candidate -> initialConversations.any { it.id == candidate } } ?: initialConversations.first().id)
+    }
+    val messages = conversations.firstOrNull { it.id == activeConversationId }?.messages.orEmpty()
     var tasks by remember { mutableStateOf(taskStorage.read()) }
     var dailyEntries by remember { mutableStateOf(dailyLogStorage.read()) }
     var routines by remember { mutableStateOf(routineStorage.read()) }
@@ -205,6 +211,10 @@ private fun Kf20App(context: Context) {
     var workspace by remember { mutableStateOf(Workspace.DAILY_LOG) }
     var isSending by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showConversationBrowser by remember { mutableStateOf(false) }
+    var conversationSearch by remember { mutableStateOf("") }
+    var conversationTitleDraft by remember { mutableStateOf("") }
+    var pendingConversationDeleteId by remember { mutableStateOf<String?>(null) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showServerSettings by remember { mutableStateOf(false) }
     var serverUrlDraft by remember { mutableStateOf(apiSettings.baseUrl) }
@@ -241,7 +251,7 @@ private fun Kf20App(context: Context) {
         if (uri != null) {
             runCatching {
                 val export = LocalDataExport.createJson(
-                    messages, tasks, dailyEntries, routines, weightEntries, photos, reminder,
+                    conversations, activeConversationId, tasks, dailyEntries, routines, weightEntries, photos, reminder,
                     memories, projects, privateFiles, targets, sportSessions, measurements, healthProfile, appStyle
                 )
                 context.contentResolver.openOutputStream(uri, "wt")?.bufferedWriter()?.use { it.write(export) }
@@ -256,8 +266,43 @@ private fun Kf20App(context: Context) {
     val notificationPermission = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val listState = rememberLazyListState()
 
-    LaunchedEffect(messages.size) {
+    LaunchedEffect(activeConversationId, messages.size) {
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex)
+    }
+
+    fun persistConversationMessages(conversationId: String, updatedMessages: List<ChatMessage>) {
+        val now = Instant.now().toEpochMilli()
+        val next = conversations.map { conversation ->
+            if (conversation.id != conversationId) conversation
+            else {
+                val automaticTitle = if (conversation.title == "Neuer Chat") {
+                    updatedMessages.firstOrNull { it.role == "user" }?.content?.trim()?.replace("\n", " ")?.take(42)?.ifBlank { null }
+                } else null
+                conversation.copy(
+                    title = automaticTitle ?: conversation.title,
+                    messages = updatedMessages.takeLast(500),
+                    updatedAt = now
+                )
+            }
+        }.sortedByDescending { it.updatedAt }
+        conversations = next
+        storage.write(next)
+    }
+
+    fun createConversation(title: String): String {
+        val now = Instant.now().toEpochMilli()
+        val conversation = ChatConversation("chat-$now", title.trim().ifBlank { "Neuer Chat" }, emptyList(), now)
+        val next = listOf(conversation) + conversations
+        conversations = next
+        activeConversationId = conversation.id
+        storage.write(next)
+        storage.writeActiveId(conversation.id)
+        showConversationBrowser = false
+        conversationSearch = ""
+        conversationTitleDraft = ""
+        draft = ""
+        error = null
+        return conversation.id
     }
 
     fun requestNutritionEstimate(description: String, imageDataUrl: String?) {
@@ -359,7 +404,7 @@ private fun Kf20App(context: Context) {
                         }
                     },
                     actions = {
-                        if (workspace == Workspace.CHAT) TextButton(onClick = { showDeleteDialog = true }, enabled = messages.isNotEmpty() && !isSending) { Text("Löschen") }
+                        if (workspace == Workspace.CHAT && !showConversationBrowser) TextButton(onClick = { showDeleteDialog = true }, enabled = messages.isNotEmpty() && !isSending) { Text("Leeren") }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
                 )
@@ -373,7 +418,40 @@ private fun Kf20App(context: Context) {
                 }
             }
         ) { padding ->
-            if (workspace == Workspace.CHAT) Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
+            if (workspace == Workspace.CHAT && showConversationBrowser) ConversationBrowser(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+                conversations = conversations,
+                activeConversationId = activeConversationId,
+                search = conversationSearch,
+                titleDraft = conversationTitleDraft,
+                onSearchChange = { conversationSearch = it },
+                onTitleChange = { conversationTitleDraft = it.take(60) },
+                onCreate = { createConversation(conversationTitleDraft) },
+                onOpen = { conversationId ->
+                    activeConversationId = conversationId
+                    storage.writeActiveId(conversationId)
+                    showConversationBrowser = false
+                    conversationSearch = ""
+                    draft = ""
+                    error = null
+                },
+                onDelete = { pendingConversationDeleteId = it },
+                onBack = { showConversationBrowser = false }
+            ) else if (workspace == Workspace.CHAT) Column(modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp)) {
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp)
+                ) {
+                    Row(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(conversations.firstOrNull { it.id == activeConversationId }?.title ?: "Hauptchat", fontWeight = FontWeight.Bold)
+                            Text("${messages.size} Nachrichten · verschlüsselt auf diesem Gerät", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        TextButton(onClick = { showConversationBrowser = true }, enabled = !isSending) { Text("Gespräche") }
+                        TextButton(onClick = { createConversation("Neuer Chat") }, enabled = !isSending) { Text("+ Neu") }
+                    }
+                }
                 if (messages.isEmpty()) Welcome()
                 LazyColumn(
                     modifier = Modifier.weight(1f),
@@ -398,19 +476,19 @@ private fun Kf20App(context: Context) {
                         onClick = {
                             val input = draft.trim()
                             if (input.isEmpty()) return@Button
+                            val conversationId = activeConversationId
                             draft = ""
                             error = null
                             val updated = messages + ChatMessage("user", input)
-                            messages = updated
-                            storage.write(updated)
+                            persistConversationMessages(conversationId, updated)
                             isSending = true
                             Thread {
                                 val result = runCatching { Kf20Api.send(updated.takeLast(30), apiSettings, memories.map { it.text }, webSearchEnabled) }
                                 Handler(Looper.getMainLooper()).post {
                                     isSending = false
                                     result.onSuccess { reply ->
-                                        messages = messages + ChatMessage("assistant", reply)
-                                        storage.write(messages)
+                                        val currentMessages = conversations.firstOrNull { it.id == conversationId }?.messages.orEmpty()
+                                        persistConversationMessages(conversationId, currentMessages + ChatMessage("assistant", reply))
                                     }.onFailure { failure -> error = failure.message ?: "Die Antwort konnte nicht geladen werden." }
                                 }
                             }.start()
@@ -678,15 +756,37 @@ private fun Kf20App(context: Context) {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
                 title = { Text("Verlauf löschen?") },
-                text = { Text("Alle lokal gespeicherten Nachrichten auf diesem Gerät werden entfernt.") },
+                text = { Text("Nur die Nachrichten im aktuell geöffneten Gespräch werden entfernt. Andere Gespräche bleiben erhalten.") },
                 confirmButton = {
                     TextButton(onClick = {
-                        messages = emptyList()
-                        storage.clear()
+                        persistConversationMessages(activeConversationId, emptyList())
                         showDeleteDialog = false
                     }) { Text("Endgültig löschen") }
                 },
                 dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("Abbrechen") } }
+            )
+        }
+        pendingConversationDeleteId?.let { conversationId ->
+            val title = conversations.firstOrNull { it.id == conversationId }?.title ?: "Gespräch"
+            AlertDialog(
+                onDismissRequest = { pendingConversationDeleteId = null },
+                title = { Text("Gespräch löschen?") },
+                text = { Text("„$title“ und alle darin gespeicherten Nachrichten werden endgültig von diesem Gerät entfernt.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val remaining = conversations.filterNot { it.id == conversationId }
+                        if (remaining.isNotEmpty()) {
+                            conversations = remaining
+                            storage.write(remaining)
+                            if (activeConversationId == conversationId) {
+                                activeConversationId = remaining.first().id
+                                storage.writeActiveId(remaining.first().id)
+                            }
+                        }
+                        pendingConversationDeleteId = null
+                    }) { Text("Endgültig löschen") }
+                },
+                dismissButton = { TextButton(onClick = { pendingConversationDeleteId = null }) { Text("Abbrechen") } }
             )
         }
         if (showDeleteAllData) {
@@ -702,7 +802,10 @@ private fun Kf20App(context: Context) {
                         DailyReminder.cancel(context)
                         context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE).edit().clear().commit()
                         SecureStore.deleteKey()
-                        messages = emptyList(); tasks = emptyList(); dailyEntries = emptyList(); routines = emptyList()
+                        val freshConversation = ChatConversation("chat-${Instant.now().toEpochMilli()}", "Hauptchat", emptyList(), Instant.now().toEpochMilli())
+                        conversations = listOf(freshConversation); activeConversationId = freshConversation.id
+                        showConversationBrowser = false; conversationSearch = ""; conversationTitleDraft = ""
+                        tasks = emptyList(); dailyEntries = emptyList(); routines = emptyList()
                         weightEntries = emptyList(); photos = emptyList(); memories = emptyList(); projects = emptyList(); privateFiles = emptyList()
                         sportSessions = emptyList(); measurements = emptyList(); apiSettings = ApiSettings("", "")
                         reminder = ReminderConfig(false, 20, 0); targets = NutritionTargets(2_000, 150.0, 70.0, 200.0)
@@ -870,6 +973,88 @@ private fun Kf20App(context: Context) {
                 }
             )
         }
+    }
+}
+
+@Composable private fun ConversationBrowser(
+    modifier: Modifier,
+    conversations: List<ChatConversation>,
+    activeConversationId: String,
+    search: String,
+    titleDraft: String,
+    onSearchChange: (String) -> Unit,
+    onTitleChange: (String) -> Unit,
+    onCreate: () -> Unit,
+    onOpen: (String) -> Unit,
+    onDelete: (String) -> Unit,
+    onBack: () -> Unit
+) {
+    val query = search.trim()
+    val filtered = conversations.filter { conversation ->
+        query.isBlank() || conversation.title.contains(query, ignoreCase = true) ||
+            conversation.messages.any { it.content.contains(query, ignoreCase = true) }
+    }.sortedByDescending { it.updatedAt }
+    LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        item {
+            Row(modifier = Modifier.fillMaxWidth().padding(top = 18.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Gespräche", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                    Text("Benannte, lokal verschlüsselte Verläufe", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                TextButton(onClick = onBack) { Text("Zurück") }
+            }
+        }
+        item {
+            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Neues Gespräch", fontWeight = FontWeight.Bold)
+                    OutlinedTextField(
+                        value = titleDraft,
+                        onValueChange = onTitleChange,
+                        label = { Text("Titel, z. B. Wochenplanung") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    Button(onClick = onCreate, modifier = Modifier.fillMaxWidth()) { Text("Gespräch anlegen") }
+                }
+            }
+        }
+        item {
+            OutlinedTextField(
+                value = search,
+                onValueChange = onSearchChange,
+                label = { Text("Alle Gespräche durchsuchen") },
+                supportingText = { Text("Sucht in Titeln und Nachrichten auf diesem Gerät") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+        }
+        if (filtered.isEmpty()) item {
+            Text("Keine passende Nachricht gefunden.", color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 20.dp))
+        }
+        items(filtered) { conversation ->
+            val match = if (query.isBlank()) conversation.messages.lastOrNull() else conversation.messages.lastOrNull { it.content.contains(query, ignoreCase = true) }
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = if (conversation.id == activeConversationId) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(if (conversation.id == activeConversationId) "✓ ${conversation.title}" else conversation.title, fontWeight = FontWeight.Bold)
+                            Text("${conversation.messages.size} Nachrichten", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        TextButton(onClick = { onOpen(conversation.id) }) { Text("Öffnen") }
+                    }
+                    match?.content?.replace("\n", " ")?.take(120)?.let { preview ->
+                        Text(preview, maxLines = 2, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (conversations.size > 1) TextButton(onClick = { onDelete(conversation.id) }) { Text("Gespräch löschen") }
+                }
+            }
+        }
+        item { Spacer(Modifier.height(12.dp)) }
     }
 }
 
@@ -2347,15 +2532,57 @@ private class UiPreferencesStorage(context: Context) {
 
 private class ChatStorage(context: Context) {
     private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
-    fun read(): List<ChatMessage> = runCatching {
-        val array = JSONArray(SecureStore.decrypt(preferences.getString("messages", null)) ?: "[]")
-        List(array.length()) { index -> array.getJSONObject(index).let { ChatMessage(it.getString("role"), it.getString("content")) } }
-    }.getOrDefault(emptyList())
-    fun write(messages: List<ChatMessage>) {
-        val array = JSONArray(); messages.takeLast(500).forEach { array.put(JSONObject().put("role", it.role).put("content", it.content)) }
-        preferences.edit().putString("messages", SecureStore.encrypt(array.toString())).apply()
+    fun read(): List<ChatConversation> {
+        val stored = runCatching {
+            val array = JSONArray(SecureStore.decrypt(preferences.getString("conversations", null)) ?: "[]")
+            List(array.length()) { index ->
+                array.getJSONObject(index).let { item ->
+                    ChatConversation(
+                        id = item.getString("id"),
+                        title = item.optString("title", "Gespräch"),
+                        messages = decodeMessages(item.optJSONArray("messages") ?: JSONArray()),
+                        updatedAt = item.optLong("updatedAt", 0L)
+                    )
+                }
+            }
+        }.getOrDefault(emptyList())
+        if (stored.isNotEmpty()) return stored.sortedByDescending { it.updatedAt }
+
+        val legacyMessages = runCatching {
+            decodeMessages(JSONArray(SecureStore.decrypt(preferences.getString("messages", null)) ?: "[]"))
+        }.getOrDefault(emptyList())
+        val now = Instant.now().toEpochMilli()
+        val migrated = listOf(ChatConversation("chat-$now", "Hauptchat", legacyMessages, now))
+        write(migrated)
+        preferences.edit().remove("messages").putString("active_conversation_id", migrated.first().id).apply()
+        return migrated
     }
-    fun clear() = preferences.edit().remove("messages").apply()
+
+    fun write(conversations: List<ChatConversation>) {
+        val array = JSONArray()
+        conversations.sortedByDescending { it.updatedAt }.take(50).forEach { conversation ->
+            array.put(
+                JSONObject()
+                    .put("id", conversation.id)
+                    .put("title", conversation.title)
+                    .put("updatedAt", conversation.updatedAt)
+                    .put("messages", encodeMessages(conversation.messages))
+            )
+        }
+        preferences.edit().putString("conversations", SecureStore.encrypt(array.toString())).remove("messages").apply()
+    }
+
+    fun readActiveId(): String? = preferences.getString("active_conversation_id", null)
+    fun writeActiveId(id: String) = preferences.edit().putString("active_conversation_id", id).apply()
+    fun clear() = preferences.edit().remove("conversations").remove("messages").remove("active_conversation_id").apply()
+
+    private fun decodeMessages(array: JSONArray): List<ChatMessage> = List(array.length()) { index ->
+        array.getJSONObject(index).let { ChatMessage(it.getString("role"), it.getString("content")) }
+    }
+
+    private fun encodeMessages(messages: List<ChatMessage>): JSONArray = JSONArray().apply {
+        messages.takeLast(500).forEach { message -> put(JSONObject().put("role", message.role).put("content", message.content)) }
+    }
 }
 
 private class DailyLogStorage(context: Context) {
@@ -2645,7 +2872,8 @@ private class TaskStorage(context: Context) {
 
 private object LocalDataExport {
     fun createJson(
-        messages: List<ChatMessage>,
+        conversations: List<ChatConversation>,
+        activeConversationId: String,
         tasks: List<AgentTask>,
         dailyEntries: List<DailyLogEntry>,
         routines: List<DailyRoutine>,
@@ -2662,10 +2890,23 @@ private object LocalDataExport {
         appStyle: AppStyle
     ): String {
         val root = JSONObject()
-            .put("schemaVersion", 2)
+            .put("schemaVersion", 3)
             .put("exportedAt", Instant.now().toString())
             .put("notice", "Sensible KF20-Gesundheitsdaten. Serverzugang und Provider-Schlüssel sind ausgeschlossen.")
-        root.put("messages", JSONArray().apply { messages.forEach { put(JSONObject().put("role", it.role).put("content", it.content)) } })
+        root.put("activeConversationId", activeConversationId)
+        root.put("conversations", JSONArray().apply {
+            conversations.forEach { conversation ->
+                put(
+                    JSONObject()
+                        .put("id", conversation.id)
+                        .put("title", conversation.title)
+                        .put("updatedAt", conversation.updatedAt)
+                        .put("messages", JSONArray().apply {
+                            conversation.messages.forEach { message -> put(JSONObject().put("role", message.role).put("content", message.content)) }
+                        })
+                )
+            }
+        })
         root.put("tasks", JSONArray().apply { tasks.forEach { put(JSONObject().put("title", it.title).put("done", it.done)) } })
         root.put("dailyEntries", JSONArray().apply {
             dailyEntries.forEach {
