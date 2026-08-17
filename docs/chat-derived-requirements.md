@@ -14,6 +14,14 @@ Der bisherige Agent wird hauptsächlich als fortlaufender persönlicher Tagesbeg
 - Tages-, Wochen- und Verlaufsstatistiken sowie ein Dashboard erzeugen.
 - Fortschrittsbilder speichern und zeitlich vergleichen.
 
+Aktuell belegte strukturierte Tagesfelder sind:
+
+- Trainingstyp, Trainings-kcal, optionaler Tracker-Gesamtverbrauch und Notiz
+- Gewicht, Körperfett laut Waage, Hals- und Bauchumfang
+- Hunger und Energie jeweils auf einer Skala von 0 bis 10
+
+Nicht belegte Felder wie Ruhepuls oder Schritte werden nicht allein aus Designgründen ergänzt.
+
 ## Wiederkehrende Agenten-Aktionen
 
 - Tägliche Erinnerungen und geplante Nachfragen.
