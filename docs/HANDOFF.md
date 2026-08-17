@@ -28,6 +28,7 @@ Stand: 2026-08-17
 - Navy-KFA nur mit konfigurierter Körpergröße
 - Standards/Routinen, Tagesziele, Startwerte und optionale Ziele
 - verschlüsselte lokale Speicherung, Erinnerungen, Aufgaben, Projekte, private Dateiverweise und Fortschrittsfotos
+- vollständiger lokaler JSON-Export ohne Server-Token sowie bestätigungspflichtige Löschung aller lokalen Daten, URI-Freigaben und des KF20-Keystore-Schlüssels
 - optionaler Chat-Websearch mit sichtbaren Quellen im aktuellen lokalen Stand
 - provider-neutrales Server-Interface mit separatem OpenAI-Adapter; Auswahl über `AI_PROVIDER`/`AI_MODEL`
 - Server mit Auth-Token, Rate-/Größen-/Zeitlimits und ohne Chat-Inhaltslogs
@@ -49,6 +50,8 @@ Stand: 2026-08-17
 - Lokaler Servercheck: `node --check` für Einstieg und Adapter sowie `node --test`; 5 von 5 Tests erfolgreich.
 - Lokaler Android-Check nach dem Diagramm-Redesign: `:app:compileDebugKotlin` erfolgreich; nur bestehende Deprecation-Warnungen.
 - Android wird über `.github/workflows/android.yml` mit Gradle 8.11.1, Java 21 und Android 36 gebaut.
+- Lokaler Android-Check nach Mahlzeitenplanung sowie Export-/Löschfunktion: `:app:compileDebugKotlin` erfolgreich; nur bekannte Deprecation-Warnungen.
+- Lokaler Servertest nach dem Abgleich: Syntaxchecks erfolgreich, `node --test` 5 von 5 Tests grün.
 - Workflow-Run `32008685257` ist für Commit `92c03bc5478c2cd084fc02c6ada499fd25cacd43` vollständig grün: Server-Syntaxcheck, Android-Debug-Build und APK-Upload waren erfolgreich.
 - Das APK dieses Laufs wurde auf dem lokalen Android-16-Emulator installiert und gestartet. Die vier Haupttabs sowie Sport- und Messwertdialog wurden visuell geprüft.
 - Workflow-Run `32016043340` ist für Commit `0ce2a65cd46f2700d61dac2698d74df2461737be` vollständig grün und enthält die vereinfachte Tagesansicht, Material-Tabicons sowie das vollständige KF20-Vektorlogo.
