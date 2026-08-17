@@ -103,6 +103,12 @@ Einzelwerte und KI-Schätzungen dürfen nicht als medizinische Diagnose dargeste
 
 Zielwerte werden nicht ausgedacht. Nicht gesetzte Ziele bleiben leer.
 
+### Chat-Testwoche im Debug-Build
+
+Debug-Builds bieten unter **Standards** die Aktion **Chat-Testwoche laden**. Sie legt eine reproduzierbare Testwoche mit den im privaten Chat belegten Tagesaggregaten für Kalorien, Protein, Fett, Carbs, Sport, Gewicht, Körperfett, Umfang, Hunger und Energie an. Die sieben ursprünglichen Tageswerte bleiben unverändert; nur ihre Daten werden auf die jeweils letzten sieben Kalendertage verschoben, damit sämtliche Diagramme sofort sichtbar geprüft werden können.
+
+Die Aktion ist über `BuildConfig.DEBUG` auf Entwicklungsbuilds beschränkt. Weder der rohe Chat-Export noch persönliche Nachrichten werden in App oder Repository übernommen. Ein Release-Build darf diesen Testdaten-Schalter nicht anzeigen.
+
 ## Chat
 
 - verschlüsselte lokale Historie
