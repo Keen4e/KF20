@@ -13,7 +13,7 @@ Stand: 2026-08-17
 
 - Native Android-App in Kotlin/Compose
 - vier Haupttabs im aktuellen lokalen Stand: Tag, Statistik, Standards, Chat
-- vollständige KF20-Wortmarke im App-Kopf und als Launcher-Icon; echte Material-Icons in der Hauptnavigation
+- vollständige KF20-Wortmarke im App-Kopf als echte Bildmarke statt der gestauchten ovalen Vektorvariante; vollständiges KF20-Launcher-Icon und echte Material-Icons in der Hauptnavigation
 - vereinfachter, gestufter Tagesablauf: Zielstand sehen, Mahlzeit beschreiben/fotografieren/einsprechen, KI-Ergebnis prüfen, speichern
 - grafisches Tagesdashboard mit Kalorienring, Makroringen und 7-Tage-Balkenverlauf
 - grafischer Statistikbereich für Kalorien, Makros, Gewicht, Körperfett, Sport sowie Hunger/Energie
@@ -49,15 +49,17 @@ Stand: 2026-08-17
 - Das APK dieses Laufs wurde auf dem lokalen Android-16-Emulator installiert und gestartet. Die vier Haupttabs sowie Sport- und Messwertdialog wurden visuell geprüft.
 - Workflow-Run `32016043340` ist für Commit `0ce2a65cd46f2700d61dac2698d74df2461737be` vollständig grün und enthält die vereinfachte Tagesansicht, Material-Tabicons sowie das vollständige KF20-Vektorlogo.
 - Das APK dieses Laufs wurde auf Android 16 installiert und kalt gestartet. Tagesansicht und Sportdialog wurden erneut visuell geprüft; im bereinigten Logcat trat kein Absturz auf.
+- Workflow-Run `32022349685` ist für Commit `54df0071530346c0ff3a6fc1679c126e396c000f` vollständig grün: Servertests und Android-Build einschließlich Diagramm-Dashboard waren erfolgreich.
+- Tages- und Statistikdashboard wurden auf Android 16 visuell geprüft. Die Wortmarke im Kopf wurde anschließend auf die vorhandene KF20-Bilddatei umgestellt und lokal erneut gebaut, installiert und visuell geprüft.
+- Der laufende Android-16-Emulator kann über ein sichtbares, interaktives KF20-Fenster bedient werden; die Spiegelung erfolgt lokal per scrcpy.
 - Die CI startet nur bei Änderungen unter `android/`, `server/` oder an der Workflowdatei. Handoff-/Spezifikationsänderungen lösen keinen redundanten Android-Build aus.
 
 ## Nächste konkrete Schritte
 
 1. Kamera und Mikrofon auf einem realen Android-Gerät testen.
-2. Grafisches Tages- und Statistikdashboard per CI bauen und im Android-16-Emulator visuell abnehmen.
-3. Einen zweiten Provideradapter als Wechseltest implementieren, sobald der Zielanbieter feststeht.
-4. Historischen Datenimport aus dem privaten Export entwerfen; keine privaten Werte ins Repository übernehmen.
-5. Konto-/Backend-Entscheidung umsetzen und danach vollständige E2E-Tests aufbauen.
+2. Einen zweiten Provideradapter als Wechseltest implementieren, sobald der Zielanbieter feststeht.
+3. Historischen Datenimport aus dem privaten Export entwerfen; keine privaten Werte ins Repository übernehmen.
+4. Konto-/Backend-Entscheidung umsetzen und danach vollständige E2E-Tests aufbauen.
 
 ## Blocker/Hinweise
 
