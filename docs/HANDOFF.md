@@ -15,7 +15,9 @@ Stand: 2026-08-17
 - vier Haupttabs im aktuellen lokalen Stand: Tag, Statistik, Standards, Chat
 - vollständige KF20-Wortmarke im App-Kopf als echte Bildmarke statt der gestauchten ovalen Vektorvariante; vollständiges KF20-Launcher-Icon und echte Material-Icons in der Hauptnavigation
 - vereinfachter, gestufter Tagesablauf: Zielstand sehen, Mahlzeit beschreiben/fotografieren/einsprechen, KI-Ergebnis prüfen, speichern
-- grafisches Tagesdashboard mit Kalorien- und Makroringen sowie schlanker Dreifach-Erfassung für Nahrung, Sport und Messwerte
+- grafisches Tagesdashboard mit Kalorien- und Makroringen; Nahrung bleibt KI-gestützt, Sport und Messwerte laufen gemeinsam über den Morgen-Check
+- Morgen-Check als große, von unten kommende Erfassungsfläche nach der UI-Referenz: Sport-, Energie- und Hungerregler, Gewicht/KFA, optional Hals/Bauch, Live-Zielvorschau sowie „Tag starten“/„Später“
+- Refeed-Modell aus dem privaten Chat als dokumentierte Produktregel: Energie 1–4 = 30 %, 5–7 = 50 %, 8–10 = 70 % der Sport-kcal; das Add-on erhöht das Tagesziel und die Carbs
 - gemeinsame Tagesliste für Nahrung, Sport und Messwerte einschließlich gezielter Löschaktionen
 - Tagesplanung für Nahrung: KI-Ergebnisse und Standards können als „jetzt gegessen“ oder „später geplant“ gespeichert werden; geplante Werte haben eine eigene Prognose und werden erst nach Bestätigung in Ist-Bilanz und Statistik übernommen
 - grafischer Statistikbereich für Kalorien, Makros, Gewicht, Körperfett, Sport sowie Hunger/Energie
@@ -23,8 +25,8 @@ Stand: 2026-08-17
 - konsistente Farbcodierung und zunächst eingeklappte Mahlzeitenerfassung zur Reduktion visueller Komplexität
 - Tagesdashboard für Kalorien, Protein, Fett und Carbs
 - Mahlzeitenbeschreibung, Kameraaufnahme und optionales Mikrofon über geschützte Server-API; freie Einträge erfordern eine erfolgreiche KI-Auswertung
-- Sportfelder aus dem Export: Aktivität, Trainings-kcal, Tracker-Gesamtverbrauch, Notiz
-- Messfelder aus dem Export: Gewicht, KF Waage, Hals, Bauch, Hunger, Energie
+- Sportfelder aus dem Export bleiben im Datenmodell; der tägliche Primärfluss erfasst den Sportverbrauch laut Tracker direkt im Morgen-Check
+- Messfelder aus dem Export: Gewicht, KF Waage, Hals, Bauch, Hunger, Energie; Hals und Bauch sind im Morgen-Check optional einblendbar
 - Navy-KFA nur mit konfigurierter Körpergröße
 - Standards/Routinen, Tagesziele, Startwerte und optionale Ziele
 - verschlüsselte lokale Speicherung, Erinnerungen, Aufgaben, Projekte, private Dateiverweise und Fortschrittsfotos
@@ -51,6 +53,8 @@ Stand: 2026-08-17
 - Lokaler Android-Check nach dem Diagramm-Redesign: `:app:compileDebugKotlin` erfolgreich; nur bestehende Deprecation-Warnungen.
 - Android wird über `.github/workflows/android.yml` mit Gradle 8.11.1, Java 21 und Android 36 gebaut.
 - Lokaler Android-Check nach Mahlzeitenplanung sowie Export-/Löschfunktion: `:app:compileDebugKotlin` erfolgreich; nur bekannte Deprecation-Warnungen.
+- Lokaler Android-Check nach dem Morgen-Check-Umbau: `:app:compileDebugKotlin` erfolgreich. Der Tagesbildschirm und das gemeinsame Bottom Sheet wurden auf Android 16 geöffnet; Sport, Energie, Hunger, Gewicht/KFA und die Refeed-Zielvorschau werden vollständig gerendert.
+- Funktionstest Morgen-Check auf Android 16: Energie wurde von 6 auf 8 verschoben (Faktor wechselte live von 50 auf 70 Prozent), „Tag starten“ speicherte die Werte, und ein erneuter Check ersetzte den Sport-Gesamtwert des Tages ohne Doppelzählung. Abschließender `:app:assembleDebug` sowie die 5 Server-Vertragstests waren erfolgreich.
 - Lokaler Servertest nach dem Abgleich: Syntaxchecks erfolgreich, `node --test` 5 von 5 Tests grün.
 - Workflow-Run `32008685257` ist für Commit `92c03bc5478c2cd084fc02c6ada499fd25cacd43` vollständig grün: Server-Syntaxcheck, Android-Debug-Build und APK-Upload waren erfolgreich.
 - Das APK dieses Laufs wurde auf dem lokalen Android-16-Emulator installiert und gestartet. Die vier Haupttabs sowie Sport- und Messwertdialog wurden visuell geprüft.
