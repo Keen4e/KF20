@@ -13,6 +13,7 @@ Stand: 2026-08-17
 
 - Native Android-App in Kotlin/Compose
 - vier Haupttabs im aktuellen lokalen Stand: Tag, Statistik, Standards, Chat
+- drei sofort umschaltbare, lokal gespeicherte Styleguides: Performance Dark (Standard), Health Light und Data Athlete
 - vollständige KF20-Wortmarke im App-Kopf als echte Bildmarke statt der gestauchten ovalen Vektorvariante; vollständiges KF20-Launcher-Icon und echte Material-Icons in der Hauptnavigation
 - vereinfachter, gestufter Tagesablauf: Zielstand sehen, Mahlzeit beschreiben/fotografieren/einsprechen, KI-Ergebnis prüfen, speichern
 - grafisches Tagesdashboard mit Kalorien- und Makroringen; Nahrung bleibt KI-gestützt, Sport und Messwerte laufen gemeinsam über den Morgen-Check
@@ -55,6 +56,8 @@ Stand: 2026-08-17
 - Lokaler Android-Check nach Mahlzeitenplanung sowie Export-/Löschfunktion: `:app:compileDebugKotlin` erfolgreich; nur bekannte Deprecation-Warnungen.
 - Lokaler Android-Check nach dem Morgen-Check-Umbau: `:app:compileDebugKotlin` erfolgreich. Der Tagesbildschirm und das gemeinsame Bottom Sheet wurden auf Android 16 geöffnet; Sport, Energie, Hunger, Gewicht/KFA und die Refeed-Zielvorschau werden vollständig gerendert.
 - Funktionstest Morgen-Check auf Android 16: Energie wurde von 6 auf 8 verschoben (Faktor wechselte live von 50 auf 70 Prozent), „Tag starten“ speicherte die Werte, und ein erneuter Check ersetzte den Sport-Gesamtwert des Tages ohne Doppelzählung. Abschließender `:app:assembleDebug` sowie die 5 Server-Vertragstests waren erfolgreich.
+- Style-Test auf Android 16: Performance Dark, Health Light und Data Athlete wurden in Standards nacheinander aktiviert; der Wechsel erfolgte ohne Neustart und Health Light blieb nach einem Kaltstart ausgewählt. Performance Dark wurde anschließend als gewünschter Testzustand wiederhergestellt.
+- Abschließender Style-Build: `:app:assembleDebug` erfolgreich; das erzeugte APK wurde auf Android 16 installiert. Performance Dark, die gespeicherte Auswahl und das abgerundete KF20-Bildlogo wurden im laufenden Emulator visuell geprüft.
 - Lokaler Servertest nach dem Abgleich: Syntaxchecks erfolgreich, `node --test` 5 von 5 Tests grün.
 - Workflow-Run `32008685257` ist für Commit `92c03bc5478c2cd084fc02c6ada499fd25cacd43` vollständig grün: Server-Syntaxcheck, Android-Debug-Build und APK-Upload waren erfolgreich.
 - Das APK dieses Laufs wurde auf dem lokalen Android-16-Emulator installiert und gestartet. Die vier Haupttabs sowie Sport- und Messwertdialog wurden visuell geprüft.
