@@ -100,6 +100,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.security.KeyStore
 import java.time.LocalDate
+import java.time.Instant
 import java.time.format.TextStyle
 import java.util.Calendar
 import java.util.Locale
@@ -235,6 +236,24 @@ private fun Kf20App(context: Context) {
     var standardProteinDraft by remember { mutableStateOf("") }
     var standardFatDraft by remember { mutableStateOf("") }
     var standardCarbsDraft by remember { mutableStateOf("") }
+    var dataStatus by remember { mutableStateOf<String?>(null) }
+    var showDeleteAllData by remember { mutableStateOf(false) }
+    val exportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) {
+            runCatching {
+                val export = LocalDataExport.createJson(
+                    messages, tasks, dailyEntries, routines, weightEntries, photos, reminder,
+                    memories, projects, privateFiles, targets, sportSessions, measurements, healthProfile
+                )
+                context.contentResolver.openOutputStream(uri, "wt")?.bufferedWriter()?.use { it.write(export) }
+                    ?: error("Die Exportdatei konnte nicht geöffnet werden.")
+            }.onSuccess {
+                dataStatus = "Export gespeichert. Die Datei enthält sensible Gesundheitsdaten."
+            }.onFailure {
+                dataStatus = it.message ?: "Der Export ist fehlgeschlagen."
+            }
+        }
+    }
     val notificationPermission = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val listState = rememberLazyListState()
 
@@ -500,6 +519,9 @@ private fun Kf20App(context: Context) {
                 onReminderSettings = { showReminderSettings = true },
                 onOpenTasks = { workspace = Workspace.TASKS },
                 onOpenFiles = { workspace = Workspace.FILES },
+                onExportData = { exportLauncher.launch("KF20-Export-${todayKey()}.json") },
+                onDeleteAllData = { showDeleteAllData = true },
+                dataStatus = dataStatus,
                 onLoadChatDemoData = { loadChatDemoWeek() }
             ) else if (workspace == Workspace.PROGRESS) ProgressScreen(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
@@ -634,6 +656,32 @@ private fun Kf20App(context: Context) {
                     }) { Text("Endgültig löschen") }
                 },
                 dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text("Abbrechen") } }
+            )
+        }
+        if (showDeleteAllData) {
+            AlertDialog(
+                onDismissRequest = { showDeleteAllData = false },
+                title = { Text("Alle lokalen Daten löschen?") },
+                text = { Text("Tageslogs, Messwerte, Standards, Fotos, Dateien, Aufgaben, Erinnerungen, Chatverlauf und Serverzugang werden unwiderruflich von diesem Gerät entfernt. Exportiere vorher eine Kopie, falls du die Daten behalten möchtest.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        (photos.map { it.uri } + privateFiles.map { it.uri }).distinct().forEach { value ->
+                            runCatching { context.contentResolver.releasePersistableUriPermission(Uri.parse(value), Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+                        }
+                        DailyReminder.cancel(context)
+                        context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE).edit().clear().commit()
+                        SecureStore.deleteKey()
+                        messages = emptyList(); tasks = emptyList(); dailyEntries = emptyList(); routines = emptyList()
+                        weightEntries = emptyList(); photos = emptyList(); memories = emptyList(); projects = emptyList(); privateFiles = emptyList()
+                        sportSessions = emptyList(); measurements = emptyList(); apiSettings = ApiSettings("", "")
+                        reminder = ReminderConfig(false, 20, 0); targets = NutritionTargets(2_000, 150.0, 70.0, 200.0)
+                        healthProfile = HealthProfile(null, null, null, null)
+                        serverUrlDraft = ""; serverTokenDraft = ""; selectedDate = todayKey()
+                        dataStatus = "Alle lokalen KF20-Daten wurden gelöscht."
+                        showDeleteAllData = false
+                    }) { Text("Endgültig löschen") }
+                },
+                dismissButton = { TextButton(onClick = { showDeleteAllData = false }) { Text("Abbrechen") } }
             )
         }
         if (showSportEntry) {
@@ -1112,6 +1160,9 @@ private fun Kf20App(context: Context) {
     onReminderSettings: () -> Unit,
     onOpenTasks: () -> Unit,
     onOpenFiles: () -> Unit,
+    onExportData: () -> Unit,
+    onDeleteAllData: () -> Unit,
+    dataStatus: String?,
     onLoadChatDemoData: () -> Unit
 ) {
     LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1179,6 +1230,18 @@ private fun Kf20App(context: Context) {
             Row {
                 TextButton(onClick = onOpenTasks) { Text("Aufgaben") }
                 TextButton(onClick = onOpenFiles) { Text("Private Dateien") }
+            }
+        }
+        item {
+            Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Datenschutz & Daten", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Exportiere deine lokalen Daten oder entferne sie vollständig von diesem Gerät.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Button(onClick = onExportData, modifier = Modifier.fillMaxWidth()) { Text("Lokale Daten exportieren") }
+                    OutlinedButton(onClick = onDeleteAllData, modifier = Modifier.fillMaxWidth()) { Text("Alle lokalen Daten löschen") }
+                    Text("Der Export ist eine unverschlüsselte JSON-Datei mit sensiblen Gesundheitsdaten. Server-Token und Provider-Schlüssel werden nicht exportiert.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    dataStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary) }
+                }
             }
         }
         item { Spacer(Modifier.height(8.dp)) }
@@ -2357,6 +2420,63 @@ private class TaskStorage(context: Context) {
     }
 }
 
+private object LocalDataExport {
+    fun createJson(
+        messages: List<ChatMessage>,
+        tasks: List<AgentTask>,
+        dailyEntries: List<DailyLogEntry>,
+        routines: List<DailyRoutine>,
+        weights: List<WeightEntry>,
+        photos: List<ProgressPhoto>,
+        reminder: ReminderConfig,
+        memories: List<UserMemory>,
+        projects: List<ProjectEntry>,
+        files: List<PrivateFile>,
+        targets: NutritionTargets,
+        sessions: List<SportSession>,
+        measurements: List<BodyMeasurement>,
+        profile: HealthProfile
+    ): String {
+        val root = JSONObject()
+            .put("schemaVersion", 1)
+            .put("exportedAt", Instant.now().toString())
+            .put("notice", "Sensible KF20-Gesundheitsdaten. Serverzugang und Provider-Schlüssel sind ausgeschlossen.")
+        root.put("messages", JSONArray().apply { messages.forEach { put(JSONObject().put("role", it.role).put("content", it.content)) } })
+        root.put("tasks", JSONArray().apply { tasks.forEach { put(JSONObject().put("title", it.title).put("done", it.done)) } })
+        root.put("dailyEntries", JSONArray().apply {
+            dailyEntries.forEach {
+                put(JSONObject().put("date", it.date).put("type", it.type).put("title", it.title).put("calories", it.calories)
+                    .put("protein", it.protein).put("fat", it.fat).put("carbs", it.carbs).put("planned", it.planned))
+            }
+        })
+        root.put("routines", JSONArray().apply {
+            routines.forEach { put(JSONObject().put("title", it.title).put("calories", it.calories).put("protein", it.protein).put("fat", it.fat).put("carbs", it.carbs)) }
+        })
+        root.put("weights", JSONArray().apply { weights.forEach { put(JSONObject().put("date", it.date).put("kilograms", it.kilograms)) } })
+        root.put("photos", JSONArray().apply { photos.forEach { put(JSONObject().put("date", it.date).put("uri", it.uri)) } })
+        root.put("reminder", JSONObject().put("enabled", reminder.enabled).put("hour", reminder.hour).put("minute", reminder.minute))
+        root.put("memories", JSONArray().apply { memories.forEach { put(it.text) } })
+        root.put("projects", JSONArray().apply { projects.forEach { put(JSONObject().put("name", it.name).put("notes", it.notes).put("status", it.status)) } })
+        root.put("privateFiles", JSONArray().apply {
+            files.forEach { put(JSONObject().put("date", it.date).put("uri", it.uri).put("name", it.name).put("mimeType", it.mimeType)) }
+        })
+        root.put("targets", JSONObject().put("calories", targets.calories).put("protein", targets.protein).put("fat", targets.fat).put("carbs", targets.carbs))
+        root.put("sportSessions", JSONArray().apply {
+            sessions.forEach { put(JSONObject().put("date", it.date).put("activity", it.activity).put("calories", it.calories).put("trackerCalories", it.trackerCalories ?: JSONObject.NULL).put("note", it.note)) }
+        })
+        root.put("measurements", JSONArray().apply {
+            measurements.forEach {
+                put(JSONObject().put("date", it.date).put("weight", it.weight ?: JSONObject.NULL).put("scaleBodyFat", it.scaleBodyFat ?: JSONObject.NULL)
+                    .put("neck", it.neck ?: JSONObject.NULL).put("abdomen", it.abdomen ?: JSONObject.NULL)
+                    .put("hunger", it.hunger ?: JSONObject.NULL).put("energy", it.energy ?: JSONObject.NULL))
+            }
+        })
+        root.put("profile", JSONObject().put("startWeight", profile.startWeight ?: JSONObject.NULL).put("heightCm", profile.heightCm ?: JSONObject.NULL)
+            .put("goalWeight", profile.goalWeight ?: JSONObject.NULL).put("goalBodyFat", profile.goalBodyFat ?: JSONObject.NULL))
+        return root.toString(2)
+    }
+}
+
 private object SecureStore {
     private const val KEYSTORE = "AndroidKeyStore"
     private const val ALIAS = "kf20-chat-history-key"
@@ -2375,6 +2495,11 @@ private object SecureStore {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(), javax.crypto.spec.GCMParameterSpec(128, Base64.decode(parts[0], Base64.NO_WRAP)))
         return String(cipher.doFinal(Base64.decode(parts[1], Base64.NO_WRAP)), Charsets.UTF_8)
+    }
+
+    fun deleteKey() {
+        val keyStore = KeyStore.getInstance(KEYSTORE).apply { load(null) }
+        if (keyStore.containsAlias(ALIAS)) keyStore.deleteEntry(ALIAS)
     }
 
     private fun getOrCreateKey(): SecretKey {
