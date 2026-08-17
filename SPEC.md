@@ -32,6 +32,8 @@ Die Navigation verwendet eindeutige Material-Icons mit Textlabeln. Im App-Kopf u
 - verbleibende Kalorien sowie Aufnahme, Sportverbrauch und Bilanz
 - Kalorien, Protein, Fett und Carbs jeweils mit Ziel, Istwert und prozentualer Erreichung
 - Mahlzeiten des Tages mit allen vier Nährwerten und Löschmöglichkeit
+- Nahrung kann als bereits gegessen oder für später geplant gespeichert werden
+- geplante Nahrung erscheint separat in der Tagesprognose und fließt erst nach Bestätigung als gegessen in Ist-Bilanz, Makroringe und Statistik ein
 - Schnellzugriff auf Standards
 - schlanke Tageserfassung mit drei gleichwertigen Einstiegen: Nahrung, Sport und Messwerte
 - gemeinsame Tagesliste für alle drei Eintragsarten; Nahrung zeigt Kalorien und Makros, Sport zeigt Training/Tracker, Messwerte zeigen Körper- und Befindenswerte
@@ -51,6 +53,8 @@ Die Oberfläche folgt einem gestuften Ablauf: Zunächst sind nur Beschreibung, F
 Die Mahlzeitenerfassung ist im Tagesdashboard zunächst als kompakte Schnellaktion dargestellt. Das ausführliche Formular wird erst beim Beschreiben oder nach Foto-/Mikrofoneingabe geöffnet, damit die Zielübersicht visuell im Vordergrund bleibt.
 
 Ein bereits bestätigter Standard darf ohne erneute KI-Auswertung übernommen werden, da seine Nährwerte schon gespeichert sind.
+
+Nach der KI-Prüfung entscheidet der Nutzer ausdrücklich zwischen **Jetzt gegessen** und **Später planen**. Geplante Einträge zeigen eine Prognose für Restkalorien und Makros. Sie können in der gemeinsamen Tagesliste als gegessen bestätigt oder gelöscht werden. Dieselbe Auswahl steht für gespeicherte Standards zur Verfügung.
 
 ### Sport erfassen
 
