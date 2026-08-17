@@ -30,7 +30,7 @@ jobs:
           node-version: "22"
       - name: Validate agent server
         working-directory: server
-        run: node --check src/server.js
+        run: npm test
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

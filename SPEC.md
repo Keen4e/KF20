@@ -105,7 +105,9 @@ Zielwerte werden nicht ausgedacht. Nicht gesetzte Ziele bleiben leer.
 
 ## KI- und Providerregel
 
-Der Android-Client verwendet ausschließlich die provider-neutrale KF20-Server-API. Der aktuelle Prototyp nutzt serverseitig die OpenAI API. Eine ChatGPT-Subscription ist kein API-Zugang; für den Prototyp ist ein separat konfigurierter Server-API-Key erforderlich. Modell und Anbieter müssen später serverseitig wechselbar sein, ohne die Android-Datenmodelle oder Oberflächen zu ändern.
+Der Android-Client verwendet ausschließlich die provider-neutrale KF20-Server-API. Der Server besitzt ein internes Provider-Interface für Chat und Nährwertanalyse; Auswahl und Modell erfolgen ausschließlich über `AI_PROVIDER` und `AI_MODEL`. Der aktuelle Prototyp nutzt den OpenAI-Adapter. Weitere Anbieter werden als Serveradapter ergänzt, ohne Android-Datenmodelle, Oberflächen oder die stabilen KF20-Endpunkte zu ändern. Eine ChatGPT-Subscription ist kein API-Zugang; für den Prototyp ist ein separat konfigurierter Server-API-Key erforderlich.
+
+Provider-Capabilities werden explizit ausgewiesen. Wird etwa Web-Recherche verlangt, aber vom konfigurierten Anbieter nicht unterstützt, liefert der Server einen klaren Capability-Fehler und erfindet keine Quellen.
 
 ## Datenschutz
 

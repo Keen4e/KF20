@@ -4,7 +4,7 @@ Die aktuelle Codebasis ist **nicht** bereit für die öffentliche Veröffentlich
 
 1. **Authentifizierung:** Der Server braucht eine echte Nutzeranmeldung sowie Zugriffskontrolle. CORS ist keine Zugangskontrolle für eine Android-App.
 2. **Transport:** Ausschließlich HTTPS, mit TLS-Konfiguration und einer produktiven Domain.
-3. **Geheimnisse:** `OPENAI_API_KEY` nur im Secret Store des Hosts; niemals in Git, APK, Build-Logs oder Supporttickets.
+3. **Geheimnisse:** Provider-API-Keys nur im Secret Store des Hosts; niemals in Git, APK, Build-Logs oder Supporttickets.
 4. **Missbrauchsschutz:** Rate Limits pro Nutzer, Größenlimits, Zeitlimits und Monitoring ohne Chat-Inhalte.
 5. **Datenspeicherung:** Definierte Aufbewahrungsfristen, Kontolöschung und ein Backup-/Restore-Konzept.
 6. **Client-Speicher:** Der Chatverlauf wird mit einem AES-GCM-Schlüssel aus dem Android Keystore verschlüsselt gespeichert. Ein künftiger Auth-Token muss denselben Schutz erhalten.

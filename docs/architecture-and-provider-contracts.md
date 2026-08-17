@@ -51,6 +51,10 @@ Request:
 }
 ```
 
+### `GET /healthz`
+
+Der Health-Endpunkt meldet neben `status` die serverseitige Provider-ID und deren Capabilities. Er enthält keine Secrets, Modellprompts oder Nutzerdaten.
+
 Mindestens Beschreibung oder Bild ist erforderlich. Response:
 
 ```json
@@ -69,16 +73,18 @@ Mindestens Beschreibung oder Bild ist erforderlich. Response:
 
 ## Provider-Grenze
 
-Der aktuelle Server ruft OpenAI Responses auf. Die nächste Server-Refaktorierung führt ein internes Interface ein:
+Der Server verwendet bereits ein internes Interface:
 
 ```text
 AiProvider.chat(messages, memories, webSearch) -> { text, sources }
 AiProvider.analyzeNutrition(description, imageDataUrl) -> NutritionEstimate
 ```
 
-Provider-Auswahl erfolgt ausschließlich über Serverkonfiguration (`AI_PROVIDER`, Modellname und Secret Store). Ein neuer Provider muss die stabilen KF20-Responses erzeugen. Der Android-Client wird dafür nicht geändert.
+Provider-Auswahl erfolgt ausschließlich über Serverkonfiguration (`AI_PROVIDER`, `AI_MODEL` und Secret Store). `server/src/providers/openai.js` implementiert den ersten Adapter. Ein neuer Provider wird unter `server/src/providers/` ergänzt und muss die stabilen KF20-Responses erzeugen. Der Android-Client wird dafür nicht geändert.
 
 Web-Recherche ist eine optionale Capability. Ein Provider ohne Recherche muss einen klaren Capability-Fehler zurückgeben; er darf keine Quellen erfinden.
+
+Providerfehler werden ohne Anfrageinhalte protokolliert und in stabile, generische KF20-Fehler übersetzt. Providerantworten für Nährwerte werden vor der Rückgabe nochmals gegen den KF20-Vertrag validiert.
 
 ## Aktuelle Sicherheitsgrenze
 
