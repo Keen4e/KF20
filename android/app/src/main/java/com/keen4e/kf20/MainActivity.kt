@@ -256,8 +256,8 @@ private fun Kf20App(context: Context) {
                             Image(
                                 painter = painterResource(R.drawable.ic_kf20),
                                 contentDescription = "KF20",
-                                modifier = Modifier.width(104.dp).height(44.dp),
-                                contentScale = ContentScale.Crop
+                                modifier = Modifier.width(72.dp).height(48.dp),
+                                contentScale = ContentScale.Fit
                             )
                             Spacer(Modifier.width(10.dp))
                             Text("Dein täglicher Agent", style = MaterialTheme.typography.labelSmall)
