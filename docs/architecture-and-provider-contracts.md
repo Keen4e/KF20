@@ -15,9 +15,11 @@ Der Android-Client enthält keine Provider-SDKs, API-Schlüssel oder providerspe
 - lokale sensible Daten verschlüsselt über AES-GCM und Android Keystore
 - Bildaufnahme als temporäre JPEG-Data-URL nur für eine Analyse
 - freie Textbeschreibung direkt in der App; optionale Spracheingabe über Android Speech Recognizer wird lokal in denselben Texteingabekanal überführt
+- benannte Gespräche werden als getrennte, AES-GCM-verschlüsselte lokale Verläufe gespeichert; die Volltextsuche erfolgt ausschließlich im bereits entschlüsselten In-Memory-Zustand der App
+- der bisherige einzelne `messages`-Speicher wird beim ersten Lesen in einen `Hauptchat` migriert; an die Chat-API gehen weiterhin nur Nachrichten des aktuell geöffneten Gesprächs
 - Nährwertwerte bleiben nach der KI-Antwort editierbar
 - lokaler, nutzerinitiierter JSON-Export schließt Server-Token aus; die Datei selbst ist unverschlüsselt und wird nur an einen vom Nutzer gewählten Android-Speicherort geschrieben
-- nicht-sensitive UI-Präferenzen wie der Styleguide liegen im selben lokalen Preference-Lebenszyklus, werden sofort angewendet und im JSON-Exportschema 2 unter `uiPreferences` ausgegeben
+- nicht-sensitive UI-Präferenzen wie der Styleguide liegen im selben lokalen Preference-Lebenszyklus, werden sofort angewendet und im JSON-Exportschema 3 unter `uiPreferences` ausgegeben; Schema 3 exportiert zusätzlich alle benannten Gespräche und die aktive Gesprächs-ID
 - bestätigte lokale Gesamtlöschung entfernt verschlüsselte Preferences, persistierte URI-Freigaben, Erinnerungsalarm und Android-Keystore-Schlüssel
 
 ## Stabile KF20-API
