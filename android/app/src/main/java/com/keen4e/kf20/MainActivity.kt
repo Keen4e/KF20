@@ -254,7 +254,7 @@ private fun Kf20App(context: Context) {
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Image(
-                                painter = painterResource(R.drawable.kf20_wordmark),
+                                painter = painterResource(R.drawable.ic_kf20),
                                 contentDescription = "KF20",
                                 modifier = Modifier.width(104.dp).height(44.dp),
                                 contentScale = ContentScale.Crop
