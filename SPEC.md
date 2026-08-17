@@ -19,10 +19,13 @@ Die untere Navigation besteht aus genau vier Haupttabs:
 
 Sport und Messungen sind keine eigenen Haupttabs. Ihre Erfassung gehört zum jeweiligen Tag.
 
+Die Navigation verwendet eindeutige Material-Icons mit Textlabeln. Im App-Kopf und als Launcher-Symbol wird die vollständige Wortmarke **KF20** verwendet, nicht nur der Buchstabe K.
+
 ## Tag
 
 ### Tagesübersicht
 
+- aufgeräumte, visuell priorisierte Startansicht: Restkalorien zuerst, danach die vier Kernwerte und die Erfassung
 - Datum vor/zurück und Sprung zu heute
 - verbleibende Kalorien sowie Aufnahme, Sportverbrauch und Bilanz
 - Kalorien, Protein, Fett und Carbs jeweils mit Ziel, Istwert und prozentualer Erreichung
@@ -38,6 +41,8 @@ Es gibt zwei primäre Eingänge:
 - **Mikrofon:** optional in deutscher Sprache diktieren; das erkannte Transkript unmittelbar KI-gestützt interpretieren.
 
 Vor dem Loggen einer neuen freien Mahlzeit ist immer eine erfolgreiche KI-Auswertung erforderlich. Ergebnisfelder: Name, Kalorien, Protein, Fett und Carbs sowie Konfidenz und Hinweis. Alle Werte bleiben vor dem Speichern korrigierbar. Das Foto wird nicht im Tageslog gespeichert. Falls auf dem Gerät keine Spracheingabe verfügbar ist, bleibt die Texteingabe vollständig nutzbar.
+
+Die Oberfläche folgt einem gestuften Ablauf: Zunächst sind nur Beschreibung, Foto, Mikrofon und der zentrale KI-Auswertungsbutton sichtbar. Die korrigierbaren Ergebnisfelder erscheinen erst nach einer erfolgreichen Auswertung. So muss der Nutzer nicht schon vor der Analyse technische Nährwertfelder bearbeiten.
 
 Ein bereits bestätigter Standard darf ohne erneute KI-Auswertung übernommen werden, da seine Nährwerte schon gespeichert sind.
 
