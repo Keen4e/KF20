@@ -28,12 +28,13 @@ Die Navigation verwendet eindeutige Material-Icons mit Textlabeln. Im App-Kopf u
 - aufgeräumte, visuell priorisierte Startansicht: Restkalorien zuerst, danach die vier Kernwerte und die Erfassung
 - großer Kalorien-Fortschrittsring mit Restwert, Zielerreichung, Aufnahme, Sport und Bilanz
 - farbcodierte Fortschrittsringe für Protein, Fett und Carbs
-- kompakter 7-Tage-Balkenverlauf mit sichtbarer Tagesziellinie
 - Datum vor/zurück und Sprung zu heute
 - verbleibende Kalorien sowie Aufnahme, Sportverbrauch und Bilanz
 - Kalorien, Protein, Fett und Carbs jeweils mit Ziel, Istwert und prozentualer Erreichung
 - Mahlzeiten des Tages mit allen vier Nährwerten und Löschmöglichkeit
 - Schnellzugriff auf Standards
+- schlanke Tageserfassung mit drei gleichwertigen Einstiegen: Nahrung, Sport und Messwerte
+- gemeinsame Tagesliste für alle drei Eintragsarten; Nahrung zeigt Kalorien und Makros, Sport zeigt Training/Tracker, Messwerte zeigen Körper- und Befindenswerte
 
 ### Mahlzeit erfassen
 
@@ -77,7 +78,7 @@ Wenn Hals, Bauch und Körpergröße vorliegen, berechnet KF20 den Körperfettwer
 
 ## Statistik
 
-- Zeitraum 7, 14 oder 30 Tage
+- Zeitraum 7, 14 oder 30 Tage; 7 Tage sind die Voreinstellung
 - aktuelle Tageszielerreichung für Kalorien, Protein, Fett und Carbs
 - Kalorien als Tagesbalken mit Ziellinie
 - Protein, Fett und Carbs als farbcodierte, normalisierte Verlaufslinien
