@@ -267,10 +267,10 @@ private fun Kf20App(context: Context) {
                     title = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Image(
-                                painter = painterResource(R.drawable.ic_kf20),
+                                painter = painterResource(R.drawable.kf20_wordmark),
                                 contentDescription = "KF20",
-                                modifier = Modifier.width(72.dp).height(48.dp),
-                                contentScale = ContentScale.Fit
+                                modifier = Modifier.width(112.dp).height(48.dp),
+                                contentScale = ContentScale.Crop
                             )
                             Spacer(Modifier.width(10.dp))
                             Text("Dein täglicher Agent", style = MaterialTheme.typography.labelSmall)
