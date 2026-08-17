@@ -132,10 +132,12 @@ Provider-Capabilities werden explizit ausgewiesen. Wird etwa Web-Recherche verla
 ## Datenschutz
 
 - Gesundheits- und Chatdaten lokal AES-GCM-verschlüsselt speichern.
+- Vollständigen lokalen JSON-Export auf ausdrückliche Nutzeraktion anbieten; der Export schließt Zugangstoken aus und warnt sichtbar, dass die erzeugte Datei selbst nicht verschlüsselt ist.
+- Alle lokalen KF20-Daten, gespeicherten Dateizugriffe und den Android-Keystore-Schlüssel nach einer eindeutigen Bestätigung vollständig löschen können.
 - Keine Provider-Schlüssel in App, Git oder Logs.
 - Keine Chat-Inhaltslogs im Serverbetrieb.
 - Bilder nur für die konkrete Analyse übertragen und nicht serverseitig speichern.
-- Export, vollständiges Löschen und definierte Aufbewahrung sind vor Store-Release Pflicht.
+- Serverseitiger Export, Kontolöschung und definierte Aufbewahrung sind vor Store-Release Pflicht, sobald Nutzerkonten eingeführt werden.
 
 ## Abnahmekriterien vor Play Store
 
