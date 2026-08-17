@@ -26,6 +26,9 @@ Die Navigation verwendet eindeutige Material-Icons mit Textlabeln. Im App-Kopf u
 ### Tagesübersicht
 
 - aufgeräumte, visuell priorisierte Startansicht: Restkalorien zuerst, danach die vier Kernwerte und die Erfassung
+- großer Kalorien-Fortschrittsring mit Restwert, Zielerreichung, Aufnahme, Sport und Bilanz
+- farbcodierte Fortschrittsringe für Protein, Fett und Carbs
+- kompakter 7-Tage-Balkenverlauf mit sichtbarer Tagesziellinie
 - Datum vor/zurück und Sprung zu heute
 - verbleibende Kalorien sowie Aufnahme, Sportverbrauch und Bilanz
 - Kalorien, Protein, Fett und Carbs jeweils mit Ziel, Istwert und prozentualer Erreichung
@@ -43,6 +46,8 @@ Es gibt zwei primäre Eingänge:
 Vor dem Loggen einer neuen freien Mahlzeit ist immer eine erfolgreiche KI-Auswertung erforderlich. Ergebnisfelder: Name, Kalorien, Protein, Fett und Carbs sowie Konfidenz und Hinweis. Alle Werte bleiben vor dem Speichern korrigierbar. Das Foto wird nicht im Tageslog gespeichert. Falls auf dem Gerät keine Spracheingabe verfügbar ist, bleibt die Texteingabe vollständig nutzbar.
 
 Die Oberfläche folgt einem gestuften Ablauf: Zunächst sind nur Beschreibung, Foto, Mikrofon und der zentrale KI-Auswertungsbutton sichtbar. Die korrigierbaren Ergebnisfelder erscheinen erst nach einer erfolgreichen Auswertung. So muss der Nutzer nicht schon vor der Analyse technische Nährwertfelder bearbeiten.
+
+Die Mahlzeitenerfassung ist im Tagesdashboard zunächst als kompakte Schnellaktion dargestellt. Das ausführliche Formular wird erst beim Beschreiben oder nach Foto-/Mikrofoneingabe geöffnet, damit die Zielübersicht visuell im Vordergrund bleibt.
 
 Ein bereits bestätigter Standard darf ohne erneute KI-Auswertung übernommen werden, da seine Nährwerte schon gespeichert sind.
 
@@ -74,11 +79,15 @@ Wenn Hals, Bauch und Körpergröße vorliegen, berechnet KF20 den Körperfettwer
 
 - Zeitraum 7, 14 oder 30 Tage
 - aktuelle Tageszielerreichung für Kalorien, Protein, Fett und Carbs
+- Kalorien als Tagesbalken mit Ziellinie
+- Protein, Fett und Carbs als farbcodierte, normalisierte Verlaufslinien
 - Gewichtsverlauf
 - Körperfettverlauf getrennt nach Waage und Navy-Methode
-- Sportverbrauch, Trainingstage und durchschnittlicher gemeldeter Tracker-Verbrauch
-- Hunger- und Energiewerte
+- Sportverbrauch als Tagesbalken sowie Trainingstage und durchschnittlicher gemeldeter Tracker-Verbrauch
+- Hunger und Energie als zweifarbiger Verlauf auf der Skala 0 bis 10
 - Zugriff auf Fortschrittsfotos
+
+Die Farbzuordnung bleibt in Tages- und Statistikansicht konsistent: Kalorien grün, Protein blau, Fett amber und Carbs korall. Diagramme zeigen bei fehlenden Daten einen verständlichen Leerzustand und dürfen keine Werte erfinden.
 
 Einzelwerte und KI-Schätzungen dürfen nicht als medizinische Diagnose dargestellt werden.
 

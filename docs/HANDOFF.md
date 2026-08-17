@@ -15,6 +15,9 @@ Stand: 2026-08-17
 - vier Haupttabs im aktuellen lokalen Stand: Tag, Statistik, Standards, Chat
 - vollständige KF20-Wortmarke im App-Kopf und als Launcher-Icon; echte Material-Icons in der Hauptnavigation
 - vereinfachter, gestufter Tagesablauf: Zielstand sehen, Mahlzeit beschreiben/fotografieren/einsprechen, KI-Ergebnis prüfen, speichern
+- grafisches Tagesdashboard mit Kalorienring, Makroringen und 7-Tage-Balkenverlauf
+- grafischer Statistikbereich für Kalorien, Makros, Gewicht, Körperfett, Sport sowie Hunger/Energie
+- konsistente Farbcodierung und zunächst eingeklappte Mahlzeitenerfassung zur Reduktion visueller Komplexität
 - Tagesdashboard für Kalorien, Protein, Fett und Carbs
 - Mahlzeitenbeschreibung, Kameraaufnahme und optionales Mikrofon über geschützte Server-API; freie Einträge erfordern eine erfolgreiche KI-Auswertung
 - Sportfelder aus dem Export: Aktivität, Trainings-kcal, Tracker-Gesamtverbrauch, Notiz
@@ -40,6 +43,7 @@ Stand: 2026-08-17
 ## Verifikation
 
 - Lokaler Servercheck: `node --check` für Einstieg und Adapter sowie `node --test`; 5 von 5 Tests erfolgreich.
+- Lokaler Android-Check nach dem Diagramm-Redesign: `:app:compileDebugKotlin` erfolgreich; nur bestehende Deprecation-Warnungen.
 - Android wird über `.github/workflows/android.yml` mit Gradle 8.11.1, Java 21 und Android 36 gebaut.
 - Workflow-Run `32008685257` ist für Commit `92c03bc5478c2cd084fc02c6ada499fd25cacd43` vollständig grün: Server-Syntaxcheck, Android-Debug-Build und APK-Upload waren erfolgreich.
 - Das APK dieses Laufs wurde auf dem lokalen Android-16-Emulator installiert und gestartet. Die vier Haupttabs sowie Sport- und Messwertdialog wurden visuell geprüft.
@@ -50,9 +54,10 @@ Stand: 2026-08-17
 ## Nächste konkrete Schritte
 
 1. Kamera und Mikrofon auf einem realen Android-Gerät testen.
-2. Einen zweiten Provideradapter als Wechseltest implementieren, sobald der Zielanbieter feststeht.
-3. Historischen Datenimport aus dem privaten Export entwerfen; keine privaten Werte ins Repository übernehmen.
-4. Konto-/Backend-Entscheidung umsetzen und danach vollständige E2E-Tests aufbauen.
+2. Grafisches Tages- und Statistikdashboard per CI bauen und im Android-16-Emulator visuell abnehmen.
+3. Einen zweiten Provideradapter als Wechseltest implementieren, sobald der Zielanbieter feststeht.
+4. Historischen Datenimport aus dem privaten Export entwerfen; keine privaten Werte ins Repository übernehmen.
+5. Konto-/Backend-Entscheidung umsetzen und danach vollständige E2E-Tests aufbauen.
 
 ## Blocker/Hinweise
 

@@ -39,6 +39,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -74,7 +75,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
@@ -92,7 +96,9 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.security.KeyStore
 import java.time.LocalDate
+import java.time.format.TextStyle
 import java.util.Calendar
+import java.util.Locale
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -114,6 +120,13 @@ private data class SportSession(val date: String, val activity: String, val calo
 private data class BodyMeasurement(val date: String, val weight: Double?, val scaleBodyFat: Double?, val neck: Double?, val abdomen: Double?, val hunger: Int?, val energy: Int?)
 private data class HealthProfile(val startWeight: Double?, val heightCm: Double?, val goalWeight: Double?, val goalBodyFat: Double?)
 private enum class Workspace { CHAT, DAILY_LOG, STATISTICS, STANDARDS, PROGRESS, PHOTOS, TASKS, PROJECTS, FILES }
+
+private val CaloriesGreen = Color(0xFF0E5A42)
+private val ProteinBlue = Color(0xFF4B70D6)
+private val FatAmber = Color(0xFFE2A13A)
+private val CarbsCoral = Color(0xFFD56E61)
+private val EnergyTeal = Color(0xFF2B9C91)
+private val HungerPurple = Color(0xFF8A64C7)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -449,6 +462,7 @@ private fun Kf20App(context: Context) {
             ) else DailyLogScreen(
                 modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
                 entries = dailyEntries.filter { it.date == selectedDate },
+                allEntries = dailyEntries,
                 routines = routines,
                 targets = targets,
                 selectedDate = selectedDate,
@@ -871,6 +885,16 @@ private fun Kf20App(context: Context) {
     val todayProtein = todayEntries.sumOf { it.protein }
     val todayFat = todayEntries.sumOf { it.fat }
     val todayCarbs = todayEntries.sumOf { it.carbs }
+    val dates = (rangeDays - 1 downTo 0).map { LocalDate.now().minusDays(it.toLong()) }
+    val dailyCalories = dates.map { date ->
+        val day = dailyEntries.filter { it.date == date.toString() }
+        val intake = day.filter { it.type == "Mahlzeit" }.sumOf { it.calories }
+        val sport = day.filter { it.type == "Sport" }.sumOf { it.calories }
+        maxOf(0, intake - sport).toDouble()
+    }
+    val dailyProtein = dates.map { date -> dailyEntries.filter { it.date == date.toString() }.sumOf { it.protein } }
+    val dailyFat = dates.map { date -> dailyEntries.filter { it.date == date.toString() }.sumOf { it.fat } }
+    val dailyCarbs = dates.map { date -> dailyEntries.filter { it.date == date.toString() }.sumOf { it.carbs } }
     val rangedMeasurements = measurements.filter { inRange(it.date) }
     val weights = rangedMeasurements.mapNotNull { item -> item.weight?.let { item.date to it } }
     val scaleKf = rangedMeasurements.mapNotNull { item -> item.scaleBodyFat?.let { item.date to it } }
@@ -879,6 +903,9 @@ private fun Kf20App(context: Context) {
     val trainingCalories = rangedSessions.sumOf { it.calories }
     val trackerReadings = rangedSessions.mapNotNull { it.trackerCalories }
     val latest = measurements.lastOrNull()
+    val sportByDay = dates.map { date -> rangedSessions.filter { it.date == date.toString() }.sumOf { it.calories }.toDouble() }
+    val hungerValues = dates.map { date -> rangedMeasurements.lastOrNull { it.date == date.toString() }?.hunger?.toDouble() }
+    val energyValues = dates.map { date -> rangedMeasurements.lastOrNull { it.date == date.toString() }?.energy?.toDouble() }
     LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             Text("Statistik", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp))
@@ -889,20 +916,26 @@ private fun Kf20App(context: Context) {
                 }
             }
         }
+        item { DailyGoalHero(intake = todayIntake, burned = todayBurned, target = targets.calories) }
         item {
-            Surface(shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(18.dp)) {
-                    Text("Heute noch ${maxOf(0, targets.calories - (todayIntake - todayBurned))} kcal", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text("Aufnahme $todayIntake · Sport $todayBurned · Bilanz ${todayIntake - todayBurned} kcal", color = MaterialTheme.colorScheme.onPrimary)
+            Surface(shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                Row(modifier = Modifier.fillMaxWidth().padding(10.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+                    MacroRing("Protein", todayProtein, targets.protein, "g", ProteinBlue, Modifier.weight(1f))
+                    MacroRing("Fett", todayFat, targets.fat, "g", FatAmber, Modifier.weight(1f))
+                    MacroRing("Carbs", todayCarbs, targets.carbs, "g", CarbsCoral, Modifier.weight(1f))
                 }
             }
         }
         item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                MacroCard("Kal", todayIntake.toDouble(), targets.calories.toDouble(), "kcal", Modifier.weight(1f))
-                MacroCard("Protein", todayProtein, targets.protein, "g", Modifier.weight(1f))
-                MacroCard("Fett", todayFat, targets.fat, "g", Modifier.weight(1f))
-                MacroCard("Carbs", todayCarbs, targets.carbs, "g", Modifier.weight(1f))
+            ChartCard(title = "Kalorienverlauf", subtitle = "Netto pro Tag · Linie = Tagesziel") {
+                VerticalBarChart(dailyCalories, targets.calories.toDouble(), CaloriesGreen)
+                RangeDayLabels(dates)
+            }
+        }
+        item {
+            ChartCard(title = "Makro-Zielerreichung", subtitle = "Protein, Fett und Carbs als Anteil des Tagesziels") {
+                NormalizedMacroChart(dailyProtein, dailyFat, dailyCarbs, targets)
+                ChartLegend(listOf("Protein" to ProteinBlue, "Fett" to FatAmber, "Carbs" to CarbsCoral))
             }
         }
         item {
@@ -913,7 +946,7 @@ private fun Kf20App(context: Context) {
                         Text(latest?.weight?.let { "${it.de1()} kg" } ?: "Noch kein Wert", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         profile.goalWeight?.let { Text("Ziel ${it.de1()} kg", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
-                    ValueChart(weights)
+                    ValueChart(weights, color = ProteinBlue, target = profile.goalWeight)
                     if (weights.size < 2) Text("Mindestens zwei Werte ergeben eine Verlaufskurve.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                 }
             }
@@ -922,15 +955,21 @@ private fun Kf20App(context: Context) {
             Text("Körperfett", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Waage${latest?.scaleBodyFat?.let { ": ${it.de1()} %" } ?: ""}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                    ValueChart(scaleKf)
-                    Text("Navy aus Hals/Bauch${navyBodyFat(latest?.neck, latest?.abdomen, profile.heightCm)?.let { ": ${it.de1()} %" } ?: ""}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Bold)
-                    ValueChart(navyKf)
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Text("Waage${latest?.scaleBodyFat?.let { ": ${it.de1()} %" } ?: ""}", color = CarbsCoral, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        Text("Navy${navyBodyFat(latest?.neck, latest?.abdomen, profile.heightCm)?.let { ": ${it.de1()} %" } ?: ""}", color = HungerPurple, fontWeight = FontWeight.Bold)
+                    }
+                    DualValueChart(scaleKf, navyKf, CarbsCoral, HungerPurple, profile.goalBodyFat)
+                    ChartLegend(listOf("Waage" to CarbsCoral, "Navy" to HungerPurple))
                 }
             }
         }
         item {
             Text("Sport & Tracker", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            ChartCard(title = "Trainingsaktivität", subtitle = "Verbrauchte Trainingskalorien pro Tag") {
+                VerticalBarChart(sportByDay, maxOf(1.0, sportByDay.average().takeIf { !it.isNaN() } ?: 1.0), EnergyTeal)
+                RangeDayLabels(dates)
+            }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 StatCard("Training", "$trainingCalories kcal", Modifier.weight(1f))
                 StatCard("Trainingstage", "${rangedSessions.filter { it.calories > 0 }.map { it.date }.distinct().size}", Modifier.weight(1f))
@@ -940,6 +979,10 @@ private fun Kf20App(context: Context) {
         item {
             val latestHunger = measurements.lastOrNull { it.hunger != null }?.hunger
             val latestEnergy = measurements.lastOrNull { it.energy != null }?.energy
+            ChartCard(title = "Hunger & Energie", subtitle = "Persönlicher Verlauf auf der Skala von 0 bis 10") {
+                ScoreTrendChart(hungerValues, energyValues)
+                ChartLegend(listOf("Hunger" to HungerPurple, "Energie" to EnergyTeal))
+            }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MetricCard("Hunger", latestHunger?.let { "$it / 10" } ?: "–", Modifier.weight(1f))
                 MetricCard("Energie", latestEnergy?.let { "$it / 10" } ?: "–", Modifier.weight(1f))
@@ -1271,25 +1314,161 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
     }
 }
 
-@Composable private fun ValueChart(weights: List<Pair<String, Double>>) {
+@Composable private fun ChartCard(title: String, subtitle: String, content: @Composable () -> Unit) {
+    Surface(shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(8.dp))
+            content()
+        }
+    }
+}
+
+@Composable private fun RangeDayLabels(dates: List<LocalDate>) {
+    if (dates.isEmpty()) return
+    val label: (LocalDate) -> String = { date -> "${date.dayOfMonth}. ${date.month.getDisplayName(TextStyle.SHORT, Locale.GERMAN)}" }
+    if (dates.size <= 7) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            dates.forEach { date ->
+                Text(date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.GERMAN).take(2), modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    } else {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Text(label(dates.first()), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.weight(1f))
+            Text(label(dates[dates.size / 2]), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.weight(1f))
+            Text(label(dates.last()), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable private fun ChartLegend(items: List<Pair<String, Color>>) {
+    Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        items.forEach { (label, color) ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = CircleShape, color = color, modifier = Modifier.width(9.dp).height(9.dp)) {}
+                Spacer(Modifier.width(5.dp))
+                Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable private fun NormalizedMacroChart(protein: List<Double>, fat: List<Double>, carbs: List<Double>, targets: NutritionTargets) {
+    val gridColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)
+    val series = listOf(
+        protein.map { if (targets.protein > 0) (it / targets.protein).coerceIn(0.0, 1.4) else 0.0 } to ProteinBlue,
+        fat.map { if (targets.fat > 0) (it / targets.fat).coerceIn(0.0, 1.4) else 0.0 } to FatAmber,
+        carbs.map { if (targets.carbs > 0) (it / targets.carbs).coerceIn(0.0, 1.4) else 0.0 } to CarbsCoral
+    )
+    Canvas(modifier = Modifier.fillMaxWidth().height(150.dp)) {
+        repeat(4) { index ->
+            val y = size.height * index / 3f
+            drawLine(gridColor, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(size.width, y), strokeWidth = 1.dp.toPx())
+        }
+        val targetY = size.height * (1f - 1f / 1.4f)
+        drawLine(CaloriesGreen.copy(alpha = 0.5f), androidx.compose.ui.geometry.Offset(0f, targetY), androidx.compose.ui.geometry.Offset(size.width, targetY), strokeWidth = 2.dp.toPx())
+        series.forEach { (values, color) ->
+            if (values.isNotEmpty()) {
+                val step = if (values.size > 1) size.width / (values.size - 1) else size.width
+                val path = Path()
+                values.forEachIndexed { index, value ->
+                    val point = androidx.compose.ui.geometry.Offset(index * step, size.height - (value / 1.4).toFloat() * size.height)
+                    if (index == 0) path.moveTo(point.x, point.y) else path.lineTo(point.x, point.y)
+                }
+                drawPath(path, color, style = Stroke(4.dp.toPx(), cap = StrokeCap.Round))
+            }
+        }
+    }
+}
+
+@Composable private fun DualValueChart(first: List<Pair<String, Double>>, second: List<Pair<String, Double>>, firstColor: Color, secondColor: Color, target: Double?) {
+    val all = first.map { it.second } + second.map { it.second } + listOfNotNull(target)
+    if (all.size < 2) {
+        Text("Noch nicht genug Werte für einen Verlauf.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 20.dp))
+        return
+    }
+    val minValue = all.minOrNull() ?: return
+    val maxValue = all.maxOrNull() ?: return
+    val span = (maxValue - minValue).coerceAtLeast(1.0)
+    val gridColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)
+    Canvas(modifier = Modifier.fillMaxWidth().height(170.dp).padding(top = 12.dp)) {
+        repeat(4) { index ->
+            val y = size.height * index / 3f
+            drawLine(gridColor, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(size.width, y), strokeWidth = 1.dp.toPx())
+        }
+        target?.let {
+            val y = size.height - ((it - minValue) / span).toFloat() * size.height
+            drawLine(CaloriesGreen.copy(alpha = 0.5f), androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(size.width, y), strokeWidth = 2.dp.toPx())
+        }
+        listOf(first to firstColor, second to secondColor).forEach { (points, color) ->
+            if (points.size >= 2) {
+                val step = size.width / (points.size - 1)
+                val path = Path()
+                points.forEachIndexed { index, point ->
+                    val y = size.height - ((point.second - minValue) / span).toFloat() * size.height
+                    if (index == 0) path.moveTo(0f, y) else path.lineTo(index * step, y)
+                    drawCircle(color, radius = 5.dp.toPx(), center = androidx.compose.ui.geometry.Offset(index * step, y))
+                }
+                drawPath(path, color, style = Stroke(4.dp.toPx(), cap = StrokeCap.Round))
+            }
+        }
+    }
+}
+
+@Composable private fun ScoreTrendChart(hunger: List<Double?>, energy: List<Double?>) {
+    val gridColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)
+    Canvas(modifier = Modifier.fillMaxWidth().height(150.dp)) {
+        repeat(3) { index ->
+            val y = size.height * index / 2f
+            drawLine(gridColor, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(size.width, y), strokeWidth = 1.dp.toPx())
+        }
+        listOf(hunger to HungerPurple, energy to EnergyTeal).forEach { (values, color) ->
+            val step = if (values.size > 1) size.width / (values.size - 1) else size.width
+            var previous: androidx.compose.ui.geometry.Offset? = null
+            values.forEachIndexed { index, value ->
+                if (value == null) {
+                    previous = null
+                } else {
+                    val point = androidx.compose.ui.geometry.Offset(index * step, size.height - (value / 10.0).toFloat() * size.height)
+                    previous?.let { drawLine(color, it, point, strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round) }
+                    drawCircle(color, radius = 5.dp.toPx(), center = point)
+                    previous = point
+                }
+            }
+        }
+    }
+}
+
+@Composable private fun ValueChart(weights: List<Pair<String, Double>>, color: Color = CaloriesGreen, target: Double? = null) {
     if (weights.size < 2) return
-    val values = weights.map { it.second }
+    val values = weights.map { it.second } + listOfNotNull(target)
     val minValue = values.minOrNull() ?: return
     val maxValue = values.maxOrNull() ?: return
     val span = (maxValue - minValue).coerceAtLeast(1.0)
-    val lineColor = MaterialTheme.colorScheme.primary
+    val gridColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f)
     Canvas(modifier = Modifier.fillMaxWidth().height(150.dp).padding(top = 12.dp)) {
-        val stepX = if (values.size > 1) size.width / (values.size - 1) else size.width
-        values.forEachIndexed { index, value ->
+        repeat(4) { index ->
+            val y = size.height * index / 3f
+            drawLine(gridColor, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(size.width, y), strokeWidth = 1.dp.toPx())
+        }
+        target?.let {
+            val y = size.height - (((it - minValue) / span).toFloat() * size.height * 0.75f + size.height * 0.1f)
+            drawLine(CaloriesGreen.copy(alpha = 0.5f), androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(size.width, y), strokeWidth = 2.dp.toPx())
+        }
+        val sourceValues = weights.map { it.second }
+        val stepX = if (sourceValues.size > 1) size.width / (sourceValues.size - 1) else size.width
+        val path = Path()
+        sourceValues.forEachIndexed { index, value ->
             val x = stepX * index
             val y = size.height - (((value - minValue) / span).toFloat() * size.height * 0.75f + size.height * 0.1f)
-            if (index > 0) {
-                val previous = values[index - 1]
-                val previousY = size.height - (((previous - minValue) / span).toFloat() * size.height * 0.75f + size.height * 0.1f)
-                drawLine(lineColor, start = androidx.compose.ui.geometry.Offset(stepX * (index - 1), previousY), end = androidx.compose.ui.geometry.Offset(x, y), strokeWidth = 6f)
-            }
-            drawCircle(lineColor, radius = 8f, center = androidx.compose.ui.geometry.Offset(x, y))
+            if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            drawCircle(color, radius = 6.dp.toPx(), center = androidx.compose.ui.geometry.Offset(x, y))
         }
+        drawPath(path, color, style = Stroke(4.dp.toPx(), cap = StrokeCap.Round))
     }
 }
 
@@ -1362,6 +1541,7 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
 @Composable private fun DailyLogScreen(
     modifier: Modifier,
     entries: List<DailyLogEntry>,
+    allEntries: List<DailyLogEntry>,
     routines: List<DailyRoutine>,
     targets: NutritionTargets,
     selectedDate: String,
@@ -1395,6 +1575,7 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
     onAdd: () -> Unit
 ) {
     var captureError by remember { mutableStateOf<String?>(null) }
+    var showMealComposer by remember { mutableStateOf(false) }
     val mealCamera = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
         if (bitmap != null) {
             captureError = null
@@ -1416,6 +1597,15 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
     val fatTotal = entries.sumOf { it.fat }
     val carbsTotal = entries.sumOf { it.carbs }
     val isToday = selectedDate == todayKey()
+    val anchorDate = runCatching { LocalDate.parse(selectedDate) }.getOrDefault(LocalDate.now())
+    val weeklyCalories = (6 downTo 0).map { offset ->
+        val date = anchorDate.minusDays(offset.toLong())
+        val dayEntries = allEntries.filter { it.date == date.toString() }
+        val eaten = dayEntries.filter { it.type == "Mahlzeit" }.sumOf { it.calories }
+        val sport = dayEntries.filter { it.type == "Sport" }.sumOf { it.calories }
+        date to maxOf(0, eaten - sport)
+    }
+    val composerVisible = showMealComposer || description.isNotBlank() || isEstimating || analysisReady || hasPhoto
     LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1428,26 +1618,20 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
                 TextButton(onClick = onNextDay) { Text("›") }
             }
         }
+        item { DailyGoalHero(intake = intake, burned = burned, target = targets.calories) }
         item {
-            Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.primary, modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp)) {
-                    Text("${maxOf(0, targets.calories - (intake - burned))} kcal übrig", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                    Text("$intake gegessen · $burned Sport · ${intake - burned} Bilanz", color = MaterialTheme.colorScheme.onPrimary)
+            Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 14.dp)) {
+                    Text("Makros heute", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                        MacroRing("Protein", proteinTotal, targets.protein, "g", ProteinBlue, Modifier.weight(1f))
+                        MacroRing("Fett", fatTotal, targets.fat, "g", FatAmber, Modifier.weight(1f))
+                        MacroRing("Carbs", carbsTotal, targets.carbs, "g", CarbsCoral, Modifier.weight(1f))
+                    }
                 }
             }
         }
-        item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MacroCard("Kalorien", intake.toDouble(), targets.calories.toDouble(), "kcal", Modifier.weight(1f))
-                    MacroCard("Protein", proteinTotal, targets.protein, "g", Modifier.weight(1f))
-                }
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MacroCard("Fett", fatTotal, targets.fat, "g", Modifier.weight(1f))
-                    MacroCard("Carbs", carbsTotal, targets.carbs, "g", Modifier.weight(1f))
-                }
-            }
-        }
+        item { WeeklyCalorieCard(values = weeklyCalories, target = targets.calories) }
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = onSportEntry, modifier = Modifier.weight(1f)) { Text("Sport") }
@@ -1469,7 +1653,27 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
         item {
             Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Mahlzeit hinzufügen", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Mahlzeit erfassen", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text("Text, Foto oder Sprache", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        if (composerVisible) TextButton(onClick = { showMealComposer = false }) { Text("Schließen") }
+                    }
+                    if (!composerVisible) {
+                        Button(onClick = { showMealComposer = true }, modifier = Modifier.fillMaxWidth()) { Text("Beschreiben") }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(onClick = { mealCamera.launch(null) }, modifier = Modifier.weight(1f)) { Text("Foto") }
+                            OutlinedButton(onClick = {
+                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "de-DE")
+                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Beschreibe deine Mahlzeit")
+                                }
+                                runCatching { speechRecognizer.launch(intent) }.onFailure { captureError = "Auf diesem Gerät ist keine Spracheingabe verfügbar." }
+                            }, modifier = Modifier.weight(1f)) { Text("Mikrofon") }
+                        }
+                    } else {
                     Text("Schreib einfach, was du gegessen hast – KF20 schätzt die Nährwerte.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedTextField(
                         value = description,
@@ -1511,6 +1715,7 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
                         Button(onClick = onAdd, enabled = title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Mahlzeit speichern") }
                         TextButton(onClick = onSaveRoutine, enabled = title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Auch als Standard speichern") }
                     }
+                    }
                 }
             }
         }
@@ -1535,6 +1740,102 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
             }
         }
         item { Spacer(Modifier.height(16.dp)) }
+    }
+}
+
+@Composable private fun DailyGoalHero(intake: Int, burned: Int, target: Int) {
+    val net = intake - burned
+    val remaining = maxOf(0, target - net)
+    val progress = if (target > 0) (net.toFloat() / target).coerceIn(0f, 1f) else 0f
+    Surface(shape = RoundedCornerShape(28.dp), color = CaloriesGreen, modifier = Modifier.fillMaxWidth()) {
+        Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.width(132.dp).height(132.dp), contentAlignment = Alignment.Center) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val stroke = 13.dp.toPx()
+                    drawArc(Color.White.copy(alpha = 0.18f), -90f, 360f, false, style = Stroke(stroke, cap = StrokeCap.Round))
+                    drawArc(Color.White, -90f, progress * 360f, false, style = Stroke(stroke, cap = StrokeCap.Round))
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("$remaining", color = Color.White, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                    Text("kcal übrig", color = Color.White.copy(alpha = 0.86f), style = MaterialTheme.typography.labelMedium)
+                }
+            }
+            Spacer(Modifier.width(18.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                Text("Dein Tagesziel", color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.labelLarge)
+                Text("${(progress * 100).toInt()} % erreicht", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                HeroMetric("Gegessen", "$intake kcal")
+                HeroMetric("Sport", "$burned kcal")
+                HeroMetric("Bilanz", "$net kcal")
+            }
+        }
+    }
+}
+
+@Composable private fun HeroMetric(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Text(label, color = Color.White.copy(alpha = 0.72f), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
+        Text(value, color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+@Composable private fun MacroRing(label: String, value: Double, target: Double, unit: String, color: Color, modifier: Modifier = Modifier) {
+    val progress = if (target > 0) (value / target).coerceIn(0.0, 1.0).toFloat() else 0f
+    Column(modifier = modifier.padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(modifier = Modifier.width(86.dp).height(86.dp), contentAlignment = Alignment.Center) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val stroke = 9.dp.toPx()
+                drawArc(color.copy(alpha = 0.14f), -90f, 360f, false, style = Stroke(stroke, cap = StrokeCap.Round))
+                drawArc(color, -90f, progress * 360f, false, style = Stroke(stroke, cap = StrokeCap.Round))
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("${(progress * 100).toInt()}%", fontWeight = FontWeight.Bold, color = color)
+                Text("${"%.0f".format(value)} $unit", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        Text(label, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+        Text("Ziel ${"%.0f".format(target)} $unit", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+@Composable private fun WeeklyCalorieCard(values: List<Pair<LocalDate, Int>>, target: Int) {
+    Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface, tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("7-Tage-Überblick", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Netto-Kalorien im Vergleich zum Ziel", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                }
+                Surface(shape = CircleShape, color = CaloriesGreen.copy(alpha = 0.12f)) {
+                    Text("Ziel $target", color = CaloriesGreen, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
+                }
+            }
+            VerticalBarChart(values = values.map { it.second.toDouble() }, target = target.toDouble(), color = CaloriesGreen, modifier = Modifier.padding(top = 12.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                values.forEach { (date, _) ->
+                    Text(date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.GERMAN).take(2), modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+}
+
+@Composable private fun VerticalBarChart(values: List<Double>, target: Double, color: Color, modifier: Modifier = Modifier) {
+    val highest = maxOf(target, values.maxOrNull() ?: 0.0, 1.0)
+    val targetColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+    Canvas(modifier = modifier.fillMaxWidth().height(112.dp)) {
+        val gap = (if (values.size > 14) 3.dp else 8.dp).toPx()
+        val barWidth = ((size.width - gap * (values.size - 1)) / values.size).coerceAtLeast(4.dp.toPx())
+        val chartTop = 8.dp.toPx()
+        val chartBottom = size.height - 6.dp.toPx()
+        val chartHeight = chartBottom - chartTop
+        val targetY = chartBottom - (target / highest).toFloat() * chartHeight
+        drawLine(targetColor, androidx.compose.ui.geometry.Offset(0f, targetY), androidx.compose.ui.geometry.Offset(size.width, targetY), strokeWidth = 2.dp.toPx())
+        values.forEachIndexed { index, value ->
+            val left = index * (barWidth + gap)
+            val barHeight = ((value / highest).toFloat() * chartHeight).coerceAtLeast(3.dp.toPx())
+            drawRoundRect(color.copy(alpha = if (index == values.lastIndex) 1f else 0.62f), topLeft = androidx.compose.ui.geometry.Offset(left, chartBottom - barHeight), size = androidx.compose.ui.geometry.Size(barWidth, barHeight), cornerRadius = androidx.compose.ui.geometry.CornerRadius(7.dp.toPx(), 7.dp.toPx()))
+        }
     }
 }
 
@@ -1590,14 +1891,23 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
 }
 
 private fun kf20Colors(): ColorScheme = androidx.compose.material3.lightColorScheme(
-    primary = Color(0xFF0E4B36),
+    primary = CaloriesGreen,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFB7F1D2),
+    primaryContainer = Color(0xFFD8F2E5),
     onPrimaryContainer = Color(0xFF002116),
-    secondaryContainer = Color(0xFFE4EFE5),
-    onSecondaryContainer = Color(0xFF16382B),
+    secondary = ProteinBlue,
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFE5ECFA),
+    onSecondaryContainer = Color(0xFF172A54),
+    tertiary = CarbsCoral,
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFFFE2DC),
+    onTertiaryContainer = Color(0xFF4D1711),
     surface = Color(0xFFFFFBF5),
-    background = Color(0xFFFFFBF5)
+    surfaceVariant = Color(0xFFF1EFE9),
+    onSurfaceVariant = Color(0xFF5D625F),
+    outline = Color(0xFF7A817D),
+    background = Color(0xFFF8F6F1)
 )
 
 private class ChatStorage(context: Context) {
