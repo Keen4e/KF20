@@ -17,6 +17,7 @@ Stand: 2026-08-17
 - vereinfachter, gestufter Tagesablauf: Zielstand sehen, Mahlzeit beschreiben/fotografieren/einsprechen, KI-Ergebnis prüfen, speichern
 - grafisches Tagesdashboard mit Kalorien- und Makroringen sowie schlanker Dreifach-Erfassung für Nahrung, Sport und Messwerte
 - gemeinsame Tagesliste für Nahrung, Sport und Messwerte einschließlich gezielter Löschaktionen
+- Tagesplanung für Nahrung: KI-Ergebnisse und Standards können als „jetzt gegessen“ oder „später geplant“ gespeichert werden; geplante Werte haben eine eigene Prognose und werden erst nach Bestätigung in Ist-Bilanz und Statistik übernommen
 - grafischer Statistikbereich für Kalorien, Makros, Gewicht, Körperfett, Sport sowie Hunger/Energie
 - der 7-Tage-Überblick liegt ausschließlich unter Statistik und ist dort die Voreinstellung
 - konsistente Farbcodierung und zunächst eingeklappte Mahlzeitenerfassung zur Reduktion visueller Komplexität
