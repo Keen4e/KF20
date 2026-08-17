@@ -29,6 +29,7 @@ Stand: 2026-08-17
 - provider-neutrales Server-Interface mit separatem OpenAI-Adapter; Auswahl über `AI_PROVIDER`/`AI_MODEL`
 - Server mit Auth-Token, Rate-/Größen-/Zeitlimits und ohne Chat-Inhaltslogs
 - automatische Provider- und HTTP-Vertragstests ohne echte Provideranfragen
+- Debug-Testmodus unter Standards: eine aus den belegten Chat-Aggregaten abgeleitete Woche kann mit einem Knopfdruck geladen werden; die Werte bleiben unverändert und werden nur auf die letzten sieben Tage gelegt
 
 ## Noch nicht produktionsbereit
 
@@ -51,19 +52,21 @@ Stand: 2026-08-17
 - Das APK dieses Laufs wurde auf Android 16 installiert und kalt gestartet. Tagesansicht und Sportdialog wurden erneut visuell geprüft; im bereinigten Logcat trat kein Absturz auf.
 - Workflow-Run `32022349685` ist für Commit `54df0071530346c0ff3a6fc1679c126e396c000f` vollständig grün: Servertests und Android-Build einschließlich Diagramm-Dashboard waren erfolgreich.
 - Tages- und Statistikdashboard wurden auf Android 16 visuell geprüft. Die Wortmarke im Kopf wurde anschließend auf die vorhandene KF20-Bilddatei umgestellt und lokal erneut gebaut, installiert und visuell geprüft.
-- Der laufende Android-16-Emulator kann über ein sichtbares, interaktives KF20-Fenster bedient werden; die Spiegelung erfolgt lokal per scrcpy.
+- Die Chat-Testwoche wurde auf Android 16 geladen und visuell geprüft: aktueller Tag 2.374 kcal, 165 g Protein, 68 g Fett, 207 g Carbs und 540 Sport-kcal bei Zielen 2.484/180/70/290; Kalorien-, Makro-, Gewichts- und weitere Verlaufsdiagramme sind befüllt.
+- Der laufende Android-16-Emulator kann über ein sichtbares, interaktives KF20-Fenster im lokalen App-Browser bedient werden.
 - Die CI startet nur bei Änderungen unter `android/`, `server/` oder an der Workflowdatei. Handoff-/Spezifikationsänderungen lösen keinen redundanten Android-Build aus.
 
 ## Nächste konkrete Schritte
 
 1. Kamera und Mikrofon auf einem realen Android-Gerät testen.
 2. Einen zweiten Provideradapter als Wechseltest implementieren, sobald der Zielanbieter feststeht.
-3. Historischen Datenimport aus dem privaten Export entwerfen; keine privaten Werte ins Repository übernehmen.
+3. Historischen Datenimport aus dem privaten Export entwerfen; weiterhin keine privaten Nachrichten oder den Roh-Export ins Repository übernehmen.
 4. Konto-/Backend-Entscheidung umsetzen und danach vollständige E2E-Tests aufbauen.
 
 ## Blocker/Hinweise
 
 - Ein portables Android-16-Emulator-Setup ist lokal eingerichtet. Durch sporadische Windows-Sandbox-Dateisperren bleibt GitHub Actions die maßgebliche vollständige Buildprüfung.
+- Die Debug-Testwoche enthält ausschließlich abstrahierte Tagesaggregate. Der private Chat-Export bleibt außerhalb von Git und App-Paket.
 - Für die KI-Funktionen ist ein serverseitiger OpenAI-API-Key mit API-Abrechnung nötig; eine ChatGPT-Subscription allein genügt nicht.
 - Vor Store-Veröffentlichung gelten alle Punkte in `security-release-gates.md` und `play-store-checklist.md`.
 
