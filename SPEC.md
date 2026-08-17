@@ -142,7 +142,11 @@ Die Aktion ist über `BuildConfig.DEBUG` auf Entwicklungsbuilds beschränkt. Wed
 
 ## Chat
 
-- verschlüsselte lokale Historie
+- mehrere benannte Gespräche mit jeweils eigener, verschlüsselter lokaler Historie
+- Gesprächsübersicht zum Anlegen, Wechseln und bestätigten Löschen einzelner Gespräche
+- lokale Volltextsuche über Gesprächstittel und Nachrichten; Suchbegriffe und Treffer verlassen das Gerät nicht
+- ein vorhandener Einzelverlauf wird beim ersten Start verlustfrei als **Hauptchat** übernommen
+- nur die Nachrichten des aktuell geöffneten Gesprächs werden als Kontext an den KF20-Server gesendet
 - freie Agentenantworten über den KF20-Server
 - vom Nutzer bestätigte Langzeit-Erinnerungen
 - optional zuschaltbare Web-Recherche
@@ -158,7 +162,7 @@ Provider-Capabilities werden explizit ausgewiesen. Wird etwa Web-Recherche verla
 ## Datenschutz
 
 - Gesundheits- und Chatdaten lokal AES-GCM-verschlüsselt speichern.
-- Vollständigen lokalen JSON-Export auf ausdrückliche Nutzeraktion anbieten; der Export enthält ab Schema 2 auch die Designauswahl, schließt Zugangstoken aus und warnt sichtbar, dass die erzeugte Datei selbst nicht verschlüsselt ist.
+- Vollständigen lokalen JSON-Export auf ausdrückliche Nutzeraktion anbieten; der Export enthält ab Schema 3 die benannten Gespräche, den aktiven Gesprächsbezug und die Designauswahl, schließt Zugangstoken aus und warnt sichtbar, dass die erzeugte Datei selbst nicht verschlüsselt ist.
 - Alle lokalen KF20-Daten, gespeicherten Dateizugriffe und den Android-Keystore-Schlüssel nach einer eindeutigen Bestätigung vollständig löschen können.
 - Keine Provider-Schlüssel in App, Git oder Logs.
 - Keine Chat-Inhaltslogs im Serverbetrieb.
