@@ -17,6 +17,7 @@ import android.os.Handler
 import android.os.Looper
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import android.speech.RecognizerIntent
 import android.util.Base64
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -102,7 +103,7 @@ private data class NutritionEstimate(val name: String, val calories: Int, val pr
 private data class NutritionTargets(val calories: Int, val protein: Double, val fat: Double, val carbs: Double)
 private data class SportSession(val date: String, val activity: String, val calories: Int, val trackerCalories: Int?, val note: String)
 private data class BodyMeasurement(val date: String, val weight: Double?, val scaleBodyFat: Double?, val neck: Double?, val abdomen: Double?, val hunger: Int?, val energy: Int?)
-private data class HealthProfile(val startWeight: Double, val heightCm: Double, val goalWeight: Double?, val goalBodyFat: Double?)
+private data class HealthProfile(val startWeight: Double?, val heightCm: Double?, val goalWeight: Double?, val goalBodyFat: Double?)
 private enum class Workspace { CHAT, DAILY_LOG, STATISTICS, STANDARDS, PROGRESS, PHOTOS, TASKS, PROJECTS, FILES }
 
 class MainActivity : ComponentActivity() {
@@ -175,9 +176,10 @@ private fun Kf20App(context: Context) {
     var reminderMinuteDraft by remember { mutableStateOf(reminder.minute.toString().padStart(2, '0')) }
     var showMemories by remember { mutableStateOf(false) }
     var memoryDraft by remember { mutableStateOf("") }
-    var mealPhotoUri by remember { mutableStateOf<String?>(null) }
+    var mealPhotoDataUrl by remember { mutableStateOf<String?>(null) }
     var isEstimatingNutrition by remember { mutableStateOf(false) }
     var nutritionHint by remember { mutableStateOf<String?>(null) }
+    var nutritionAnalysisReady by remember { mutableStateOf(false) }
     var webSearchEnabled by remember { mutableStateOf(false) }
     var showTargetSettings by remember { mutableStateOf(false) }
     var targetCaloriesDraft by remember { mutableStateOf(targets.calories.toString()) }
@@ -198,8 +200,8 @@ private fun Kf20App(context: Context) {
     var showSportEntry by remember { mutableStateOf(false) }
     var showMeasurementEntry by remember { mutableStateOf(false) }
     var showProfileSettings by remember { mutableStateOf(false) }
-    var profileStartWeightDraft by remember { mutableStateOf(healthProfile.startWeight.toString()) }
-    var profileHeightDraft by remember { mutableStateOf(healthProfile.heightCm.toString()) }
+    var profileStartWeightDraft by remember { mutableStateOf(healthProfile.startWeight?.toString() ?: "") }
+    var profileHeightDraft by remember { mutableStateOf(healthProfile.heightCm?.toString() ?: "") }
     var profileGoalWeightDraft by remember { mutableStateOf(healthProfile.goalWeight?.toString() ?: "") }
     var profileGoalBodyFatDraft by remember { mutableStateOf(healthProfile.goalBodyFat?.toString() ?: "") }
     var standardTitleDraft by remember { mutableStateOf("") }
@@ -212,6 +214,28 @@ private fun Kf20App(context: Context) {
 
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex)
+    }
+
+    fun requestNutritionEstimate(description: String, imageDataUrl: String?) {
+        if (description.isBlank() && imageDataUrl == null) return
+        isEstimatingNutrition = true
+        nutritionAnalysisReady = false
+        nutritionHint = null
+        Thread {
+            val result = runCatching { NutritionApi.estimate(description, imageDataUrl, apiSettings) }
+            Handler(Looper.getMainLooper()).post {
+                isEstimatingNutrition = false
+                result.onSuccess { estimate ->
+                    logTitle = estimate.name
+                    logCalories = estimate.calories.toString()
+                    logProtein = "%.1f".format(estimate.protein)
+                    logFat = "%.1f".format(estimate.fat)
+                    logCarbs = "%.1f".format(estimate.carbs)
+                    nutritionAnalysisReady = true
+                    nutritionHint = "KI-Schätzung (${estimate.confidence}): ${estimate.note} Bitte vor dem Loggen prüfen."
+                }.onFailure { failure -> nutritionHint = failure.message ?: "Die Nährwert-Schätzung konnte nicht geladen werden." }
+            }
+        }.start()
     }
 
     MaterialTheme(colorScheme = kf20Colors()) {
@@ -415,36 +439,18 @@ private fun Kf20App(context: Context) {
                 fat = logFat,
                 carbs = logCarbs,
                 onTypeChange = { logType = it },
-                onTitleChange = { logTitle = it },
+                onTitleChange = { logTitle = it; nutritionAnalysisReady = false },
                 onCaloriesChange = { logCalories = it },
                 onProteinChange = { logProtein = it },
                 onFatChange = { logFat = it },
                 onCarbsChange = { logCarbs = it },
-                photoUri = mealPhotoUri,
+                hasPhoto = mealPhotoDataUrl != null,
                 isEstimating = isEstimatingNutrition,
+                analysisReady = nutritionAnalysisReady,
                 nutritionHint = nutritionHint,
-                onPhotoChange = { mealPhotoUri = it },
-                onEstimate = {
-                    val description = logTitle.trim()
-                    if (description.isNotEmpty() || mealPhotoUri != null) {
-                        isEstimatingNutrition = true
-                        nutritionHint = null
-                        Thread {
-                            val result = runCatching { NutritionApi.estimate(description, mealPhotoUri, context, apiSettings) }
-                            Handler(Looper.getMainLooper()).post {
-                                isEstimatingNutrition = false
-                                result.onSuccess { estimate ->
-                                    logTitle = estimate.name
-                                    logCalories = estimate.calories.toString()
-                                    logProtein = "%.1f".format(estimate.protein)
-                                    logFat = "%.1f".format(estimate.fat)
-                                    logCarbs = "%.1f".format(estimate.carbs)
-                                    nutritionHint = "KI-Schätzung (${estimate.confidence}): ${estimate.note} Bitte vor dem Loggen prüfen."
-                                }.onFailure { failure -> nutritionHint = failure.message ?: "Die Nährwert-Schätzung konnte nicht geladen werden." }
-                            }
-                        }.start()
-                    }
-                },
+                onPhotoCaptured = { dataUrl -> mealPhotoDataUrl = dataUrl; requestNutritionEstimate(logTitle.trim(), dataUrl) },
+                onVoiceCaptured = { description -> mealPhotoDataUrl = null; logTitle = description; requestNutritionEstimate(description, null) },
+                onEstimate = { requestNutritionEstimate(logTitle.trim(), mealPhotoDataUrl) },
                 onSportEntry = { showSportEntry = true },
                 onMeasurementEntry = { showMeasurementEntry = true },
                 onPreviousDay = { selectedDate = LocalDate.parse(selectedDate).minusDays(1).toString() },
@@ -472,11 +478,11 @@ private fun Kf20App(context: Context) {
                 },
                 onAdd = {
                     val title = logTitle.trim()
-                    if (title.isNotEmpty()) {
+                    if (title.isNotEmpty() && nutritionAnalysisReady) {
                         val entry = DailyLogEntry(selectedDate, logType, title, logCalories.toIntOrNull() ?: 0, logProtein.replace(',', '.').toDoubleOrNull() ?: 0.0, logFat.replace(',', '.').toDoubleOrNull() ?: 0.0, logCarbs.replace(',', '.').toDoubleOrNull() ?: 0.0)
                         dailyEntries = dailyEntries + entry
                         dailyLogStorage.write(dailyEntries)
-                        logTitle = ""; logCalories = ""; logProtein = ""; logFat = ""; logCarbs = ""; mealPhotoUri = null; nutritionHint = null
+                        logTitle = ""; logCalories = ""; logProtein = ""; logFat = ""; logCarbs = ""; mealPhotoDataUrl = null; nutritionHint = null; nutritionAnalysisReady = false
                     }
                 }
             )
@@ -965,7 +971,7 @@ private fun Kf20App(context: Context) {
             Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("Startwerte & Profil", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("Start ${profile.startWeight.de1()} kg · Größe ${profile.heightCm.de1()} cm")
+                    Text("Start ${profile.startWeight?.let { "${it.de1()} kg" } ?: "nicht gesetzt"} · Größe ${profile.heightCm?.let { "${it.de1()} cm" } ?: "nicht gesetzt"}")
                     val goals = listOfNotNull(profile.goalWeight?.let { "Zielgewicht ${it.de1()} kg" }, profile.goalBodyFat?.let { "Ziel-KF ${it.de1()} %" })
                     Text(if (goals.isEmpty()) "Noch keine Gewichts-/KF-Ziele gesetzt." else goals.joinToString(" · "), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     TextButton(onClick = onProfileSettings) { Text("Startwerte und Ziele bearbeiten") }
@@ -1122,14 +1128,14 @@ private fun Kf20App(context: Context) {
     val visible = measurements.filter { runCatching { !LocalDate.parse(it.date).isBefore(cutoff) }.getOrDefault(false) }
     val weights = visible.mapNotNull { item -> item.weight?.let { item.date to it } }
     val scaleBodyFatValues = visible.mapNotNull { item -> item.scaleBodyFat?.let { item.date to it } }
-    val navyValues = visible.mapNotNull { item -> navyBodyFat(item.neck, item.abdomen)?.let { item.date to it } }
+    val navyValues = visible.mapNotNull { item -> navyBodyFat(item.neck, item.abdomen, null)?.let { item.date to it } }
     val allWeights = measurements.mapNotNull { it.weight }
     val currentWeight = measurements.lastOrNull { it.weight != null }?.weight
     val startWeight = allWeights.firstOrNull()
     val latestScaleBodyFat = measurements.lastOrNull { it.scaleBodyFat != null }?.scaleBodyFat
     val latestNeck = measurements.lastOrNull { it.neck != null }?.neck
     val latestAbdomen = measurements.lastOrNull { it.abdomen != null }?.abdomen
-    val latestNavy = measurements.asReversed().firstNotNullOfOrNull { navyBodyFat(it.neck, it.abdomen) }
+    val latestNavy = measurements.asReversed().firstNotNullOfOrNull { navyBodyFat(it.neck, it.abdomen, null) }
     val latestHunger = measurements.lastOrNull { it.hunger != null }?.hunger
     val latestEnergy = measurements.lastOrNull { it.energy != null }?.energy
     LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1173,7 +1179,7 @@ private fun Kf20App(context: Context) {
                     Text("Körperfettverlauf", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text("Waage", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
                     ValueChart(scaleBodyFatValues)
-                    Text("Navy-Methode (Hals/Bauch, Größe 194 cm)", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+                    Text("Navy-Methode (Hals/Bauch; Körpergröße im Profil erforderlich)", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
                     ValueChart(navyValues)
                     if (scaleBodyFatValues.isEmpty() && navyValues.isEmpty()) Text("Für diesen Zeitraum gibt es noch keine Körperfettwerte.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -1206,7 +1212,7 @@ private fun Kf20App(context: Context) {
                         OutlinedTextField(value = hunger, onValueChange = onHungerChange, label = { Text("Hunger 0–10") }, modifier = Modifier.weight(1f), singleLine = true)
                         OutlinedTextField(value = energy, onValueChange = onEnergyChange, label = { Text("Energie 0–10") }, modifier = Modifier.weight(1f), singleLine = true)
                     }
-                    val previewNavy = navyBodyFat(neck.toLocalizedDouble(), abdomen.toLocalizedDouble())
+                    val previewNavy = navyBodyFat(neck.toLocalizedDouble(), abdomen.toLocalizedDouble(), null)
                     if (previewNavy != null) Text("Navy-KFA wird als ${previewNavy.de1()} % gespeichert.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     Button(onClick = onAdd, enabled = listOf(weight, bodyFat, abdomen, neck, hunger, energy).any { it.isNotBlank() }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) { Text("Messung speichern") }
                     TextButton(onClick = onOpenPhotos, modifier = Modifier.fillMaxWidth()) { Text("Fortschrittsfoto hinzufügen") }
@@ -1341,10 +1347,12 @@ private fun Kf20App(context: Context) {
     onProteinChange: (String) -> Unit,
     onFatChange: (String) -> Unit,
     onCarbsChange: (String) -> Unit,
-    photoUri: String?,
+    hasPhoto: Boolean,
     isEstimating: Boolean,
+    analysisReady: Boolean,
     nutritionHint: String?,
-    onPhotoChange: (String?) -> Unit,
+    onPhotoCaptured: (String) -> Unit,
+    onVoiceCaptured: (String) -> Unit,
     onEstimate: () -> Unit,
     onSportEntry: () -> Unit,
     onMeasurementEntry: () -> Unit,
@@ -1356,10 +1364,22 @@ private fun Kf20App(context: Context) {
     onDeleteEntry: (DailyLogEntry) -> Unit,
     onAdd: () -> Unit
 ) = Column(modifier = modifier) {
-    val mealPhotoPicker = androidx.activity.compose.rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument(),
-        onResult = { uri -> onPhotoChange(uri?.toString()) }
-    )
+    var captureError by remember { mutableStateOf<String?>(null) }
+    val mealCamera = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+        if (bitmap != null) {
+            captureError = null
+            runCatching { bitmapDataUrl(bitmap) }.onSuccess(onPhotoCaptured).onFailure { captureError = "Das Foto konnte nicht verarbeitet werden." }
+        }
+    }
+    val speechRecognizer = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()?.trim()
+            if (!spoken.isNullOrEmpty()) {
+                captureError = null
+                onVoiceCaptured(spoken)
+            }
+        }
+    }
     val intake = entries.filter { it.type == "Mahlzeit" }.sumOf { it.calories }
     val burned = entries.filter { it.type == "Sport" }.sumOf { it.calories }
     val proteinTotal = entries.sumOf { it.protein }
@@ -1399,11 +1419,22 @@ private fun Kf20App(context: Context) {
     }
     OutlinedTextField(value = title, onValueChange = onTitleChange, modifier = Modifier.fillMaxWidth(), placeholder = { Text(if (type == "Mahlzeit") "z. B. zwei Brötchen mit Ei und Käse" else "${type}: Bezeichnung") }, minLines = if (type == "Mahlzeit") 2 else 1, maxLines = 3)
     if (type == "Mahlzeit") {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = { mealPhotoPicker.launch(arrayOf("image/*")) }) { Text(if (photoUri == null) "Foto hinzufügen" else "Foto gewählt") }
-            Button(onClick = onEstimate, enabled = !isEstimating && (title.isNotBlank() || photoUri != null)) { Text(if (isEstimating) "Schätze …" else "KI-Nährwerte schätzen") }
+        Text("Mahlzeit erfassen", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = { mealCamera.launch(null) }, enabled = !isEstimating, modifier = Modifier.weight(1f)) { Text("Foto") }
+            Button(onClick = {
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "de-DE")
+                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Beschreibe deine Mahlzeit")
+                }
+                runCatching { speechRecognizer.launch(intent) }.onFailure { captureError = "Auf diesem Gerät ist keine Spracheingabe verfügbar." }
+            }, enabled = !isEstimating, modifier = Modifier.weight(1f)) { Text("Mikrofon") }
         }
-        if (photoUri != null) Text("Das Foto wird nur für diese Schätzung an deinen eingerichteten KF20-Server gesendet und nicht im Tageslog gespeichert.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Button(onClick = onEstimate, enabled = !isEstimating && title.isNotBlank(), modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) { Text(if (isEstimating) "KI wertet aus …" else "Beschreibung auswerten") }
+        if (hasPhoto) Text("Das Foto wird nur für diese KI-Schätzung an den KF20-Server gesendet und nicht im Tageslog gespeichert.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (analysisReady) Text("Nährwerte ermittelt – bitte prüfen und anschließend loggen.", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+        captureError?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
         nutritionHint?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
     }
     Row(modifier = Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -1416,9 +1447,9 @@ private fun Kf20App(context: Context) {
         Spacer(Modifier.width(8.dp))
         OutlinedTextField(value = carbs, onValueChange = onCarbsChange, modifier = Modifier.weight(1f), placeholder = { Text("Carbs g") }, singleLine = true)
         Spacer(Modifier.width(8.dp))
-        Button(onClick = onAdd, enabled = title.isNotBlank()) { Text("Loggen") }
+        Button(onClick = onAdd, enabled = title.isNotBlank() && analysisReady) { Text("Loggen") }
     }
-    if (type == "Mahlzeit") TextButton(onClick = onSaveRoutine, enabled = title.isNotBlank()) { Text("Als Routine speichern") }
+    if (type == "Mahlzeit") TextButton(onClick = onSaveRoutine, enabled = title.isNotBlank() && analysisReady) { Text("Als Standard speichern") }
     LazyColumn(modifier = Modifier.weight(1f).padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         items(entries.reversed()) { entry ->
             Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.fillMaxWidth()) {
@@ -1537,10 +1568,18 @@ private fun decimalInput(value: String): String {
 private fun String.toLocalizedDouble(): Double? = replace(',', '.').toDoubleOrNull()
 private fun Double.de1(): String = "%.1f".format(this).replace('.', ',')
 private fun signed1(value: Double): String = "${if (value > 0) "+" else ""}${value.de1()}"
-private fun navyBodyFat(neck: Double?, abdomen: Double?, heightCm: Double = 194.0): Double? {
-    if (neck == null || abdomen == null || abdomen <= neck || heightCm <= 0) return null
+private fun navyBodyFat(neck: Double?, abdomen: Double?, heightCm: Double?): Double? {
+    if (neck == null || abdomen == null || abdomen <= neck || heightCm == null || heightCm <= 0) return null
     val result = 495.0 / (1.0324 - 0.19077 * kotlin.math.log10(abdomen - neck) + 0.15456 * kotlin.math.log10(heightCm)) - 450.0
     return result.takeIf { it in 2.0..70.0 }
+}
+
+private fun bitmapDataUrl(bitmap: Bitmap): String {
+    val output = ByteArrayOutputStream()
+    bitmap.compress(Bitmap.CompressFormat.JPEG, 82, output)
+    val bytes = output.toByteArray()
+    require(bytes.size <= 1_000_000) { "Das Bild ist zu groß." }
+    return "data:image/jpeg;base64,${Base64.encodeToString(bytes, Base64.NO_WRAP)}"
 }
 
 private fun displayName(context: Context, uri: Uri): String = runCatching {
@@ -1736,16 +1775,16 @@ private class HealthProfileStorage(context: Context) {
     fun read(): HealthProfile = runCatching {
         val data = JSONObject(SecureStore.decrypt(preferences.getString("health_profile", null)) ?: "{}")
         HealthProfile(
-            startWeight = data.optDouble("startWeight", 90.4),
-            heightCm = data.optDouble("heightCm", 194.0),
+            startWeight = data.optionalDouble("startWeight"),
+            heightCm = data.optionalDouble("heightCm"),
             goalWeight = data.optionalDouble("goalWeight"),
             goalBodyFat = data.optionalDouble("goalBodyFat")
         )
-    }.getOrDefault(HealthProfile(90.4, 194.0, null, null))
+    }.getOrDefault(HealthProfile(null, null, null, null))
     fun write(profile: HealthProfile) {
         val data = JSONObject()
-            .put("startWeight", profile.startWeight)
-            .put("heightCm", profile.heightCm)
+            .put("startWeight", profile.startWeight ?: JSONObject.NULL)
+            .put("heightCm", profile.heightCm ?: JSONObject.NULL)
             .put("goalWeight", profile.goalWeight ?: JSONObject.NULL)
             .put("goalBodyFat", profile.goalBodyFat ?: JSONObject.NULL)
         preferences.edit().putString("health_profile", SecureStore.encrypt(data.toString())).apply()
@@ -1885,11 +1924,11 @@ private object Kf20Api {
 }
 
 private object NutritionApi {
-    fun estimate(description: String, photoUri: String?, context: Context, settings: ApiSettings): NutritionEstimate {
+    fun estimate(description: String, imageDataUrl: String?, settings: ApiSettings): NutritionEstimate {
         val baseUrl = settings.baseUrl.ifBlank { BuildConfig.KF20_API_BASE_URL }
         require(!baseUrl.contains("REPLACE_WITH") && settings.token.isNotBlank()) { "Bitte richte zuerst die Serververbindung ein." }
         val request = JSONObject().put("description", description)
-        photoUri?.let { request.put("imageDataUrl", resizedImageDataUrl(context, Uri.parse(it))) }
+        imageDataUrl?.let { request.put("imageDataUrl", it) }
         val connection = (URL("$baseUrl/v1/nutrition/analyze").openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"; connectTimeout = 20_000; readTimeout = 90_000; doOutput = true
             setRequestProperty("Content-Type", "application/json")
@@ -1900,22 +1939,6 @@ private object NutritionApi {
         if (connection.responseCode !in 200..299) throw IllegalStateException(JSONObject(body).optString("error", "Die Nährwert-Schätzung wurde abgelehnt."))
         val estimate = JSONObject(body).getJSONObject("estimate")
         return NutritionEstimate(estimate.getString("name"), estimate.getInt("calories"), estimate.getDouble("protein"), estimate.getDouble("fat"), estimate.getDouble("carbs"), estimate.getString("confidence"), estimate.getString("note"))
-    }
-
-    private fun resizedImageDataUrl(context: Context, uri: Uri): String {
-        val source = context.contentResolver.openInputStream(uri)?.use(BitmapFactory::decodeStream) ?: throw IllegalArgumentException("Das Bild konnte nicht gelesen werden.")
-        val largestSide = maxOf(source.width, source.height)
-        val bitmap: Bitmap = if (largestSide > 1280) {
-            val scale = 1280.0 / largestSide
-            Bitmap.createScaledBitmap(source, (source.width * scale).toInt(), (source.height * scale).toInt(), true)
-        } else source
-        val output = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 82, output)
-        if (bitmap !== source) bitmap.recycle()
-        source.recycle()
-        val bytes = output.toByteArray()
-        require(bytes.size <= 1_000_000) { "Das Bild ist zu groß. Bitte wähle ein kleineres Foto." }
-        return "data:image/jpeg;base64,${Base64.encodeToString(bytes, Base64.NO_WRAP)}"
     }
 }
 
