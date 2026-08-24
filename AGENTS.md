@@ -6,6 +6,7 @@ Dieses Repository muss ohne Zugriff auf frühere Chats übernehmbar bleiben. Vor
 2. `docs/architecture-and-provider-contracts.md` – technische Grenzen und stabile API-Verträge
 3. `docs/HANDOFF.md` – aktueller Implementierungs-, Test- und Blockerstatus
 4. `docs/chat-derived-requirements.md` – aus dem privaten Export abstrahierte Anforderungen
+5. `docs/quality-baseline.md` – verbindliche Build-, Test- und CI-Gates
 
 ## Verbindliche Pflege
 
@@ -22,5 +23,4 @@ Dieses Repository muss ohne Zugriff auf frühere Chats übernehmbar bleiben. Vor
 - Nutzerwerte lokal verschlüsseln; Schlüssel aus Android Keystore.
 - KI-Schätzungen sichtbar kennzeichnen und vor dem Speichern korrigierbar machen.
 - Externe Aktionen niemals still ausführen.
-- Nach Änderungen mindestens Server-Syntaxcheck und Android-Debug-Build ausführen; Ergebnis im Handoff vermerken.
-
+- Nach Änderungen Server-Syntax-/Vertragstests sowie `:app:testDebugUnitTest`, `:app:lintDebug` und `:app:assembleDebug` über den eingecheckten Gradle-Wrapper ausführen; Ergebnis im Handoff vermerken.

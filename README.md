@@ -21,6 +21,17 @@ Every implementation handoff starts with:
 - [`docs/HANDOFF.md`](docs/HANDOFF.md) – current code, verification and blocker status
 - [`AGENTS.md`](AGENTS.md) – mandatory maintenance rules for coding agents
 
+## Reproducible quality check
+
+The repository pins Gradle 8.11.1 through the checked-in wrapper and verifies its distribution checksum. With Java 21 and Android SDK 36 installed, the complete local quality gate is:
+
+```powershell
+cd android
+.\gradlew.bat :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+```
+
+On macOS or Linux, use `./gradlew` with the same tasks. The GitHub workflow runs server syntax/contract tests, Android unit tests, Android lint and the debug build as separate blocking steps.
+
 ## Current state
 
 This is a new implementation. The prior GitHub repository only contained a compiled APK and no source code.
@@ -31,4 +42,3 @@ This is a new implementation. The prior GitHub repository only contained a compi
 2. Select the provider, add its key through a secret store and deploy `server/` to a private HTTPS endpoint.
 3. Set the Android `API_BASE_URL` to that endpoint.
 4. Complete the Play Store items in `docs/play-store-checklist.md`.
-

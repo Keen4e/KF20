@@ -1,6 +1,6 @@
 # KF20 Handoff
 
-Stand: 2026-08-17
+Stand: 2026-08-24
 
 ## Repository
 
@@ -39,6 +39,7 @@ Stand: 2026-08-17
 - Server mit Auth-Token, Rate-/Größen-/Zeitlimits und ohne Chat-Inhaltslogs
 - automatische Provider- und HTTP-Vertragstests ohne echte Provideranfragen
 - Debug-Testmodus unter Standards: eine aus den belegten Chat-Aggregaten abgeleitete Woche kann mit einem Knopfdruck geladen werden; die Werte bleiben unverändert und werden nur auf die letzten sieben Tage gelegt
+- G1-B1-Qualitätsfundament: eingecheckter Gradle-Wrapper 8.11.1 mit SHA-256-Prüfung, erste Android-JVM-Fachlogiktests sowie getrennte CI-Gates für Server, Android-Unit-Tests, Lint und Debug-Build
 
 ## Noch nicht produktionsbereit
 
@@ -52,6 +53,8 @@ Stand: 2026-08-17
 
 ## Verifikation
 
+- G1-B1 lokal: Der neue Gradle-Wrapper lädt und verifiziert Gradle 8.11.1 erfolgreich unter Java 21. `compileDebugKotlin` kompiliert den geänderten Android-Code; der anschließende vollständige Windows-Lauf wird weiterhin durch die bekannte Sandbox-Dateisperre auf Android-/Gradle-JARs blockiert und ist daher kein vollständiger lokaler Testnachweis.
+- G1-B1 lokal: Server-Syntaxchecks erfolgreich; `node --test` 5 von 5 Tests grün. Der vollständige Linux-CI-Nachweis für Android-Unit-Tests, Lint und APK-Build wird am funktionalen G1-B1-Commit dokumentiert, sobald der Workflow abgeschlossen ist.
 - Lokaler Servercheck: `node --check` für Einstieg und Adapter sowie `node --test`; 5 von 5 Tests erfolgreich.
 - Lokaler Android-Check nach dem Diagramm-Redesign: `:app:compileDebugKotlin` erfolgreich; nur bestehende Deprecation-Warnungen.
 - Android wird über `.github/workflows/android.yml` mit Gradle 8.11.1, Java 21 und Android 36 gebaut.
@@ -75,10 +78,12 @@ Stand: 2026-08-17
 
 ## Nächste konkrete Schritte
 
-1. Kamera und Mikrofon auf einem realen Android-Gerät testen.
-2. Einen zweiten Provideradapter als Wechseltest implementieren, sobald der Zielanbieter feststeht.
-3. Historischen Datenimport aus dem privaten Export entwerfen; weiterhin keine privaten Nachrichten oder den Roh-Export ins Repository übernehmen.
-4. Konto-/Backend-Entscheidung umsetzen und danach vollständige E2E-Tests aufbauen.
+1. G1-B2 separat priorisieren: die Android-Monolithdatei schrittweise in testbare Fach-, Daten-, Netzwerk- und UI-Schichten zerlegen.
+2. Speicher-, Export- und Gesprächsmigration sowie kritische Compose-Flows automatisiert testen.
+3. Kamera und Mikrofon auf einem realen Android-Gerät testen.
+4. Einen zweiten Provideradapter als Wechseltest implementieren, sobald der Zielanbieter feststeht.
+5. Historischen Datenimport aus dem privaten Export entwerfen; weiterhin keine privaten Nachrichten oder den Roh-Export ins Repository übernehmen.
+6. Konto-/Backend-Entscheidung umsetzen und danach vollständige E2E-Tests aufbauen.
 
 ## Blocker/Hinweise
 
@@ -86,4 +91,3 @@ Stand: 2026-08-17
 - Die Debug-Testwoche enthält ausschließlich abstrahierte Tagesaggregate. Der private Chat-Export bleibt außerhalb von Git und App-Paket.
 - Für die KI-Funktionen ist ein serverseitiger OpenAI-API-Key mit API-Abrechnung nötig; eine ChatGPT-Subscription allein genügt nicht.
 - Vor Store-Veröffentlichung gelten alle Punkte in `security-release-gates.md` und `play-store-checklist.md`.
-
