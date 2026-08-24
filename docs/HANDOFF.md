@@ -54,7 +54,9 @@ Stand: 2026-08-24
 ## Verifikation
 
 - G1-B1 lokal: Der neue Gradle-Wrapper lädt und verifiziert Gradle 8.11.1 erfolgreich unter Java 21. `compileDebugKotlin` kompiliert den geänderten Android-Code; der anschließende vollständige Windows-Lauf wird weiterhin durch die bekannte Sandbox-Dateisperre auf Android-/Gradle-JARs blockiert und ist daher kein vollständiger lokaler Testnachweis.
-- G1-B1 lokal: Server-Syntaxchecks erfolgreich; `node --test` 5 von 5 Tests grün. Der vollständige Linux-CI-Nachweis für Android-Unit-Tests, Lint und APK-Build wird am funktionalen G1-B1-Commit dokumentiert, sobald der Workflow abgeschlossen ist.
+- G1-B1 lokal: Server-Syntaxchecks erfolgreich; `node --test` 5 von 5 Tests grün.
+- Workflow-Run `32700645622` ist für den funktionalen G1-B1-Commit `95cd618c131dabdc899cf86f850df5eab7243b68` vollständig grün: Server-Syntax-/Vertragstests, Android-JVM-Tests, Android-Lint, Debug-Build und APK-Upload waren erfolgreich.
+- Der repository-basierte Agenten-Handoff liegt in `docs/PROJECT_STATUS.md`, `docs/PI_ROADMAP.md`, `docs/DECISIONS.md`, `docs/quality-baseline.md` und `AGENTS.md`. Status, nächste Aufgaben, Tokenprognosen, Entscheidungen und Verifikation sind damit ohne früheren Chat auf GitHub übernehmbar.
 - Lokaler Servercheck: `node --check` für Einstieg und Adapter sowie `node --test`; 5 von 5 Tests erfolgreich.
 - Lokaler Android-Check nach dem Diagramm-Redesign: `:app:compileDebugKotlin` erfolgreich; nur bestehende Deprecation-Warnungen.
 - Android wird über `.github/workflows/android.yml` mit Gradle 8.11.1, Java 21 und Android 36 gebaut.

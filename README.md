@@ -14,11 +14,14 @@ The prototype selects the OpenAI adapter with `AI_PROVIDER=openai`. `AI_MODEL` c
 
 ## Authoritative project context
 
-Every implementation handoff starts with:
+Every agent handoff starts with [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md). It contains the active PI package, verified commit, current blockers and the next user decisions. Continue with:
 
+- [`docs/PI_ROADMAP.md`](docs/PI_ROADMAP.md) – ordered features, dependencies and token forecasts
 - [`SPEC.md`](SPEC.md) – product requirements and acceptance criteria
 - [`docs/architecture-and-provider-contracts.md`](docs/architecture-and-provider-contracts.md) – stable API and provider boundaries
+- [`docs/quality-baseline.md`](docs/quality-baseline.md) – mandatory build and test gates
 - [`docs/HANDOFF.md`](docs/HANDOFF.md) – current code, verification and blocker status
+- [`docs/DECISIONS.md`](docs/DECISIONS.md) – accepted product, architecture and process decisions
 - [`AGENTS.md`](AGENTS.md) – mandatory maintenance rules for coding agents
 
 ## Reproducible quality check
