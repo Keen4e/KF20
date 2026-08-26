@@ -29,10 +29,24 @@ class DailyTargetLogicTest {
     }
 
     @Test
+    fun `adaptive targets ignore negative sport calories`() {
+        val base = NutritionTargets(calories = 2_000, protein = 150.0, fat = 70.0, carbs = 200.0)
+
+        assertEquals(base, adaptiveTargets(base, sportCalories = -100, energy = 10))
+    }
+
+    @Test
+    fun `missing energy uses the normal refeed band`() {
+        assertEquals(0.5, refeedFactor(null), 0.0)
+    }
+
+    @Test
     fun `navy body fat requires complete plausible inputs`() {
         assertNull(navyBodyFat(neck = null, abdomen = 90.0, heightCm = 180.0))
         assertNull(navyBodyFat(neck = 95.0, abdomen = 90.0, heightCm = 180.0))
+        assertNull(navyBodyFat(neck = 40.0, abdomen = 90.0, heightCm = 0.0))
         val estimate = requireNotNull(navyBodyFat(neck = 40.0, abdomen = 90.0, heightCm = 180.0))
         assertTrue(estimate in 2.0..70.0)
     }
 }
+

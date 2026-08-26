@@ -1,6 +1,6 @@
 # KF20 Projektstatus
 
-Stand: 2026-08-24
+Stand: 2026-08-26
 
 Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie wird bei jedem begonnenen oder abgeschlossenen PI-Arbeitspaket aktualisiert. Frühere Chats sind für die Übernahme nicht erforderlich.
 
@@ -17,13 +17,13 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 
 | Feld | Wert |
 |---|---|
-| Paket | G1-B1 – Reproduzierbarer Build und CI-Gates |
+| Paket | G1-B2a – Fachmodelle und reine Berechnungslogik |
 | Entscheidung | GO |
-| Status | DONE – vollständig grün abgenommen |
-| P50 / P80 | 25k / 40k Roh-Tokens |
-| Ist-Verbrauch | Roh-Schätzung etwa 40k; Plus-Wochenanzeige ist die verbindliche Kalibrierung |
+| Status | IN PROGRESS |
+| P50 / P80 | 20k / 30k Roh-Tokens |
+| Ist-Verbrauch | nach Abschluss zu erfassen; Plus-Wochenanzeige ist die verbindliche Kalibrierung |
 | Produktänderung | keine |
-| Abnahme | Wrapper 8.11.1 mit SHA-256, JVM-Tests, Lint- und Build-Gates, Agenten-Dokumentation auf GitHub |
+| Abnahme | Fachmodelle und Refeed-/Ziel-/Navy-Berechnungen liegen außerhalb von `MainActivity.kt`; Verhalten bleibt durch JVM-Tests gesichert |
 
 ## Implementierter Produktstand
 
@@ -71,3 +71,4 @@ Vor Übergabe:
 2. Code und alle betroffenen Spezifikations-/Architekturdateien gemeinsam aktualisieren.
 3. Commit, Workflow-Run, Testergebnis, Blocker und nächstes Gate hier eintragen.
 4. Keine privaten Chattexte, Gesundheitswerte, Schlüssel oder Serveradressen in Git übernehmen.
+
