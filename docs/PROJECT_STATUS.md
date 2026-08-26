@@ -9,8 +9,8 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 - GitHub: `Keen4e/KF20`
 - Arbeitsbranch: `codex/kf20-rebuild`
 - Draft-PR: `#1` gegen `main`
-- Letzter vollständig grüner funktionaler Commit: `95cd618c131dabdc899cf86f850df5eab7243b68`
-- Verifizierender Workflow: `32700645622`, Ergebnis: `SUCCESS`
+- Letzter vollständig grüner funktionaler Commit: `2f9b8f48d7827c503f9c53323102b50d264e73e0`
+- Verifizierender Workflow: `33001726047`, Ergebnis: `SUCCESS`
 - Geprüfte Gates: Server-Syntax/Verträge, Android-JVM-Tests, Android-Lint, Debug-APK und Artefakt-Upload
 
 ## Aktives PI-Paket
@@ -19,9 +19,9 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 |---|---|
 | Paket | G1-B2a – Fachmodelle und reine Berechnungslogik |
 | Entscheidung | GO |
-| Status | IN PROGRESS |
+| Status | DONE – vollständig grün abgenommen |
 | P50 / P80 | 20k / 30k Roh-Tokens |
-| Ist-Verbrauch | nach Abschluss zu erfassen; Plus-Wochenanzeige ist die verbindliche Kalibrierung |
+| Ist-Verbrauch | Roh-Schätzung etwa 20k; Plus-Wochenanzeige ist die verbindliche Kalibrierung |
 | Produktänderung | keine |
 | Abnahme | Fachmodelle und Refeed-/Ziel-/Navy-Berechnungen liegen außerhalb von `MainActivity.kt`; Verhalten bleibt durch JVM-Tests gesichert |
 
@@ -50,8 +50,8 @@ Details und Abnahmekriterien stehen in `SPEC.md`; der technische Verlauf steht i
 
 | Reihenfolge | Paket | Status | Voraussetzung | P50 | P80 |
 |---|---|---|---|---:|---:|
-| 1 | G1-B2 – Android-Schichten und testbare Fachlogik | PROPOSED / AWAITING DECISION | G1-B1 grün | 45k | 70k |
-| 2 | G1-B3 – Speicher-, Migration- und Compose-Tests | PROPOSED | G1-B2 | 35k | 55k |
+| 1 | G1-B2b – Daten-, Netzwerk- und UI-Grenzen | PROPOSED / AWAITING DECISION | G1-B2a grün | 30k | 50k |
+| 2 | G1-B3 – Speicher-, Migration- und Compose-Tests | PROPOSED | G1-B2b | 35k | 55k |
 | 3 | G2 – Konto und produktives Backend | DEFERRED | G1 abgeschlossen | 240k | 360k |
 | 4 | G3 – KI Ende-zu-Ende und Provider-Wechseltest | DEFERRED | G2 | 140k | 220k |
 

@@ -1,7 +1,7 @@
 # KF20 Qualitätsbaseline
 
-Stand: 2026-08-24
-PI-Paket: G1-B1
+Stand: 2026-08-26
+PI-Paket: G1-B2a
 
 ## Verbindliches Qualitätsgate
 
@@ -28,12 +28,19 @@ Android verwendet ausschließlich den eingecheckten Gradle-Wrapper 8.11.1 mit ve
 - CI verwendet den Wrapper und besitzt getrennte Gates für Server, Android-Unit-Tests, Lint und Debug-Build.
 - Erste JVM-Tests sichern Refeed-Bänder, dynamische Tagesziele und die Eingabegrenzen der Navy-KFA-Berechnung.
 
+## Mit G1-B2a geschlossen
+
+- Die gemeinsamen Domänenmodelle liegen nicht mehr in der Compose-Einstiegsdatei.
+- Refeed-Faktor, adaptive Tagesziele und Navy-KFA sind Android-unabhängig gekapselt und direkt per JVM-Test ausführbar.
+- Zusätzliche Tests sichern fehlende Energieangaben, negative Sportkalorien und ungültige Körpergrößen ab.
+
 ## Offene Qualitätsrisiken
 
-1. Die Android-Datei muss in testbare Fach-, Daten-, Netzwerk- und UI-Schichten zerlegt werden.
+1. Speicherung, Netzwerk und Compose-UI sind weiterhin in `MainActivity.kt` gekoppelt und müssen in G1-B2b schrittweise getrennt werden.
 2. Speicher-, Export- und Gesprächsmigration benötigen eigene Unit-/Migrationstests.
 3. Kritische Compose-Flows benötigen Instrumentierungs- beziehungsweise UI-Tests.
 4. Der Widerspruch bei automatisch gesetzten Nährwertzielen ist in einem eigenen Produkt-Gate zu entscheiden und zu korrigieren.
 5. Kamera, Mikrofon und Upgrade-Pfade benötigen weiterhin Realgerät-Tests.
 
 Diese Baseline ändert keine Produktfunktion. Jedes weitere Arbeitspaket wird vor Beginn separat priorisiert.
+

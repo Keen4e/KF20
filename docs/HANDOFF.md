@@ -1,6 +1,6 @@
 # KF20 Handoff
 
-Stand: 2026-08-24
+Stand: 2026-08-26
 
 ## Repository
 
@@ -40,6 +40,7 @@ Stand: 2026-08-24
 - automatische Provider- und HTTP-Vertragstests ohne echte Provideranfragen
 - Debug-Testmodus unter Standards: eine aus den belegten Chat-Aggregaten abgeleitete Woche kann mit einem Knopfdruck geladen werden; die Werte bleiben unverändert und werden nur auf die letzten sieben Tage gelegt
 - G1-B1-Qualitätsfundament: eingecheckter Gradle-Wrapper 8.11.1 mit SHA-256-Prüfung, erste Android-JVM-Fachlogiktests sowie getrennte CI-Gates für Server, Android-Unit-Tests, Lint und Debug-Build
+- G1-B2a-Struktur: gemeinsame Domänenmodelle liegen in `Kf20Models.kt`; Refeed-Faktor, adaptive Tagesziele und Navy-KFA liegen als reine, Android-unabhängige Funktionen in `DailyTargetLogic.kt`
 
 ## Noch nicht produktionsbereit
 
@@ -53,6 +54,8 @@ Stand: 2026-08-24
 
 ## Verifikation
 
+- G1-B2a lokal: Server-Syntaxchecks erfolgreich; `npm test` 5 von 5 Tests grün. Die lokale Android-Ausführung war in der aktuellen Windows-Shell mangels registrierter Java-Runtime nicht möglich.
+- Workflow-Run `33001726047` ist für den funktionalen G1-B2a-Commit `2f9b8f48d7827c503f9c53323102b50d264e73e0` vollständig grün: Server-Syntax-/Vertragstests, sechs Android-JVM-Tests, Android-Lint, Debug-Build und APK-Upload waren erfolgreich.
 - G1-B1 lokal: Der neue Gradle-Wrapper lädt und verifiziert Gradle 8.11.1 erfolgreich unter Java 21. `compileDebugKotlin` kompiliert den geänderten Android-Code; der anschließende vollständige Windows-Lauf wird weiterhin durch die bekannte Sandbox-Dateisperre auf Android-/Gradle-JARs blockiert und ist daher kein vollständiger lokaler Testnachweis.
 - G1-B1 lokal: Server-Syntaxchecks erfolgreich; `node --test` 5 von 5 Tests grün.
 - Workflow-Run `32700645622` ist für den funktionalen G1-B1-Commit `95cd618c131dabdc899cf86f850df5eab7243b68` vollständig grün: Server-Syntax-/Vertragstests, Android-JVM-Tests, Android-Lint, Debug-Build und APK-Upload waren erfolgreich.
@@ -80,7 +83,7 @@ Stand: 2026-08-24
 
 ## Nächste konkrete Schritte
 
-1. G1-B2 separat priorisieren: die Android-Monolithdatei schrittweise in testbare Fach-, Daten-, Netzwerk- und UI-Schichten zerlegen.
+1. G1-B2b separat priorisieren: Speicherung und Netzwerk aus der Compose-Monolithdatei lösen und klare UI-Grenzen schaffen.
 2. Speicher-, Export- und Gesprächsmigration sowie kritische Compose-Flows automatisiert testen.
 3. Kamera und Mikrofon auf einem realen Android-Gerät testen.
 4. Einen zweiten Provideradapter als Wechseltest implementieren, sobald der Zielanbieter feststeht.
@@ -93,3 +96,5 @@ Stand: 2026-08-24
 - Die Debug-Testwoche enthält ausschließlich abstrahierte Tagesaggregate. Der private Chat-Export bleibt außerhalb von Git und App-Paket.
 - Für die KI-Funktionen ist ein serverseitiger OpenAI-API-Key mit API-Abrechnung nötig; eine ChatGPT-Subscription allein genügt nicht.
 - Vor Store-Veröffentlichung gelten alle Punkte in `security-release-gates.md` und `play-store-checklist.md`.
+
+
