@@ -17,13 +17,13 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 
 | Feld | Wert |
 |---|---|
-| Paket | G1-B2a – Fachmodelle und reine Berechnungslogik |
+| Paket | G1-B2b – Daten-, Netzwerk- und UI-Grenzen |
 | Entscheidung | GO |
-| Status | DONE – vollständig grün abgenommen |
-| P50 / P80 | 20k / 30k Roh-Tokens |
-| Ist-Verbrauch | Roh-Schätzung etwa 20k; Plus-Wochenanzeige ist die verbindliche Kalibrierung |
+| Status | IN PROGRESS |
+| P50 / P80 | 30k / 50k Roh-Tokens |
+| Ist-Verbrauch | nach Abschluss zu erfassen; Plus-Wochenanzeige ist die verbindliche Kalibrierung |
 | Produktänderung | keine |
-| Abnahme | Fachmodelle und Refeed-/Ziel-/Navy-Berechnungen liegen außerhalb von `MainActivity.kt`; Verhalten bleibt durch JVM-Tests gesichert |
+| Abnahme | lokale Persistenz, Export, Systemdienste und KF20-API-Zugriffe liegen außerhalb von `MainActivity.kt`; Compose greift nur über klar benannte Klassen darauf zu |
 
 ## Implementierter Produktstand
 
