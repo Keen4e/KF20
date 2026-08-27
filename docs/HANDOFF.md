@@ -1,6 +1,6 @@
 # KF20 Handoff
 
-Stand: 2026-08-26
+Stand: 2026-08-27
 
 ## Repository
 
@@ -12,7 +12,8 @@ Stand: 2026-08-26
 ## Implementierter Stand
 
 - Native Android-App in Kotlin/Compose
-- vier Haupttabs im aktuellen lokalen Stand: Tag, Statistik, Standards, Chat
+- vier Haupttabs im aktuellen lokalen Stand: Tag, Statistik, Chat, Einstellungen
+- G1-C1a in Arbeit: Kalorien- und Makrostatistik stehen am Anfang der Tagesseite; ein einzelnes Plus unten rechts öffnet die Auswahl Nahrung, Morgenwerte und Tagesabschluss. Die bisherige große Tageserfassungskarte ist entfallen.
 - drei sofort umschaltbare, lokal gespeicherte Styleguides: Performance Dark (Standard), Health Light und Data Athlete
 - mehrere benannte, AES-GCM-verschlüsselte Gespräche mit eigener Historie, lokaler Volltextsuche, bestätigtem Löschen und automatischer Migration des bisherigen Einzelverlaufs in den Hauptchat
 - vollständige KF20-Wortmarke im App-Kopf als echte Bildmarke statt der gestauchten ovalen Vektorvariante; vollständiges KF20-Launcher-Icon und echte Material-Icons in der Hauptnavigation
@@ -41,6 +42,7 @@ Stand: 2026-08-26
 - Debug-Testmodus unter Standards: eine aus den belegten Chat-Aggregaten abgeleitete Woche kann mit einem Knopfdruck geladen werden; die Werte bleiben unverändert und werden nur auf die letzten sieben Tage gelegt
 - G1-B1-Qualitätsfundament: eingecheckter Gradle-Wrapper 8.11.1 mit SHA-256-Prüfung, erste Android-JVM-Fachlogiktests sowie getrennte CI-Gates für Server, Android-Unit-Tests, Lint und Debug-Build
 - G1-B2a-Struktur: gemeinsame Domänenmodelle liegen in `Kf20Models.kt`; Refeed-Faktor, adaptive Tagesziele und Navy-KFA liegen als reine, Android-unabhängige Funktionen in `DailyTargetLogic.kt`
+- G1-B2b-Struktur: lokale Speicherung, Verschlüsselung und Export liegen in `Kf20Storage.kt`; Erinnerungen/Systemdienste in `Kf20Services.kt`; providerneutrale HTTP-Aufrufe in `Kf20ApiClient.kt`. `MainActivity.kt` enthält weiterhin Compose, aber keine direkten Infrastrukturimplementierungen mehr.
 
 ## Noch nicht produktionsbereit
 
@@ -54,6 +56,9 @@ Stand: 2026-08-26
 
 ## Verifikation
 
+- G1-B2b: Der erste Workflow `33004367088` zeigte einen fehlenden `android.os.Build`-Import. Der korrigierte funktionale Commit `6effd6996f6976c37638e36365caed4390dff7d7` wurde durch Workflow `33005372164` vollständig grün verifiziert: Serververträge, Android-JVM-Tests, Lint, Debug-Build und APK-Artefakt.
+- G1-B2b lokal: `compileDebugKotlin` und ein lokaler Debug-APK-Build waren erfolgreich; nur die zwei bekannten Compose-Deprecation-Warnungen bleiben. Das APK wurde auf dem Android-16-Emulator installiert.
+- Privater Telegram-Testimport vom 12.07.–26.08.2026: 29 Ernährungstage, 43 Messtage und 12 Sporttage wurden ausschließlich lokal strukturiert, in den Emulator geladen und dort verschlüsselt gespeichert. Rohchat, Importdatei und private Werte wurden nicht versioniert; der einmalige Importhelfer wurde vor dem abschließenden Build entfernt.
 - G1-B2a lokal: Server-Syntaxchecks erfolgreich; `npm test` 5 von 5 Tests grün. Die lokale Android-Ausführung war in der aktuellen Windows-Shell mangels registrierter Java-Runtime nicht möglich.
 - Workflow-Run `33001726047` ist für den funktionalen G1-B2a-Commit `2f9b8f48d7827c503f9c53323102b50d264e73e0` vollständig grün: Server-Syntax-/Vertragstests, sechs Android-JVM-Tests, Android-Lint, Debug-Build und APK-Upload waren erfolgreich.
 - G1-B1 lokal: Der neue Gradle-Wrapper lädt und verifiziert Gradle 8.11.1 erfolgreich unter Java 21. `compileDebugKotlin` kompiliert den geänderten Android-Code; der anschließende vollständige Windows-Lauf wird weiterhin durch die bekannte Sandbox-Dateisperre auf Android-/Gradle-JARs blockiert und ist daher kein vollständiger lokaler Testnachweis.
@@ -83,11 +88,11 @@ Stand: 2026-08-26
 
 ## Nächste konkrete Schritte
 
-1. G1-B2b separat priorisieren: Speicherung und Netzwerk aus der Compose-Monolithdatei lösen und klare UI-Grenzen schaffen.
-2. Speicher-, Export- und Gesprächsmigration sowie kritische Compose-Flows automatisiert testen.
+1. Mit dem Nutzer fehlende Produktfeatures neu priorisieren oder alternativ G1-B3 freigeben.
+2. Nach ausdrücklichem GO Speicher-, Export- und Gesprächsmigration sowie kritische Compose-Flows automatisiert testen.
 3. Kamera und Mikrofon auf einem realen Android-Gerät testen.
 4. Einen zweiten Provideradapter als Wechseltest implementieren, sobald der Zielanbieter feststeht.
-5. Historischen Datenimport aus dem privaten Export entwerfen; weiterhin keine privaten Nachrichten oder den Roh-Export ins Repository übernehmen.
+5. Einen dauerhaften, nutzergeführten historischen Datenimport als eigenes Feature entwerfen; weiterhin keine privaten Nachrichten oder den Roh-Export ins Repository übernehmen.
 6. Konto-/Backend-Entscheidung umsetzen und danach vollständige E2E-Tests aufbauen.
 
 ## Blocker/Hinweise
@@ -96,5 +101,4 @@ Stand: 2026-08-26
 - Die Debug-Testwoche enthält ausschließlich abstrahierte Tagesaggregate. Der private Chat-Export bleibt außerhalb von Git und App-Paket.
 - Für die KI-Funktionen ist ein serverseitiger OpenAI-API-Key mit API-Abrechnung nötig; eine ChatGPT-Subscription allein genügt nicht.
 - Vor Store-Veröffentlichung gelten alle Punkte in `security-release-gates.md` und `play-store-checklist.md`.
-
 

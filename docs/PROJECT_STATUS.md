@@ -1,6 +1,6 @@
 # KF20 Projektstatus
 
-Stand: 2026-08-26
+Stand: 2026-08-27
 
 Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie wird bei jedem begonnenen oder abgeschlossenen PI-Arbeitspaket aktualisiert. Frühere Chats sind für die Übernahme nicht erforderlich.
 
@@ -9,25 +9,25 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 - GitHub: `Keen4e/KF20`
 - Arbeitsbranch: `codex/kf20-rebuild`
 - Draft-PR: `#1` gegen `main`
-- Letzter vollständig grüner funktionaler Commit: `2f9b8f48d7827c503f9c53323102b50d264e73e0`
-- Verifizierender Workflow: `33001726047`, Ergebnis: `SUCCESS`
+- Letzter vollständig grüner funktionaler Commit: `6effd6996f6976c37638e36365caed4390dff7d7`
+- Verifizierender Workflow: `33005372164`, Ergebnis: `SUCCESS`
 - Geprüfte Gates: Server-Syntax/Verträge, Android-JVM-Tests, Android-Lint, Debug-APK und Artefakt-Upload
 
 ## Aktives PI-Paket
 
 | Feld | Wert |
 |---|---|
-| Paket | G1-B2b – Daten-, Netzwerk- und UI-Grenzen |
+| Paket | G1-C1a – Startseite und zentrale Plus-Navigation |
 | Entscheidung | GO |
 | Status | IN PROGRESS |
-| P50 / P80 | 30k / 50k Roh-Tokens |
-| Ist-Verbrauch | nach Abschluss zu erfassen; Plus-Wochenanzeige ist die verbindliche Kalibrierung |
-| Produktänderung | keine |
-| Abnahme | lokale Persistenz, Export, Systemdienste und KF20-API-Zugriffe liegen außerhalb von `MainActivity.kt`; Compose greift nur über klar benannte Klassen darauf zu |
+| P50 / P80 | 20k / 35k Roh-Tokens |
+| Ist-Verbrauch | nach Abschluss zu erfassen; Plus-Wochenanzeige bleibt die verbindliche Kalibrierung |
+| Produktänderung | Tagesstatistik steht am Anfang der Startseite; bisherige Erfassungskarte wird durch ein einzelnes Plus unten rechts ersetzt |
+| Abnahme | Plus öffnet die Auswahl Nahrung, Morgenwerte und Tagesabschluss; bestehende Erfassungswege bleiben erreichbar; vollständige Eingabepopups folgen erst nach separatem GO für G1-C1b |
 
 ## Implementierter Produktstand
 
-- Native Kotlin-/Compose-App mit vier Haupttabs: Tag, Statistik, Standards und Chat
+- Native Kotlin-/Compose-App mit vier Haupttabs: Tag, Statistik, Chat und Einstellungen
 - verschlüsseltes lokales Tageslog und mehrere benannte Gespräche
 - Nahrung per Text, Foto oder Mikrofon mit korrigierbarer KI-Schätzung
 - Morgen-Check für Sport, Gewicht, Körperfett, Umfang, Hunger und Energie
@@ -41,7 +41,7 @@ Details und Abnahmekriterien stehen in `SPEC.md`; der technische Verlauf steht i
 
 1. keine echte Nutzeranmeldung, Nutzertrennung oder Kontolöschung
 2. kein produktives HTTPS-Backend und keine Datenbanksynchronisation
-3. Android-Code noch weitgehend in einer Monolithdatei; Migrationen und kritische UI-Flows unzureichend getestet
+3. Compose-UI noch weitgehend in einer Monolithdatei; Migrationen und kritische UI-Flows unzureichend getestet
 4. kein vollständiger KI-End-to-End-Test mit produktionsnahem Backend
 5. Kamera und Mikrofon noch nicht auf einem realen Gerät abgenommen
 6. kein signiertes Release-Bundle und keine vollständig erledigten Store-/Datenschutz-Gates
@@ -50,10 +50,12 @@ Details und Abnahmekriterien stehen in `SPEC.md`; der technische Verlauf steht i
 
 | Reihenfolge | Paket | Status | Voraussetzung | P50 | P80 |
 |---|---|---|---|---:|---:|
-| 1 | G1-B2b – Daten-, Netzwerk- und UI-Grenzen | PROPOSED / AWAITING DECISION | G1-B2a grün | 30k | 50k |
-| 2 | G1-B3 – Speicher-, Migration- und Compose-Tests | PROPOSED | G1-B2b | 35k | 55k |
-| 3 | G2 – Konto und produktives Backend | DEFERRED | G1 abgeschlossen | 240k | 360k |
-| 4 | G3 – KI Ende-zu-Ende und Provider-Wechseltest | DEFERRED | G2 | 140k | 220k |
+| 1 | G1-B3 – Speicher-, Migration- und Compose-Tests | PROPOSED / AWAITING DECISION | G1-B2b grün | 35k | 55k |
+| 2 | G1-C1b – Drei Erfassungs-Popups | PROPOSED / AWAITING DECISION | G1-C1a | 30k | 50k |
+| 3 | G1-C2 – Tageswerte / rollierender 7-Tage-Durchschnitt | PROPOSED / AWAITING DECISION | G1-C1a | 25k | 40k |
+| 4 | Feature-Lückenanalyse und Neupriorisierung | PROPOSED / AWAITING DECISION | Gespräch mit Nutzer | 15k | 25k |
+| 5 | G2 – Konto und produktives Backend | DEFERRED | G1 abgeschlossen | 240k | 360k |
+| 6 | G3 – KI Ende-zu-Ende und Provider-Wechseltest | DEFERRED | G2 | 140k | 220k |
 
 Kein PROPOSED- oder DEFERRED-Paket darf ohne eine neue Nutzerentscheidung `GO`, `SPLIT`, `DEFER` oder `DROP` begonnen werden.
 
@@ -71,4 +73,3 @@ Vor Übergabe:
 2. Code und alle betroffenen Spezifikations-/Architekturdateien gemeinsam aktualisieren.
 3. Commit, Workflow-Run, Testergebnis, Blocker und nächstes Gate hier eintragen.
 4. Keine privaten Chattexte, Gesundheitswerte, Schlüssel oder Serveradressen in Git übernehmen.
-

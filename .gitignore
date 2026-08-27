@@ -1,8 +1,10 @@
 .idea/
 .gradle/
 android/.gradle/
+android/build/
 android/local.properties
 android/app/build/
+emulator.*.log
 server/.env
 *.jks
 *.keystore

@@ -42,6 +42,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Icon
@@ -59,8 +60,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MonitorWeight
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Star
@@ -378,8 +381,8 @@ private fun Kf20App(context: Context) {
                 NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                     NavigationBarItem(selected = workspace == Workspace.DAILY_LOG, onClick = { workspace = Workspace.DAILY_LOG }, icon = { Icon(Icons.Filled.Today, contentDescription = null) }, label = { Text("Tag") })
                     NavigationBarItem(selected = workspace == Workspace.STATISTICS || workspace == Workspace.PROGRESS || workspace == Workspace.PHOTOS, onClick = { workspace = Workspace.STATISTICS }, icon = { Icon(Icons.Filled.BarChart, contentDescription = null) }, label = { Text("Statistik") })
-                    NavigationBarItem(selected = workspace == Workspace.STANDARDS, onClick = { workspace = Workspace.STANDARDS }, icon = { Icon(Icons.Filled.Star, contentDescription = null) }, label = { Text("Standards") })
                     NavigationBarItem(selected = workspace == Workspace.CHAT, onClick = { workspace = Workspace.CHAT }, icon = { Icon(Icons.Filled.Chat, contentDescription = null) }, label = { Text("Chat") })
+                    NavigationBarItem(selected = workspace == Workspace.STANDARDS, onClick = { workspace = Workspace.STANDARDS }, icon = { Icon(Icons.Filled.Star, contentDescription = null) }, label = { Text("Einstellungen") })
                 }
             }
         ) { padding ->
@@ -1276,7 +1279,7 @@ private fun Kf20App(context: Context) {
 ) {
     LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
-            Text("Standards", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp))
+            Text("Einstellungen", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp))
             Text("Wiederkehrende Mahlzeiten und persönliche Einstellungen.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
@@ -1911,6 +1914,8 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
     var captureError by remember { mutableStateOf<String?>(null) }
     var showMealComposer by remember { mutableStateOf(false) }
     var showMorningCheck by remember { mutableStateOf(false) }
+    var showCaptureMenu by remember { mutableStateOf(false) }
+    var showDaySummary by remember { mutableStateOf(false) }
     var morningSport by remember { mutableStateOf("0") }
     var morningEnergy by remember { mutableStateOf("7") }
     var morningHunger by remember { mutableStateOf("4") }
@@ -1961,6 +1966,64 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
         showMorningDetails = morningNeck.isNotBlank() || morningWaist.isNotBlank()
         showMealComposer = false
         showMorningCheck = true
+    }
+    if (showCaptureMenu) {
+        ModalBottomSheet(onDismissRequest = { showCaptureMenu = false }) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text("Erfassen", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text("Was möchtest du für $selectedDate hinzufügen?", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Button(
+                    onClick = { showCaptureMenu = false; showMorningCheck = false; showMealComposer = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(vertical = 14.dp)
+                ) {
+                    Icon(Icons.Filled.Restaurant, contentDescription = null)
+                    Spacer(Modifier.width(10.dp))
+                    Text("Nahrung")
+                }
+                OutlinedButton(
+                    onClick = { showCaptureMenu = false; openMorningCheck() },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(vertical = 14.dp)
+                ) {
+                    Icon(Icons.Filled.MonitorWeight, contentDescription = null)
+                    Spacer(Modifier.width(10.dp))
+                    Text("Morgenwerte")
+                }
+                OutlinedButton(
+                    onClick = { showCaptureMenu = false; showDaySummary = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(vertical = 14.dp)
+                ) {
+                    Icon(Icons.Filled.CheckCircle, contentDescription = null)
+                    Spacer(Modifier.width(10.dp))
+                    Text("Tagesabschluss")
+                }
+                Spacer(Modifier.height(18.dp))
+            }
+        }
+    }
+    if (showDaySummary) {
+        ModalBottomSheet(onDismissRequest = { showDaySummary = false }) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Tagesabschluss", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text(selectedDate, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                DailyGoalHero(intake = intake, burned = burned, target = dayTargets.calories)
+                Text(
+                    "${proteinTotal.de1()} g Protein · ${fatTotal.de1()} g Fett · ${carbsTotal.de1()} g Carbs",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text("Die Eingabefelder und Speicherung des Tagesabschlusses folgen im separat priorisierten Paket G1-C1b.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Button(onClick = { showDaySummary = false }, modifier = Modifier.fillMaxWidth()) { Text("Schließen") }
+                Spacer(Modifier.height(24.dp))
+            }
+        }
     }
     if (showMorningCheck) {
         val sportValue = morningSport.toIntOrNull()?.coerceIn(0, 1_200) ?: 0
@@ -2054,7 +2117,8 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
             }
         }
     }
-    LazyColumn(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Box(modifier = modifier) {
+      LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             Row(modifier = Modifier.fillMaxWidth().padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -2065,9 +2129,6 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
                 TextButton(onClick = onToday, enabled = !isToday) { Text("Heute") }
                 TextButton(onClick = onNextDay) { Text("›") }
             }
-        }
-        item {
-            MorningCheckCard(completed = morningCheckComplete, energy = currentMeasurement?.energy, hunger = currentMeasurement?.hunger, sport = currentSport, onOpen = { openMorningCheck() })
         }
         item { DailyGoalHero(intake = intake, burned = burned, target = dayTargets.calories) }
         item {
@@ -2082,31 +2143,11 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
                 }
             }
         }
+        item {
+            MorningCheckCard(completed = morningCheckComplete, energy = currentMeasurement?.energy, hunger = currentMeasurement?.hunger, sport = currentSport, onOpen = { openMorningCheck() })
+        }
         if (plannedFoods.isNotEmpty()) item {
             PlannedNutritionCard(plannedFoods = plannedFoods, intake = intake, targets = dayTargets)
-        }
-        item {
-            Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Tageserfassung", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text("Was möchtest du hinzufügen?", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { showMorningCheck = false; showMealComposer = true }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp)) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.Restaurant, contentDescription = null)
-                                Text("Nahrung")
-                            }
-                        }
-                        OutlinedButton(onClick = { openMorningCheck() }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp)) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Filled.MonitorWeight, contentDescription = null)
-                                Text("Morgen-Check")
-                            }
-                        }
-                    }
-                    Text("Nahrung per Text, Foto oder Mikrofon · Sport und Messwerte gemeinsam im Morgen-Check", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
         }
         if (composerVisible && routines.isNotEmpty()) {
             item {
@@ -2228,7 +2269,16 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
                 onDelete = { onDeleteEntry(entry) }
             )
         }
-        item { Spacer(Modifier.height(16.dp)) }
+        item { Spacer(Modifier.height(96.dp)) }
+      }
+      FloatingActionButton(
+          onClick = { showCaptureMenu = true },
+          modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+          containerColor = MaterialTheme.colorScheme.primary,
+          contentColor = MaterialTheme.colorScheme.onPrimary
+      ) {
+          Icon(Icons.Filled.Add, contentDescription = "Erfassen")
+      }
     }
 }
 
@@ -2514,4 +2564,3 @@ private fun displayName(context: Context, uri: Uri): String = runCatching {
         if (cursor.moveToFirst()) cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME)) else uri.lastPathSegment
     }
 }.getOrNull() ?: uri.lastPathSegment ?: "Datei"
-

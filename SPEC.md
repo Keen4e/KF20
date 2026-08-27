@@ -1,6 +1,6 @@
 # KF20 Produktspezifikation
 
-Stand: 2026-08-17
+Stand: 2026-08-27
 
 ## Produktziel
 
@@ -14,8 +14,8 @@ Die untere Navigation besteht aus genau vier Haupttabs:
 
 1. **Tag** – Startseite und Erfassung aller heutigen Daten
 2. **Statistik** – Zeitreihen und Zielerreichung
-3. **Standards** – wiederkehrende Mahlzeiten, Ziele und persönliche Einstellungen
-4. **Chat** – freier KF20-Agentendialog
+3. **Chat** – freier KF20-Agentendialog
+4. **Einstellungen** – wiederkehrende Mahlzeiten/Standards, Ziele und persönliche Einstellungen
 
 Sport und Messungen sind keine eigenen Haupttabs. Ihre Erfassung gehört zum jeweiligen Tag.
 
@@ -35,7 +35,8 @@ Die Navigation verwendet eindeutige Material-Icons mit Textlabeln. Im App-Kopf u
 - Nahrung kann als bereits gegessen oder für später geplant gespeichert werden
 - geplante Nahrung erscheint separat in der Tagesprognose und fließt erst nach Bestätigung als gegessen in Ist-Bilanz, Makroringe und Statistik ein
 - Schnellzugriff auf Standards
-- schlanke Tageserfassung mit drei gleichwertigen Einstiegen: Nahrung, Sport und Messwerte
+- Tagesstatistik für Kalorien, Protein, Fett und Carbs direkt am Seitenanfang
+- genau ein schwebendes Plus unten rechts als Einstieg für Nahrung, Morgenwerte und Tagesabschluss
 - gemeinsame Tagesliste für alle drei Eintragsarten; Nahrung zeigt Kalorien und Makros, Sport zeigt Training/Tracker, Messwerte zeigen Körper- und Befindenswerte
 
 ### Mahlzeit erfassen
@@ -58,7 +59,7 @@ Nach der KI-Prüfung entscheidet der Nutzer ausdrücklich zwischen **Jetzt geges
 
 ### Morgen-Check: Sport und Tageswerte
 
-Sport und die täglichen Körper-/Befindenswerte werden nicht in getrennten Pop-ups erfasst. Die Tagesseite zeigt oberhalb des Kalorien-Dashboards eine klar sichtbare Karte **Morgen-Check offen/erledigt**. **Jetzt eintragen** beziehungsweise **Morgen-Check ändern** öffnet eine große, von unten kommende und scrollbar bleibende Erfassungsfläche im Stil eines zusammenhängenden Tagesstarts.
+Sport und die täglichen Körper-/Befindenswerte werden gemeinsam als **Morgenwerte** erfasst. Das zentrale Plus öffnet die Auswahl Nahrung, Morgenwerte und Tagesabschluss. Die Tagesseite zeigt unterhalb des Kalorien- und Makro-Dashboards zusätzlich den Status **Morgen-Check offen/erledigt**. Morgenwerte öffnen eine große, von unten kommende und scrollbar bleibende Erfassungsfläche im Stil eines zusammenhängenden Tagesstarts.
 
 Der primäre Morgen-Check enthält:
 
@@ -119,7 +120,11 @@ Die Farbzuordnung bleibt in Tages- und Statistikansicht konsistent: Kalorien gr�
 
 Einzelwerte und KI-Schätzungen dürfen nicht als medizinische Diagnose dargestellt werden.
 
-## Standards
+## Einstellungen
+
+Die Seite **Einstellungen** enthält Standards/Routinen, Tagesziele, persönliche Start- und Zielwerte, Erinnerungen, Designauswahl sowie lokale Datenfunktionen.
+
+### Standards
 
 - beliebig viele wiederkehrende Mahlzeiten, insbesondere ein Standardfrühstück
 - Name, Kalorien, Protein, Fett und Carbs je Standard
@@ -136,7 +141,7 @@ Zielwerte werden nicht ausgedacht. Nicht gesetzte Ziele bleiben leer.
 
 ### Chat-Testwoche im Debug-Build
 
-Debug-Builds bieten unter **Standards** die Aktion **Chat-Testwoche laden**. Sie legt eine reproduzierbare Testwoche mit den im privaten Chat belegten Tagesaggregaten für Kalorien, Protein, Fett, Carbs, Sport, Gewicht, Körperfett, Umfang, Hunger und Energie an. Die sieben ursprünglichen Tageswerte bleiben unverändert; nur ihre Daten werden auf die jeweils letzten sieben Kalendertage verschoben, damit sämtliche Diagramme sofort sichtbar geprüft werden können.
+Debug-Builds bieten unter **Einstellungen** die Aktion **Chat-Testwoche laden**. Sie legt eine reproduzierbare Testwoche mit den im privaten Chat belegten Tagesaggregaten für Kalorien, Protein, Fett, Carbs, Sport, Gewicht, Körperfett, Umfang, Hunger und Energie an. Die sieben ursprünglichen Tageswerte bleiben unverändert; nur ihre Daten werden auf die jeweils letzten sieben Kalendertage verschoben, damit sämtliche Diagramme sofort sichtbar geprüft werden können.
 
 Die Aktion ist über `BuildConfig.DEBUG` auf Entwicklungsbuilds beschränkt. Weder der rohe Chat-Export noch persönliche Nachrichten werden in App oder Repository übernommen. Ein Release-Build darf diesen Testdaten-Schalter nicht anzeigen.
 

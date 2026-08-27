@@ -13,7 +13,10 @@ Der Android-Client enthält keine Provider-SDKs, API-Schlüssel oder providerspe
 
 - Kotlin und Jetpack Compose
 - gemeinsame Domänenmodelle liegen in `Kf20Models.kt`; Android-unabhängige Refeed-, Tagesziel- und Navy-KFA-Berechnungen liegen in `DailyTargetLogic.kt` und werden mit JVM-Tests abgesichert
-- `MainActivity.kt` enthält vorerst weiterhin Compose, Speicherung und Netzwerkzugriffe; deren Entkopplung ist das noch nicht freigegebene Paket G1-B2b
+- `MainActivity.kt` enthält weiterhin den Compose-Zustand und die Bildschirmkomposition, greift aber nur noch über klar benannte Grenzen auf Infrastruktur zu
+- `Kf20Storage.kt` kapselt lokale Speicherung, Verschlüsselung, Export und Gesamtlöschung
+- `Kf20Services.kt` kapselt Erinnerungsplanung und Android-Systemdienste
+- `Kf20ApiClient.kt` kapselt die providerneutralen KF20-HTTP-Aufrufe für Chat und Nährwertanalyse
 - lokale sensible Daten verschlüsselt über AES-GCM und Android Keystore
 - Bildaufnahme als temporäre JPEG-Data-URL nur für eine Analyse
 - freie Textbeschreibung direkt in der App; optionale Spracheingabe über Android Speech Recognizer wird lokal in denselben Texteingabekanal überführt
@@ -100,5 +103,4 @@ Der Prototyp verwendet einen einzelnen statischen Bearer-Token und ist nicht öf
 ## Änderungsregel
 
 Jede Änderung an Request-/Responsefeldern aktualisiert diese Datei, Android und Server atomar. Abwärtskompatible Ergänzungen sind zu bevorzugen.
-
 

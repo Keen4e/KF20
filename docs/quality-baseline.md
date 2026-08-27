@@ -1,7 +1,7 @@
 # KF20 Qualitätsbaseline
 
-Stand: 2026-08-26
-PI-Paket: G1-B2a
+Stand: 2026-08-27
+PI-Paket: G1-B2b
 
 ## Verbindliches Qualitätsgate
 
@@ -34,13 +34,19 @@ Android verwendet ausschließlich den eingecheckten Gradle-Wrapper 8.11.1 mit ve
 - Refeed-Faktor, adaptive Tagesziele und Navy-KFA sind Android-unabhängig gekapselt und direkt per JVM-Test ausführbar.
 - Zusätzliche Tests sichern fehlende Energieangaben, negative Sportkalorien und ungültige Körpergrößen ab.
 
+## Mit G1-B2b geschlossen
+
+- Lokale Speicherung, Verschlüsselung, Export und Datenlöschung liegen außerhalb der Compose-Datei.
+- Erinnerungsplanung und Android-Systemdienste liegen in einer eigenen Infrastrukturgrenze.
+- Chat- und Nährwertanfragen laufen über einen separaten providerneutralen API-Client.
+- Der vollständige CI-Lauf `33005372164` bestand Serververträge, JVM-Tests, Lint, Debug-Build und APK-Upload.
+
 ## Offene Qualitätsrisiken
 
-1. Speicherung, Netzwerk und Compose-UI sind weiterhin in `MainActivity.kt` gekoppelt und müssen in G1-B2b schrittweise getrennt werden.
-2. Speicher-, Export- und Gesprächsmigration benötigen eigene Unit-/Migrationstests.
-3. Kritische Compose-Flows benötigen Instrumentierungs- beziehungsweise UI-Tests.
+1. Speicher-, Export- und Gesprächsmigration benötigen eigene Unit-/Migrationstests.
+2. Kritische Compose-Flows benötigen Instrumentierungs- beziehungsweise UI-Tests.
+3. Compose-Zustand und Bildschirmkomposition sind weiterhin groß und sollten erst nach priorisierten Produktentscheidungen weiter zerlegt werden.
 4. Der Widerspruch bei automatisch gesetzten Nährwertzielen ist in einem eigenen Produkt-Gate zu entscheiden und zu korrigieren.
 5. Kamera, Mikrofon und Upgrade-Pfade benötigen weiterhin Realgerät-Tests.
 
 Diese Baseline ändert keine Produktfunktion. Jedes weitere Arbeitspaket wird vor Beginn separat priorisiert.
-
