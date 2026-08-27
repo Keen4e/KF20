@@ -51,7 +51,7 @@ Vor dem Loggen einer neuen freien Mahlzeit ist immer eine erfolgreiche KI-Auswer
 
 Die Oberfläche folgt einem gestuften Ablauf: Zunächst sind nur Beschreibung, Foto, Mikrofon und der zentrale KI-Auswertungsbutton sichtbar. Die korrigierbaren Ergebnisfelder erscheinen erst nach einer erfolgreichen Auswertung. So muss der Nutzer nicht schon vor der Analyse technische Nährwertfelder bearbeiten.
 
-Die Mahlzeitenerfassung ist im Tagesdashboard zunächst als kompakte Schnellaktion dargestellt. Das ausführliche Formular wird erst beim Beschreiben oder nach Foto-/Mikrofoneingabe geöffnet, damit die Zielübersicht visuell im Vordergrund bleibt.
+Die Mahlzeitenerfassung öffnet als eigenes, scrollbar bleibendes Popup. Zunächst sind nur Beschreibung, Foto, Mikrofon und KI-Auswertung sichtbar; die Ergebnisfelder folgen nach der Analyse. Das Tagesdashboard bleibt im Hintergrund unverändert.
 
 Ein bereits bestätigter Standard darf ohne erneute KI-Auswertung übernommen werden, da seine Nährwerte schon gespeichert sind.
 
@@ -71,6 +71,10 @@ Der primäre Morgen-Check enthält:
 - eine live aktualisierte Vorschau für Kalorien-, Protein-, Fett- und Carbs-Ziel
 
 Der Nutzer bestätigt alle Werte gemeinsam mit **Tag starten** oder verlässt die Erfassung mit **Später**. Ein erneutes Öffnen aktualisiert denselben Morgen-Check des Tages, statt doppelte Sporteinträge zu erzeugen. Nahrung bleibt davon getrennt und wird weiterhin per Text, Foto oder Mikrofon mit KI ausgewertet.
+
+### Tagesabschluss
+
+Der Tagesabschluss öffnet ein eigenes Popup mit der aktuellen Kalorien- und Makrobilanz. Er erfasst den gesamten Tagesverbrauch laut Tracker sowie eine optionale Tagesnotiz. Der Tracker-Gesamtverbrauch bleibt vom Sportverbrauch getrennt und darf nicht nochmals als verbrannte Trainingskalorien in die Bilanz eingehen. Ein erneutes Speichern aktualisiert den Tagesdatensatz.
 
 Der aus dem Chat belegte Refeed-Faktor wird aus dem Energiewert abgeleitet:
 
@@ -115,6 +119,7 @@ Wenn Hals, Bauch und Körpergröße vorliegen, berechnet KF20 den Körperfettwer
 - Sportverbrauch als Tagesbalken sowie Trainingstage und durchschnittlicher gemeldeter Tracker-Verbrauch
 - Hunger und Energie als zweifarbiger Verlauf auf der Skala 0 bis 10
 - Zugriff auf Fortschrittsfotos
+- sichtbarer Umschalter **Tageswerte / 7-Tage-Ø**; der rollierende Durchschnitt verwendet je Punkt den aktuellen und die sechs vorherigen Kalendertage, ignoriert fehlende Messwerte und erfindet keine Nullwerte für fehlende Ernährungstage
 
 Die Farbzuordnung bleibt in Tages- und Statistikansicht konsistent: Kalorien grün, Protein blau, Fett amber und Carbs korall. Diagramme zeigen bei fehlenden Daten einen verständlichen Leerzustand und dürfen keine Werte erfinden.
 

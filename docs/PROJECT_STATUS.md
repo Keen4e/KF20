@@ -17,13 +17,13 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 
 | Feld | Wert |
 |---|---|
-| Paket | G1-C1a – Startseite und zentrale Plus-Navigation |
+| Paket | G1-C1b + G1-C2 – Erfassungs-Popups und Statistikdarstellung |
 | Entscheidung | GO |
-| Status | DONE |
-| P50 / P80 | 20k / 35k Roh-Tokens |
-| Ist-Verbrauch | ungefähr 30k Roh-Tokens; Plus-Wochenanzeige bleibt die verbindliche Kalibrierung |
-| Produktänderung | Tagesstatistik steht am Anfang der Startseite; bisherige Erfassungskarte wird durch ein einzelnes Plus unten rechts ersetzt |
-| Abnahme | Plus öffnet die Auswahl Nahrung, Morgenwerte und Tagesabschluss; bestehende Erfassungswege bleiben erreichbar; vollständige Eingabepopups folgen erst nach separatem GO für G1-C1b |
+| Status | IN PROGRESS |
+| P50 / P80 | 55k / 90k Roh-Tokens |
+| Ist-Verbrauch | nach Abschluss zu erfassen; Plus-Wochenanzeige bleibt die verbindliche Kalibrierung |
+| Produktänderung | Nahrung, Morgenwerte und Tagesabschluss werden in getrennten Popups erfasst; Statistik kann zwischen Tageswerten und rollierendem 7-Tage-Durchschnitt umschalten |
+| Abnahme | alle drei Plus-Wege sind vollständig erfassbar; Tagesabschluss speichert Tracker-Gesamtverbrauch/Notiz ohne Doppelzählung; alle Zeitreihen reagieren auf den Darstellungsumschalter |
 
 ## Implementierter Produktstand
 

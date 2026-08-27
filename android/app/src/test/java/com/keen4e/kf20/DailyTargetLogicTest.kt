@@ -48,5 +48,22 @@ class DailyTargetLogicTest {
         val estimate = requireNotNull(navyBodyFat(neck = 40.0, abdomen = 90.0, heightCm = 180.0))
         assertTrue(estimate in 2.0..70.0)
     }
-}
 
+    @Test
+    fun `rolling average uses current and six previous values`() {
+        val result = rollingAverage((1..8).map(Int::toDouble))
+
+        assertEquals(1.0, result.first()!!, 0.0)
+        assertEquals(5.0, result.last()!!, 0.0)
+    }
+
+    @Test
+    fun `rolling average ignores missing values without inventing zeroes`() {
+        val result = rollingAverage(listOf(null, 2.0, null, 4.0), window = 3)
+
+        assertNull(result.first())
+        assertEquals(2.0, result[1]!!, 0.0)
+        assertEquals(2.0, result[2]!!, 0.0)
+        assertEquals(3.0, result[3]!!, 0.0)
+    }
+}

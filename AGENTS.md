@@ -1,5 +1,12 @@
 # KF20 – Arbeitsregeln für KI-Agenten
 
+## Richtige Arbeitsquelle zwingend prüfen
+
+- Der aktuelle baubare Quellstand liegt auf dem Branch `codex/kf20-rebuild`, nicht auf `main`.
+- Das Android-Projekt beginnt unter `android/`; erwartet werden dort `build.gradle.kts`, `settings.gradle.kts` und `app/src/main/AndroidManifest.xml`.
+- Vor jeder Analyse oder Änderung sind `git branch --show-current` und die drei genannten Dateien zu prüfen. Fehlen sie, arbeitet der Agent im falschen Branch oder in einem falschen Checkout und darf keine Ersatzdateien aus dekompilierten Artefakten erzeugen.
+- Der vollständige Android-Check wird aus `android/` mit `./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` beziehungsweise unter Windows mit `gradlew.bat` gestartet.
+
 Dieses Repository muss ohne Zugriff auf frühere Chats übernehmbar bleiben. Vor Änderungen sind diese Dateien vollständig und in dieser Reihenfolge zu lesen:
 
 1. `docs/PROJECT_STATUS.md` – einzige Quelle für Phase, aktives Paket, Blocker und nächste Entscheidungen
@@ -31,3 +38,4 @@ Dieses Repository muss ohne Zugriff auf frühere Chats übernehmbar bleiben. Vor
 - KI-Schätzungen sichtbar kennzeichnen und vor dem Speichern korrigierbar machen.
 - Externe Aktionen niemals still ausführen.
 - Nach Änderungen Server-Syntax-/Vertragstests sowie `:app:testDebugUnitTest`, `:app:lintDebug` und `:app:assembleDebug` über den eingecheckten Gradle-Wrapper ausführen; Ergebnis im Handoff vermerken.
+

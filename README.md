@@ -1,5 +1,7 @@
 # KF20
 
+> **Agenten und Entwickler:** Der baubare Quellstand liegt derzeit auf `codex/kf20-rebuild`. Der alte `main`-Branch enthält nicht das Android-Quellprojekt. Nach dem Checkout liegt das Gradle-Projekt unter `android/`; verbindliche Arbeitsregeln stehen in [`AGENTS.md`](AGENTS.md).
+
 KF20 is a private daily AI companion for Android. It provides a focused text chat, local conversation history and user-controlled long-term notes.
 
 ## Architecture
@@ -45,3 +47,4 @@ This is a new implementation. The prior GitHub repository only contained a compi
 2. Select the provider, add its key through a secret store and deploy `server/` to a private HTTPS endpoint.
 3. Set the Android `API_BASE_URL` to that endpoint.
 4. Complete the Play Store items in `docs/play-store-checklist.md`.
+

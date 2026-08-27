@@ -31,3 +31,12 @@ internal fun navyBodyFat(
     return result.takeIf { it in 2.0..70.0 }
 }
 
+internal fun rollingAverage(values: List<Double?>, window: Int = 7): List<Double?> {
+    require(window > 0) { "window must be positive" }
+    return values.indices.map { index ->
+        values.subList(maxOf(0, index - window + 1), index + 1)
+            .filterNotNull()
+            .takeIf { it.isNotEmpty() }
+            ?.average()
+    }
+}
