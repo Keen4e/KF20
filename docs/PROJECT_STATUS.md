@@ -9,8 +9,8 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 - GitHub: `Keen4e/KF20`
 - Arbeitsbranch: `codex/kf20-rebuild`
 - Draft-PR: `#1` gegen `main`
-- Letzter vollständig grüner funktionaler Commit: `8acfa952ca1ad5d7007583730157cac0524012c4`
-- Verifizierender Workflow: `33107141951`, Ergebnis: `SUCCESS`
+- Letzter vollständig grüner funktionaler Commit: `2c4ca71d85d54d9cf580f046b4233464c3856bee`
+- Verifizierender Workflow: `33109832049`, Ergebnis: `SUCCESS`
 - Geprüfte Gates: Server-Syntax/Verträge, Android-JVM-Tests, Android-Lint, Debug-APK und Artefakt-Upload
 
 ## Aktives PI-Paket
@@ -19,11 +19,11 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 |---|---|
 | Paket | G1-C1b + G1-C2 – Erfassungs-Popups und Statistikdarstellung |
 | Entscheidung | GO |
-| Status | IN PROGRESS |
+| Status | DONE |
 | P50 / P80 | 55k / 90k Roh-Tokens |
-| Ist-Verbrauch | nach Abschluss zu erfassen; Plus-Wochenanzeige bleibt die verbindliche Kalibrierung |
+| Ist-Verbrauch | ungefähr 45k Roh-Tokens; Plus-Wochenanzeige bleibt die verbindliche Kalibrierung |
 | Produktänderung | Nahrung, Morgenwerte und Tagesabschluss werden in getrennten Popups erfasst; Statistik kann zwischen Tageswerten und rollierendem 7-Tage-Durchschnitt umschalten |
-| Abnahme | alle drei Plus-Wege sind vollständig erfassbar; Tagesabschluss speichert Tracker-Gesamtverbrauch/Notiz ohne Doppelzählung; alle Zeitreihen reagieren auf den Darstellungsumschalter |
+| Abnahme | im Android-16-Emulator alle drei Plus-Wege geöffnet; Tagesabschluss speichert Tracker-Gesamtverbrauch/Notiz ohne Doppelzählung; Statistik zwischen Tageswerten und 7-Tage-Ø umgeschaltet; vollständige CI grün |
 
 ## Implementierter Produktstand
 
@@ -51,11 +51,9 @@ Details und Abnahmekriterien stehen in `SPEC.md`; der technische Verlauf steht i
 | Reihenfolge | Paket | Status | Voraussetzung | P50 | P80 |
 |---|---|---|---|---:|---:|
 | 1 | G1-B3 – Speicher-, Migration- und Compose-Tests | PROPOSED / AWAITING DECISION | G1-B2b grün | 35k | 55k |
-| 2 | G1-C1b – Drei Erfassungs-Popups | PROPOSED / AWAITING DECISION | G1-C1a | 30k | 50k |
-| 3 | G1-C2 – Tageswerte / rollierender 7-Tage-Durchschnitt | PROPOSED / AWAITING DECISION | G1-C1a | 25k | 40k |
-| 4 | Feature-Lückenanalyse und Neupriorisierung | PROPOSED / AWAITING DECISION | Gespräch mit Nutzer | 15k | 25k |
-| 5 | G2 – Konto und produktives Backend | DEFERRED | G1 abgeschlossen | 240k | 360k |
-| 6 | G3 – KI Ende-zu-Ende und Provider-Wechseltest | DEFERRED | G2 | 140k | 220k |
+| 2 | Feature-Lückenanalyse und Neupriorisierung | PROPOSED / AWAITING DECISION | Gespräch mit Nutzer | 15k | 25k |
+| 3 | G2 – Konto und produktives Backend | DEFERRED | G1 abgeschlossen | 240k | 360k |
+| 4 | G3 – KI Ende-zu-Ende und Provider-Wechseltest | DEFERRED | G2 | 140k | 220k |
 
 Kein PROPOSED- oder DEFERRED-Paket darf ohne eine neue Nutzerentscheidung `GO`, `SPLIT`, `DEFER` oder `DROP` begonnen werden.
 

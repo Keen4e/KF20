@@ -20,8 +20,8 @@ Stand: 2026-08-27
 | G1-B2b | Daten-, Netzwerk- und UI-Grenzen | Speicherung und API von Compose entkoppeln | G1-B2a | 30k | 50k | DONE |
 | G1-B3 | Migrations- und UI-Tests | Speicher-, Export-, Upgrade- und Kernflow-Tests | G1-B2b | 35k | 55k | PROPOSED |
 | G1-C1a | Startseite und zentrale Plus-Navigation | Tagesstatistik zuerst; ein Plus für Nahrung, Morgenwerte und Tagesabschluss | G1-B2b | 20k | 35k | DONE |
-| G1-C1b | Drei Erfassungs-Popups | getrennte, kompakte Eingabepopups mit Speicherung und Tests | G1-C1a | 30k | 50k | GO / IN PROGRESS |
-| G1-C2 | Statistikdarstellung | Umschalter Tageswerte / rollierender 7-Tage-Durchschnitt für Zeitreihen | G1-C1a | 25k | 40k | GO / IN PROGRESS |
+| G1-C1b | Drei Erfassungs-Popups | getrennte, kompakte Eingabepopups mit Speicherung und Tests | G1-C1a | 30k | 50k | DONE |
+| G1-C2 | Statistikdarstellung | Umschalter Tageswerte / rollierender 7-Tage-Durchschnitt für Zeitreihen | G1-C1a | 25k | 40k | DONE |
 | G2 | Konto und Backend | Anmeldung, Nutzertrennung, Datenbank und produktives HTTPS | G1 | 240k | 360k | DEFERRED |
 | G3 | KI Ende-zu-Ende | Text, Foto, Mikrofon und Chat produktionsnah; Provider-Wechseltest | G2 | 140k | 220k | DEFERRED |
 | G4 | Revisionslog und Import | sichtbare Korrekturhistorie, Backup-Restore und historischer Abgleich | G1 | 120k | 190k | DEFERRED |

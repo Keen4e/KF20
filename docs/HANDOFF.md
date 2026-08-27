@@ -14,6 +14,8 @@ Stand: 2026-08-27
 - Native Android-App in Kotlin/Compose
 - vier Haupttabs im aktuellen lokalen Stand: Tag, Statistik, Chat, Einstellungen
 - G1-C1a abgeschlossen: Kalorien- und Makrostatistik stehen am Anfang der Tagesseite; ein einzelnes Plus unten rechts öffnet die Auswahl Nahrung, Morgenwerte und Tagesabschluss. Die bisherige große Tageserfassungskarte ist entfallen. Die Navigation lautet Tag, Statistik, Chat, Einstellungen.
+- G1-C1b abgeschlossen: Nahrung, Morgenwerte und Tagesabschluss öffnen jeweils als eigene Bottom-Sheet-Erfassung. Der Tagesabschluss zeigt die aktuelle Bilanz und speichert Tracker-Gesamtverbrauch plus optionale Notiz, ohne den Wert nochmals als Trainingskalorien zu verbuchen.
+- G1-C2 abgeschlossen: Jede Statistikzeitreihe kann zwischen Tageswerten und rollierendem 7-Tage-Durchschnitt umgeschaltet werden. Das Fenster umfasst den aktuellen und die sechs vorherigen Kalendertage; fehlende Ernährungs- oder Messwerte werden ausgelassen statt als Null erfunden.
 - drei sofort umschaltbare, lokal gespeicherte Styleguides: Performance Dark (Standard), Health Light und Data Athlete
 - mehrere benannte, AES-GCM-verschlüsselte Gespräche mit eigener Historie, lokaler Volltextsuche, bestätigtem Löschen und automatischer Migration des bisherigen Einzelverlaufs in den Hauptchat
 - vollständige KF20-Wortmarke im App-Kopf als echte Bildmarke statt der gestauchten ovalen Vektorvariante; vollständiges KF20-Launcher-Icon und echte Material-Icons in der Hauptnavigation
@@ -56,6 +58,8 @@ Stand: 2026-08-27
 
 ## Verifikation
 
+- G1-C1b/C2: Workflow `33109832049` ist für den funktionalen Commit `2c4ca71d85d54d9cf580f046b4233464c3856bee` vollständig grün. Serververträge, Android-JVM-Tests einschließlich der neuen Rolling-Average-Fälle, Lint, Debug-Build und Upload des Artefakts `kf20-debug-apk` (ID `9662197741`) waren erfolgreich.
+- G1-C1b/C2 lokal: Kotlin-Kompilierung und Debug-APK-Build erfolgreich; APK auf Android 16 installiert. Nahrung, Morgenwerte und Tagesabschluss wurden als getrennte Erfassungsflächen geöffnet und die Statistik sichtbar zwischen Tageswerten und `7-Tage-Ø` umgeschaltet. Der vollständige lokale JVM-Lauf traf erneut die bekannte Windows-Sandbox-Dateisperre auf einer Gradle-JAR; GitHub Actions lief ohne Workaround vollständig grün.
 - G1-C1a: Workflow `33107141951` ist für den funktionalen Commit `8acfa952ca1ad5d7007583730157cac0524012c4` vollständig grün. Serververträge, Android-JVM-Tests, Lint, Debug-Build und Upload des Artefakts `kf20-debug-apk` (ID `9661057166`) waren erfolgreich.
 - G1-C1a lokal: Debug-APK erfolgreich gebaut, auf Android 16 installiert und in der sichtbaren Browser-Emulatoransicht geprüft. Tagesstatistik steht zuerst, Plus-Menü enthält Nahrung/Morgenwerte/Tagesabschluss, und die Hauptnavigation lautet Tag/Statistik/Chat/Einstellungen.
 - G1-B2b: Der erste Workflow `33004367088` zeigte einen fehlenden `android.os.Build`-Import. Der korrigierte funktionale Commit `6effd6996f6976c37638e36365caed4390dff7d7` wurde durch Workflow `33005372164` vollständig grün verifiziert: Serververträge, Android-JVM-Tests, Lint, Debug-Build und APK-Artefakt.

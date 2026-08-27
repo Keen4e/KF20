@@ -1,7 +1,7 @@
 # KF20 Qualitätsbaseline
 
 Stand: 2026-08-27
-PI-Paket: G1-B2b
+PI-Paket: G1-C1b + G1-C2
 
 ## Verbindliches Qualitätsgate
 
@@ -40,6 +40,13 @@ Android verwendet ausschließlich den eingecheckten Gradle-Wrapper 8.11.1 mit ve
 - Erinnerungsplanung und Android-Systemdienste liegen in einer eigenen Infrastrukturgrenze.
 - Chat- und Nährwertanfragen laufen über einen separaten providerneutralen API-Client.
 - Der vollständige CI-Lauf `33005372164` bestand Serververträge, JVM-Tests, Lint, Debug-Build und APK-Upload.
+
+## Mit G1-C1b und G1-C2 geschlossen
+
+- Nahrung, Morgenwerte und Tagesabschluss sind als drei getrennte Bottom-Sheet-Flows vom zentralen Plus erreichbar und im Android-16-Emulator geprüft.
+- Der Tagesabschluss hält Tracker-Gesamtverbrauch und optionale Tagesnotiz getrennt von verbrannten Trainingskalorien.
+- Reine JVM-Tests sichern den rollierenden Durchschnitt, das Sieben-Tage-Fenster und die Behandlung fehlender Werte ohne erfundene Nullen.
+- Workflow `33109832049` bestand für Commit `2c4ca71d85d54d9cf580f046b4233464c3856bee` Serververträge, Android-JVM-Tests, Lint, Debug-Build und APK-Upload.
 
 ## Offene Qualitätsrisiken
 
