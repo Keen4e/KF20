@@ -9,8 +9,8 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 - GitHub: `Keen4e/KF20`
 - Arbeitsbranch: `codex/kf20-rebuild`
 - Draft-PR: `#1` gegen `main`
-- Letzter vollständig grüner funktionaler Commit: `6effd6996f6976c37638e36365caed4390dff7d7`
-- Verifizierender Workflow: `33005372164`, Ergebnis: `SUCCESS`
+- Letzter vollständig grüner funktionaler Commit: `8acfa952ca1ad5d7007583730157cac0524012c4`
+- Verifizierender Workflow: `33107141951`, Ergebnis: `SUCCESS`
 - Geprüfte Gates: Server-Syntax/Verträge, Android-JVM-Tests, Android-Lint, Debug-APK und Artefakt-Upload
 
 ## Aktives PI-Paket
@@ -19,9 +19,9 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 |---|---|
 | Paket | G1-C1a – Startseite und zentrale Plus-Navigation |
 | Entscheidung | GO |
-| Status | IN PROGRESS |
+| Status | DONE |
 | P50 / P80 | 20k / 35k Roh-Tokens |
-| Ist-Verbrauch | nach Abschluss zu erfassen; Plus-Wochenanzeige bleibt die verbindliche Kalibrierung |
+| Ist-Verbrauch | ungefähr 30k Roh-Tokens; Plus-Wochenanzeige bleibt die verbindliche Kalibrierung |
 | Produktänderung | Tagesstatistik steht am Anfang der Startseite; bisherige Erfassungskarte wird durch ein einzelnes Plus unten rechts ersetzt |
 | Abnahme | Plus öffnet die Auswahl Nahrung, Morgenwerte und Tagesabschluss; bestehende Erfassungswege bleiben erreichbar; vollständige Eingabepopups folgen erst nach separatem GO für G1-C1b |
 

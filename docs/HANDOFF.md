@@ -13,7 +13,7 @@ Stand: 2026-08-27
 
 - Native Android-App in Kotlin/Compose
 - vier Haupttabs im aktuellen lokalen Stand: Tag, Statistik, Chat, Einstellungen
-- G1-C1a in Arbeit: Kalorien- und Makrostatistik stehen am Anfang der Tagesseite; ein einzelnes Plus unten rechts öffnet die Auswahl Nahrung, Morgenwerte und Tagesabschluss. Die bisherige große Tageserfassungskarte ist entfallen.
+- G1-C1a abgeschlossen: Kalorien- und Makrostatistik stehen am Anfang der Tagesseite; ein einzelnes Plus unten rechts öffnet die Auswahl Nahrung, Morgenwerte und Tagesabschluss. Die bisherige große Tageserfassungskarte ist entfallen. Die Navigation lautet Tag, Statistik, Chat, Einstellungen.
 - drei sofort umschaltbare, lokal gespeicherte Styleguides: Performance Dark (Standard), Health Light und Data Athlete
 - mehrere benannte, AES-GCM-verschlüsselte Gespräche mit eigener Historie, lokaler Volltextsuche, bestätigtem Löschen und automatischer Migration des bisherigen Einzelverlaufs in den Hauptchat
 - vollständige KF20-Wortmarke im App-Kopf als echte Bildmarke statt der gestauchten ovalen Vektorvariante; vollständiges KF20-Launcher-Icon und echte Material-Icons in der Hauptnavigation
@@ -56,6 +56,8 @@ Stand: 2026-08-27
 
 ## Verifikation
 
+- G1-C1a: Workflow `33107141951` ist für den funktionalen Commit `8acfa952ca1ad5d7007583730157cac0524012c4` vollständig grün. Serververträge, Android-JVM-Tests, Lint, Debug-Build und Upload des Artefakts `kf20-debug-apk` (ID `9661057166`) waren erfolgreich.
+- G1-C1a lokal: Debug-APK erfolgreich gebaut, auf Android 16 installiert und in der sichtbaren Browser-Emulatoransicht geprüft. Tagesstatistik steht zuerst, Plus-Menü enthält Nahrung/Morgenwerte/Tagesabschluss, und die Hauptnavigation lautet Tag/Statistik/Chat/Einstellungen.
 - G1-B2b: Der erste Workflow `33004367088` zeigte einen fehlenden `android.os.Build`-Import. Der korrigierte funktionale Commit `6effd6996f6976c37638e36365caed4390dff7d7` wurde durch Workflow `33005372164` vollständig grün verifiziert: Serververträge, Android-JVM-Tests, Lint, Debug-Build und APK-Artefakt.
 - G1-B2b lokal: `compileDebugKotlin` und ein lokaler Debug-APK-Build waren erfolgreich; nur die zwei bekannten Compose-Deprecation-Warnungen bleiben. Das APK wurde auf dem Android-16-Emulator installiert.
 - Privater Telegram-Testimport vom 12.07.–26.08.2026: 29 Ernährungstage, 43 Messtage und 12 Sporttage wurden ausschließlich lokal strukturiert, in den Emulator geladen und dort verschlüsselt gespeichert. Rohchat, Importdatei und private Werte wurden nicht versioniert; der einmalige Importhelfer wurde vor dem abschließenden Build entfernt.
