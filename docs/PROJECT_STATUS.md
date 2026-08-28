@@ -19,11 +19,11 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 |---|---|
 | Paket | Feature-Lückenanalyse und Neupriorisierung |
 | Entscheidung | GO |
-| Status | IN PROGRESS |
+| Status | DONE |
 | P50 / P80 | 15k / 25k Roh-Tokens |
-| Ist-Verbrauch | nach Abschluss zu erfassen; Plus-Wochenanzeige bleibt die verbindliche Kalibrierung |
+| Ist-Verbrauch | ungefähr 14k Roh-Tokens; Plus-Wochenanzeige bleibt die verbindliche Kalibrierung |
 | Produktänderung | keine; Anforderungen, vorhandener Stand und fehlende Features werden entscheidungsreif abgeglichen |
-| Abnahme | priorisierte Lückenliste mit Nutzen, Abhängigkeiten, Risiken, P50/P80 und klaren nächsten Entscheidungs-Gates liegt im Repository |
+| Abnahme | `docs/FEATURE_GAPS.md` enthält priorisierte Lücken, vorhandenen Kern, Abhängigkeiten, Risiken, P50/P80 und klare nächste Entscheidungs-Gates |
 
 ## Implementierter Produktstand
 
@@ -50,10 +50,14 @@ Details und Abnahmekriterien stehen in `SPEC.md`; der technische Verlauf steht i
 
 | Reihenfolge | Paket | Status | Voraussetzung | P50 | P80 |
 |---|---|---|---|---:|---:|
-| 1 | G1-B3 – Speicher-, Migration- und Compose-Tests | PROPOSED / AWAITING DECISION | G1-B2b grün | 35k | 55k |
-| 2 | Feature-Lückenanalyse und Neupriorisierung | GO / IN PROGRESS | Gespräch mit Nutzer | 15k | 25k |
-| 3 | G2 – Konto und produktives Backend | DEFERRED | G1 abgeschlossen | 240k | 360k |
-| 4 | G3 – KI Ende-zu-Ende und Provider-Wechseltest | DEFERRED | G2 | 140k | 220k |
+| 1 | G1-D0 – Zielwerte und Produktwahrheit | PROPOSED / AWAITING DECISION | aktueller Stand | 12k | 20k |
+| 2 | G1-B3 – Speicher-, Migration- und Compose-Tests | PROPOSED / AWAITING DECISION | aktueller Stand | 35k | 55k |
+| 3 | G1-D1 – Bearbeiten und Revisionslog | PROPOSED / AWAITING DECISION | G1-B3 | 45k | 70k |
+| 4 | G1-D2 – Import und Restore | PROPOSED / AWAITING DECISION | G1-B3 | 45k | 75k |
+| 5 | G1-D3 – Standards und Tagesroutinen | PROPOSED / AWAITING DECISION | G1-B3 | 35k | 55k |
+| 6 | G1-D4 – Fortschritt und Statistikdetails | PROPOSED / AWAITING DECISION | G1-B3 | 45k | 75k |
+| 7 | G2a – Private KI-Testumgebung | PROPOSED / AWAITING DECISION | G1-B3 | 70k | 110k |
+| 8 | G3a – KI-End-to-End-Abnahme | PROPOSED / AWAITING DECISION | G2a | 70k | 115k |
 
 Kein PROPOSED- oder DEFERRED-Paket darf ohne eine neue Nutzerentscheidung `GO`, `SPLIT`, `DEFER` oder `DROP` begonnen werden.
 

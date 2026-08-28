@@ -11,6 +11,7 @@ Stand: 2026-08-27
 
 ## Implementierter Stand
 
+- Die Feature-Lückenanalyse vom 28.08.2026 liegt in `docs/FEATURE_GAPS.md`. Sie trennt vorhandenen Kern, partielle Prototypen und fehlende Produkt-/Releasefunktionen und zerlegt die nächsten Optionen in einzeln entscheidbare Pakete mit P50/P80. Es wurde dabei kein Produktcode geändert.
 - Native Android-App in Kotlin/Compose
 - vier Haupttabs im aktuellen lokalen Stand: Tag, Statistik, Chat, Einstellungen
 - G1-C1a abgeschlossen: Kalorien- und Makrostatistik stehen am Anfang der Tagesseite; ein einzelnes Plus unten rechts öffnet die Auswahl Nahrung, Morgenwerte und Tagesabschluss. Die bisherige große Tageserfassungskarte ist entfallen. Die Navigation lautet Tag, Statistik, Chat, Einstellungen.

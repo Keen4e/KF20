@@ -11,12 +11,13 @@ Dieses Repository muss ohne Zugriff auf frühere Chats übernehmbar bleiben. Vor
 
 1. `docs/PROJECT_STATUS.md` – einzige Quelle für Phase, aktives Paket, Blocker und nächste Entscheidungen
 2. `docs/PI_ROADMAP.md` – Featurefolge, Abhängigkeiten und P50/P80-Tokenprognosen
-3. `SPEC.md` – verbindliche Produktanforderungen und Abnahmekriterien
-4. `docs/architecture-and-provider-contracts.md` – technische Grenzen und stabile API-Verträge
-5. `docs/quality-baseline.md` – verbindliche Build-, Test- und CI-Gates
-6. `docs/HANDOFF.md` – detaillierter Implementierungs- und Verifikationsverlauf
-7. `docs/DECISIONS.md` – bestätigte Produkt-, Architektur- und Prozessentscheidungen
-8. `docs/chat-derived-requirements.md` – aus dem privaten Export abstrahierte Anforderungen
+3. `docs/FEATURE_GAPS.md` – letzter Anforderungsabgleich und getrennt entscheidbare Featurepakete
+4. `SPEC.md` – verbindliche Produktanforderungen und Abnahmekriterien
+5. `docs/architecture-and-provider-contracts.md` – technische Grenzen und stabile API-Verträge
+6. `docs/quality-baseline.md` – verbindliche Build-, Test- und CI-Gates
+7. `docs/HANDOFF.md` – detaillierter Implementierungs- und Verifikationsverlauf
+8. `docs/DECISIONS.md` – bestätigte Produkt-, Architektur- und Prozessentscheidungen
+9. `docs/chat-derived-requirements.md` – aus dem privaten Export abstrahierte Anforderungen
 
 ## Verbindliche Pflege
 
