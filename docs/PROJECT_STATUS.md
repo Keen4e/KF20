@@ -1,6 +1,6 @@
 # KF20 Projektstatus
 
-Stand: 2026-08-27
+Stand: 2026-08-28
 
 Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie wird bei jedem begonnenen oder abgeschlossenen PI-Arbeitspaket aktualisiert. Frühere Chats sind für die Übernahme nicht erforderlich.
 
@@ -17,13 +17,13 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 
 | Feld | Wert |
 |---|---|
-| Paket | G1-C1b + G1-C2 – Erfassungs-Popups und Statistikdarstellung |
+| Paket | Feature-Lückenanalyse und Neupriorisierung |
 | Entscheidung | GO |
-| Status | DONE |
-| P50 / P80 | 55k / 90k Roh-Tokens |
-| Ist-Verbrauch | ungefähr 45k Roh-Tokens; Plus-Wochenanzeige bleibt die verbindliche Kalibrierung |
-| Produktänderung | Nahrung, Morgenwerte und Tagesabschluss werden in getrennten Popups erfasst; Statistik kann zwischen Tageswerten und rollierendem 7-Tage-Durchschnitt umschalten |
-| Abnahme | im Android-16-Emulator alle drei Plus-Wege geöffnet; Tagesabschluss speichert Tracker-Gesamtverbrauch/Notiz ohne Doppelzählung; Statistik zwischen Tageswerten und 7-Tage-Ø umgeschaltet; vollständige CI grün |
+| Status | IN PROGRESS |
+| P50 / P80 | 15k / 25k Roh-Tokens |
+| Ist-Verbrauch | nach Abschluss zu erfassen; Plus-Wochenanzeige bleibt die verbindliche Kalibrierung |
+| Produktänderung | keine; Anforderungen, vorhandener Stand und fehlende Features werden entscheidungsreif abgeglichen |
+| Abnahme | priorisierte Lückenliste mit Nutzen, Abhängigkeiten, Risiken, P50/P80 und klaren nächsten Entscheidungs-Gates liegt im Repository |
 
 ## Implementierter Produktstand
 
@@ -51,7 +51,7 @@ Details und Abnahmekriterien stehen in `SPEC.md`; der technische Verlauf steht i
 | Reihenfolge | Paket | Status | Voraussetzung | P50 | P80 |
 |---|---|---|---|---:|---:|
 | 1 | G1-B3 – Speicher-, Migration- und Compose-Tests | PROPOSED / AWAITING DECISION | G1-B2b grün | 35k | 55k |
-| 2 | Feature-Lückenanalyse und Neupriorisierung | PROPOSED / AWAITING DECISION | Gespräch mit Nutzer | 15k | 25k |
+| 2 | Feature-Lückenanalyse und Neupriorisierung | GO / IN PROGRESS | Gespräch mit Nutzer | 15k | 25k |
 | 3 | G2 – Konto und produktives Backend | DEFERRED | G1 abgeschlossen | 240k | 360k |
 | 4 | G3 – KI Ende-zu-Ende und Provider-Wechseltest | DEFERRED | G2 | 140k | 220k |
 
