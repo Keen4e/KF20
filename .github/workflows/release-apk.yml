@@ -50,10 +50,12 @@ jobs:
         working-directory: .
         shell: bash
         run: |
-          echo "tag=$(node -p \"require('./release/current.json').tag\")" >> "$GITHUB_OUTPUT"
-          echo "title=$(node -p \"require('./release/current.json').title\")" >> "$GITHUB_OUTPUT"
+          TAG=$(node -p "require('./release/current.json').tag")
+          TITLE=$(node -p "require('./release/current.json').title")
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "title=$TITLE" >> "$GITHUB_OUTPUT"
           node -p "require('./release/current.json').notes" > release-notes.txt
-          cp android/app/build/outputs/apk/debug/app-debug.apk "KF20-$(node -p \"require('./release/current.json').tag\").apk"
+          cp android/app/build/outputs/apk/debug/app-debug.apk "KF20-$TAG.apk"
       - name: Publish GitHub prerelease
         working-directory: .
         env:
