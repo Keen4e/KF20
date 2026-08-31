@@ -171,19 +171,30 @@ Die Aktion ist über `BuildConfig.DEBUG` auf Entwicklungsbuilds beschränkt. Wed
 
 ## KI- und Providerregel
 
-Der Android-Client verwendet ausschließlich die provider-neutrale KF20-Server-API. Der Server besitzt ein internes Provider-Interface für Chat und Nährwertanalyse; Auswahl und Modell erfolgen ausschließlich über `AI_PROVIDER` und `AI_MODEL`. Der aktuelle Prototyp nutzt den OpenAI-Adapter. Weitere Anbieter werden als Serveradapter ergänzt, ohne Android-Datenmodelle, Oberflächen oder die stabilen KF20-Endpunkte zu ändern. Eine ChatGPT-Subscription ist kein API-Zugang; für den Prototyp ist ein separat konfigurierter Server-API-Key erforderlich.
+Der Android-Client verwendet ausschließlich die provider-neutrale KF20-Server-API. Der Server besitzt ein internes Provider-Interface für Chat und Nährwertanalyse. Der aktuelle Prototyp nutzt den OpenAI-Adapter. Weitere Anbieter werden als Serveradapter ergänzt, ohne Android-Fachmodelle oder die stabilen KF20-Endpunkte zu ändern.
+
+Die Einstellungen bieten künftig drei ausdrücklich getrennte Zugangsarten:
+
+- **KF20 verwaltet:** ein serverseitiger Projekt-/Service-Schlüssel des Betreibers mit Nutzerlimits und Kostenkontrolle
+- **Eigener Schlüssel (BYOK):** benutzereigener Schlüssel für OpenAI direkt, Anthropic direkt oder OpenRouter; verschlüsselt im separaten Secret Vault
+- **ChatGPT-Plus-Begleitmodus:** manueller, nutzergeprüfter Austausch ohne automatische API-Nutzung
+
+Eine ChatGPT-Subscription ist kein API-Zugang. KF20 fordert niemals ChatGPT-Passwort, Session-Cookie oder Browser-Token an. Provider, Modell, Zugangsart und Datenweg sind für den Nutzer sichtbar. Es gibt keinen stillen Wechsel zwischen verwaltetem und eigenem Schlüssel, direktem Provider und OpenRouter oder zu einem anderen Provider.
 
 Provider-Capabilities werden explizit ausgewiesen. Wird etwa Web-Recherche verlangt, aber vom konfigurierten Anbieter nicht unterstützt, liefert der Server einen klaren Capability-Fehler und erfindet keine Quellen.
 
 ## Datenschutz
 
 - Gesundheits- und Chatdaten lokal AES-GCM-verschlüsselt speichern.
+- Cloud-Sync bleibt optional und local-first; Erfassung und Statistik funktionieren ohne Konto und ohne Netz.
+- Zugangsschlüssel werden getrennt von Gesundheits- und Chatdaten in einem Secret Vault gespeichert, niemals synchronisiert oder exportiert und bei Kontolöschung vollständig entfernt.
 - Vollständigen lokalen JSON-Export auf ausdrückliche Nutzeraktion anbieten; Schema 4 enthält benannte Gespräche, aktiven Gesprächsbezug, Designauswahl und die transparenten Portionsmetadaten der Nahrung, schließt Zugangstoken aus und warnt sichtbar, dass die erzeugte Datei selbst nicht verschlüsselt ist.
 - Alle lokalen KF20-Daten, gespeicherten Dateizugriffe und den Android-Keystore-Schlüssel nach einer eindeutigen Bestätigung vollständig löschen können.
 - Keine Provider-Schlüssel in App, Git oder Logs.
 - Keine Chat-Inhaltslogs im Serverbetrieb.
 - Bilder nur für die konkrete Analyse übertragen und nicht serverseitig speichern.
 - Serverseitiger Export, Kontolöschung und definierte Aufbewahrung sind vor Store-Release Pflicht, sobald Nutzerkonten eingeführt werden.
+- Fortschrittsbilder bleiben bis zu einem separat freigegebenen Bild-Sync lokal. KI-Fotos sind nur temporäre Anfrageinhalte und werden nicht als Sync-Objekt gespeichert.
 
 ### Kompatibilitäts- und Qualitätsgarantien
 

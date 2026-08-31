@@ -18,15 +18,15 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 
 | Feld | Wert |
 |---|---|
-| Paket | G1-B3 – Speicher-, Migration- und Compose-Tests |
+| Paket | G2-S0 – Backend-, Sync- und KI-Provider-Strategie |
 | Entscheidung | GO |
-| Status | DONE / AWAITING NEXT PRIORITIZATION |
-| P50 / P80 | 35k / 55k Roh-Tokens |
+| Status | IN PROGRESS – Strategie dokumentiert, Verifikation/Prerelease ausstehend |
+| P50 / P80 | 25k / 40k Roh-Tokens |
 | Ist-Verbrauch | vom Agenten nicht zuverlässig als Plus-Wochenwert messbar; Kalibrierung erfolgt anhand der Nutzeranzeige |
-| Produktänderung | keine neue Nutzerfunktion; Sicherheitsnetz für verschlüsselte Speicherung, Export, Upgrade und kritische Compose-Flows |
-| Abnahme | alte und aktuelle Datenschemata bleiben lesbar; Export 4 vollständig; Gesprächsmigration idempotent; Kernflüsse automatisiert abgesichert |
-| Commit / Workflow | `7ebaad5ead0c2627b02331fe36e42dfd51feb135` / `33387922930` · SUCCESS |
-| APK-Release | `g1-b3-2026-08-31` · https://github.com/Keen4e/KF20/releases/tag/g1-b3-2026-08-31 |
+| Produktänderung | keine neue Nutzerfunktion; verbindliches Zielbild und getrennte Folgepakete für Local-first-Sync, Backend und KI-Zugänge |
+| Abnahme | Managed/BYOK/Plus getrennt; OpenAI/Anthropic/OpenRouter vorgesehen; private Alpha auf Homeserver/Cloudflare und externe Stufe auf Cloud Run/Supabase sowie Secret-, Sync-, Bild- und Löschgrenzen festgelegt |
+| Commit / Workflow | ausstehend |
+| APK-Release | ausstehend; geplant `g2-s0-2026-08-31` |
 
 ## Implementierter Produktstand
 
@@ -59,9 +59,11 @@ Details und Abnahmekriterien stehen in `SPEC.md`; der technische Verlauf steht i
 | 4 | G1-D2 – Import und Restore | PROPOSED / AWAITING DECISION | G1-B3 | 45k | 75k |
 | 5 | G1-D3 – Standards und Tagesroutinen | PROPOSED / AWAITING DECISION | G1-B3 | 35k | 55k |
 | 6 | G1-D4 – Fortschritt und Statistikdetails | PROPOSED / AWAITING DECISION | G1-B3 | 45k | 75k |
-| 7 | G2a – Private KI-Testumgebung | PROPOSED / AWAITING DECISION | G1-B3 | 70k | 110k |
-| 8 | G1-H1 – Health Connect Basis | PROPOSED / AWAITING DECISION | G1-B3 | 55k | 90k |
-| 9 | G3a – KI-End-to-End-Abnahme | PROPOSED / AWAITING DECISION | G2a | 70k | 115k |
+| 7 | G2-A1 – Private Backend-Basis | PROPOSED / AWAITING DECISION | G2-S0 | 55k | 90k |
+| 8 | G2-A2 – KI-Gateway v1 | PROPOSED / AWAITING DECISION | G2-A1 | 55k | 90k |
+| 9 | G2-A3 – BYOK und weitere Provider | PROPOSED / AWAITING DECISION | G2-A2 | 75k | 120k |
+| 10 | G2-B1 – Local-first Datensync | PROPOSED / AWAITING DECISION | G2-A1 | 110k | 175k |
+| 11 | G1-H1 – Health Connect Basis | PROPOSED / AWAITING DECISION | G1-B3 | 55k | 90k |
 
 Kein PROPOSED- oder DEFERRED-Paket darf ohne eine neue Nutzerentscheidung `GO`, `SPLIT`, `DEFER` oder `DROP` begonnen werden.
 

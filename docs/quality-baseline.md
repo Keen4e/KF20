@@ -1,7 +1,7 @@
 # KF20 Qualitätsbaseline
 
 Stand: 2026-08-31
-PI-Paket: G1-B3
+PI-Paket: G2-S0
 
 ## Verbindliches Qualitätsgate
 
@@ -74,3 +74,9 @@ Android verwendet ausschließlich den eingecheckten Gradle-Wrapper 8.11.1 mit ve
 3. Kamera, Mikrofon, reale Provideraufrufe und vollständige APK-zu-APK-Upgrades benötigen weiterhin Realgerät-/E2E-Tests.
 
 Diese Baseline ändert keine Produktfunktion. Jedes weitere Arbeitspaket wird vor Beginn separat priorisiert.
+
+## G2-S0-Prüfung
+
+- Das Paket ändert nur Spezifikation, Architektur, Roadmap und Agentenübergabe; es aktiviert keinen Dienst und enthält keine Secrets.
+- Dokumentverweise, Paket-IDs, P50/P80-Werte und der Release-Descriptor werden auf Konsistenz geprüft.
+- Gemäß Prozessregel wird die unveränderte App dennoch durch das vollständige Release-Workflow-Gate gebaut und als eigenes Debug-Prerelease veröffentlicht.

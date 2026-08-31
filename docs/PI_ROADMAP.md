@@ -30,11 +30,18 @@ Stand: 2026-08-31
 | G1-E1 | Präzisere Nahrungserfassung | Mengen/Einheiten, bestätigte Umrechnung, Zubereitungszustand und transparente Annahmen | G1-C1b | 50k | 80k | DONE · Release `g1-e1-2026-08-31` |
 | G1-S1 | Supplements | Inhaltsstoffe/Einheiten, Einnahmezeiten, Tagesbilanz, Doppelungswarnungen und Arztauszug | G1-B3 | 55k | 90k | PROPOSED |
 | G1-H1 | Health Connect Basis | explizite Verbindung und Leseberechtigung; aktive Kalorien und Trainingseinheiten vom Android-Gerät übernehmen, Quelle/Dubletten transparent halten | G1-B3 | 55k | 90k | PROPOSED |
+| G2-S0 | Backend-, Sync- und KI-Strategie | Local-first-Zielbild, Identität, Datenhaltung, Managed/BYOK/Plus-Modi, Secret-Lebenszyklus und umsetzbare Folgepakete | G1-B3 | 25k | 40k | IN PROGRESS · Release geplant `g2-s0-2026-08-31` |
+| G2-A1 | Private Backend-Basis | portables Docker-Deployment auf Homeserver, Cloudflare Tunnel, HTTPS, Healthcheck, Identität und Backup/Restore | G2-S0 | 55k | 90k | PROPOSED |
+| G2-A2 | KI-Gateway v1 | Provider-Registry, zentraler OpenAI-Projektschlüssel, Limits und Ausführungsmetadaten | G2-A1 | 55k | 90k | PROPOSED |
+| G2-A3 | BYOK und weitere Provider | Credential-Vault, OpenAI-/Anthropic-/OpenRouter-Adapter, Test/Replace/Delete und explizites Routing | G2-A2 | 75k | 120k | PROPOSED |
+| G2-B1 | Local-first Datensync | Konto, Delta-Sync, Konflikte, Export und Kontolöschung; zunächst ohne Bilder | G2-A1 | 110k | 175k | PROPOSED |
+| G2-B2 | Fortschrittsbild-Sync | optionaler verschlüsselter Bild-Sync mit Aufbewahrung und Löschtest | G2-B1 | 55k | 90k | PROPOSED |
+| G3-A1 | KI-End-to-End-Abnahme | Text, Foto, Mikrofon, Chat, Kosten-/Fehlerfälle und Providerwechsel auf Realgerät | G2-A3 | 70k | 115k | PROPOSED |
 | G1-T1 | Trainingsbibliothek | Übungskatalog, Anleitungen, Bilder und Satzprotokoll | G1-B3 | 100k | 170k | DEFERRED |
-| G2a | Private KI-Testumgebung | privates HTTPS-Backend und einfache Verbindung für internen Test | G1-B3 | 70k | 110k | PROPOSED |
-| G3a | KI-End-to-End-Abnahme | Text, Foto, Mikrofon, Chat, Fehler und Providerwechsel auf Realgerät | G2a | 70k | 115k | PROPOSED |
-| G2 | Konto und Backend | Anmeldung, Nutzertrennung, Datenbank und produktives HTTPS | G1 | 240k | 360k | DEFERRED |
-| G3 | KI Ende-zu-Ende | Text, Foto, Mikrofon und Chat produktionsnah; Provider-Wechseltest | G2 | 140k | 220k | DEFERRED |
+| G2a | Private KI-Testumgebung | frühere Grobplanung; ersetzt durch G2-A1/A2 | G1-B3 | 70k | 110k | SUPERSEDED |
+| G3a | KI-End-to-End-Abnahme | frühere Grobplanung; ersetzt durch G3-A1 | G2a | 70k | 115k | SUPERSEDED |
+| G2 | Konto und Backend | frühere Grobplanung; ersetzt durch G2-A1/A2/A3/B1/B2 | G1 | 240k | 360k | SUPERSEDED |
+| G3 | KI Ende-zu-Ende | frühere Grobplanung; ersetzt durch G3-A1 | G2 | 140k | 220k | SUPERSEDED |
 | G4 | Revisionslog und Import | sichtbare Korrekturhistorie, Backup-Restore und historischer Abgleich | G1 | 120k | 190k | DEFERRED |
 | G5 | Agenten-Anhänge | Bilder, PDFs und Dokumente im Chat mit sicheren Ergebnissen | G1, G3 | 160k | 260k | DEFERRED |
 | G6 | Security und Datenschutz | Kontolöschung, Aufbewahrung, Limits und Monitoring | G2 | 170k | 270k | DEFERRED |
@@ -42,7 +49,7 @@ Stand: 2026-08-31
 
 Gesamtprognose PI-1 vor weiterer Kalibrierung: ungefähr 1,16 bis 1,82 Millionen Roh-Tokens.
 
-Die neuen D-Pakete schneiden Teile des bisherigen Sammelpakets G4 kleiner; G2a/G3a sind interne Teststufen innerhalb von G2/G3. Diese Zeilen sind Alternativzerlegungen und werden nicht zusätzlich zu den übergeordneten Sammelpaketen summiert.
+Die neuen D-Pakete schneiden Teile des bisherigen Sammelpakets G4 kleiner. G2-A1 bis G2-B2 und G3-A1 ersetzen nach G2-S0 die gröberen Zeilen G2a/G2/G3a/G3 als bevorzugte Zerlegung; diese Alternativen werden nicht doppelt summiert.
 
 ## Gate-Ablauf
 

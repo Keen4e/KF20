@@ -22,6 +22,7 @@ Every agent handoff starts with [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.m
 - [`docs/FEATURE_GAPS.md`](docs/FEATURE_GAPS.md) – latest requirement gap analysis and decision-ready feature packages
 - [`SPEC.md`](SPEC.md) – product requirements and acceptance criteria
 - [`docs/architecture-and-provider-contracts.md`](docs/architecture-and-provider-contracts.md) – stable API and provider boundaries
+- [`docs/BACKEND_STRATEGY.md`](docs/BACKEND_STRATEGY.md) – accepted local-first sync, identity, secret and multi-provider target architecture
 - [`docs/quality-baseline.md`](docs/quality-baseline.md) – mandatory build and test gates
 - [`docs/HANDOFF.md`](docs/HANDOFF.md) – current code, verification and blocker status
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) – accepted product, architecture and process decisions

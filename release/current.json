@@ -1,5 +1,5 @@
 {
-  "tag": "g1-b3-2026-08-31",
-  "title": "KF20 G1-B3 – Qualitäts- und Migrationstests",
-  "notes": "Interne Testversion. Keine neue Nutzerfunktion: Dieses Paket ergänzt automatisierte Kompatibilitätsprüfungen für verschlüsselte Speicherung, Export-Schema 4 und die einmalige Migration älterer Chatdaten sowie bildschirmgrößenunabhängige Emulator-Tests für die zentralen Erfassungs-, Statistik- und Navigationsflüsse. Diese APK ist debug-signiert und nicht für den Play Store bestimmt."
+  "tag": "g2-s0-2026-08-31",
+  "title": "KF20 G2-S0 – Backend- und Provider-Strategie",
+  "notes": "Interne Testversion. Keine neue Nutzerfunktion: Dieses Planungspaket dokumentiert die verbindliche Local-first-, Sync-, Datenschutz- und Multi-Provider-Strategie einschließlich KF20-verwaltetem Zugang, BYOK für OpenAI/Anthropic/OpenRouter und manuellem ChatGPT-Plus-Begleitmodus. Die APK entspricht funktional dem zuvor verifizierten Stand, wird aber nach allen Qualitätsgates erneut gebaut. Sie ist debug-signiert und nicht für den Play Store bestimmt."
 }

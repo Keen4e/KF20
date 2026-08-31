@@ -3,11 +3,11 @@
 ## Systemgrenze
 
 ```text
-Android-App -> HTTPS KF20 API -> KI-Provider
-             -> künftige Konto-/Datenbankdienste
+Android-App -> HTTPS KF20 API -> Identity / Sync / PostgreSQL
+                           \-> KI-Gateway -> Secret Vault -> KI-Provider
 ```
 
-Der Android-Client enthält keine Provider-SDKs, API-Schlüssel oder providerspezifischen Antworttypen. Er kennt nur die KF20-API-Verträge.
+Der Android-Client enthält keine Provider-SDKs, API-Schlüssel oder providerspezifischen Antworttypen. Er kennt nur die KF20-API-Verträge. Das verbindliche Betriebs-, Sync- und Secret-Zielbild steht in `BACKEND_STRATEGY.md`.
 
 ## Android
 
@@ -93,11 +93,25 @@ AiProvider.chat(messages, memories, webSearch) -> { text, sources }
 AiProvider.analyzeNutrition(description, imageDataUrl) -> NutritionEstimate
 ```
 
-Provider-Auswahl erfolgt ausschließlich über Serverkonfiguration (`AI_PROVIDER`, `AI_MODEL` und Secret Store). `server/src/providers/openai.js` implementiert den ersten Adapter. Ein neuer Provider wird unter `server/src/providers/` ergänzt und muss die stabilen KF20-Responses erzeugen. Der Android-Client wird dafür nicht geändert.
+Im aktuellen Einzeltester-Prototyp erfolgt die Provider-Auswahl über Serverkonfiguration (`AI_PROVIDER`, `AI_MODEL` und Secret Store). `server/src/providers/openai.js` implementiert den ersten Adapter. Das Zielmodell erweitert die serverseitige Auswahl um `credentialMode`, `providerId` und `modelId`. Zulässige Provider und Modelle kommen aus einer Capability-Registry; Credentials werden ausschließlich über einen Secret-Resolver bezogen.
+
+Ein neuer Provider wird unter `server/src/providers/` ergänzt und muss die stabilen KF20-Responses erzeugen. Vorgesehen sind OpenAI direkt, Anthropic direkt und OpenRouter als getrennte Datenwege. Android erhält weder Provider-SDKs noch Secrets; UI-Erweiterungen zeigen lediglich die serverseitig angebotenen Modi und Fähigkeiten.
 
 Web-Recherche ist eine optionale Capability. Ein Provider ohne Recherche muss einen klaren Capability-Fehler zurückgeben; er darf keine Quellen erfinden.
 
 Providerfehler werden ohne Anfrageinhalte protokolliert und in stabile, generische KF20-Fehler übersetzt. Providerantworten für Nährwerte werden vor der Rückgabe nochmals gegen den KF20-Vertrag validiert.
+
+Kein Adapter darf still von BYOK auf einen KF20-Schlüssel, zwischen direktem Provider und OpenRouter oder auf einen anderen Provider wechseln. Provider, Modell und Zugangsart werden als nicht-sensitives Ausführungsmetadatum zurückgegeben. Die konkrete API-Erweiterung dafür wird erst in G2-A2 implementiert und versioniert.
+
+## Sync- und Secret-Grenze
+
+- Bevorzugte private Alpha: containerisierte KF20-API und PostgreSQL auf dem Homeserver, ausschließlich über Cloudflare Tunnel erreichbar und mit verschlüsseltem Offsite-Backup. Bevorzugte externe Stufe: API/KI-Gateway auf Cloud Run `europe-west3`, Supabase Auth/PostgreSQL in `eu-central-1` und Betreiber-Secrets in Google Secret Manager/KMS. Alpha- und Produktionsressourcen bleiben getrennt.
+- Die lokale verschlüsselte Datenbank bleibt bei Offline-Nutzung führend; Cloud-Sync ist opt-in.
+- Synchronisierte Fachobjekte verwenden stabile IDs, Revisionen, Zeitstempel und Löschmarker. Nicht sicher zusammenführbare Konflikte werden sichtbar statt still überschrieben.
+- Nutzeridentität wird serverseitig aus der Session abgeleitet. Eine Client-Nutzer-ID erteilt keine Berechtigung.
+- Gesundheitsdatenbank, KI-Anfrageinhalte und Provider-Secrets besitzen getrennte Speicher- und Löschpfade.
+- Fortschrittsbilder sind nicht Teil der ersten Sync-Stufe. KI-Bilder werden nach der Anfrage verworfen.
+- BYOK-Secrets werden verschlüsselt im Vault gehalten, nie über Lese-APIs zurückgegeben und von Exporten, Logs, Analytics und normalen Datenbank-Backups ausgeschlossen.
 
 ## Aktuelle Sicherheitsgrenze
 

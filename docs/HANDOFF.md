@@ -1,5 +1,16 @@
 # KF20 Handoff
 
+## G2-S0 – Backend-, Sync- und KI-Provider-Strategie (2026-08-31)
+
+- Nutzer-GO: `G2-S0 GO`.
+- `docs/BACKEND_STRATEGY.md` ist die verbindliche neue Zielarchitektur für Local-first-Sync, Identität, PostgreSQL/Supabase-Spike, Secret Vault und KI-Routing.
+- Die drei Zugangsarten sind getrennt: KF20-verwaltet, benutzereigener Schlüssel (BYOK) und manueller ChatGPT-Plus-Begleitmodus.
+- OpenAI direkt, Anthropic direkt und OpenRouter sind getrennte Providerwege. Ein stiller Wechsel von Provider, Vermittler oder Kostenträger ist ausgeschlossen.
+- Vorhandener IONOS-Webspace ist für Domain/Landingpage vorgesehen. Nur falls der Vertrag ein echter VPS/Cloud Server mit Adminzugriff ist, wird IONOS in G2-A1 als Container-Alternative zu Cloud Run geprüft.
+- Für die private Alpha ist der vorhandene Homeserver mit Docker und ausschließlich ausgehendem Cloudflare Tunnel nun die bevorzugte Laufzeit. Cloudflare Access ist Zusatzschutz und ersetzt nicht die KF20-Authentifizierung; verschlüsseltes Offsite-Backup und Restore-Test gehören zur Abnahme.
+- Das Paket enthält bewusst keinen Backend-Produktcode, kein Konto, keinen Cloud-Dienst und keinen echten Schlüssel. Die Umsetzung ist in G2-A1/A2/A3 sowie G2-B1/B2 zerlegt und benötigt jeweils ein neues GO.
+- Verifikation und Prerelease `g2-s0-2026-08-31` werden nach Commit/CI ergänzt.
+
 Stand: 2026-08-31
 
 ## Repository

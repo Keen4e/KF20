@@ -14,10 +14,11 @@ Dieses Repository muss ohne Zugriff auf frühere Chats übernehmbar bleiben. Vor
 3. `docs/FEATURE_GAPS.md` – letzter Anforderungsabgleich und getrennt entscheidbare Featurepakete
 4. `SPEC.md` – verbindliche Produktanforderungen und Abnahmekriterien
 5. `docs/architecture-and-provider-contracts.md` – technische Grenzen und stabile API-Verträge
-6. `docs/quality-baseline.md` – verbindliche Build-, Test- und CI-Gates
-7. `docs/HANDOFF.md` – detaillierter Implementierungs- und Verifikationsverlauf
-8. `docs/DECISIONS.md` – bestätigte Produkt-, Architektur- und Prozessentscheidungen
-9. `docs/chat-derived-requirements.md` – aus dem privaten Export abstrahierte Anforderungen
+6. `docs/BACKEND_STRATEGY.md` – verbindliches Zielbild für Local-first-Sync, Identität, Secrets und KI-Provider
+7. `docs/quality-baseline.md` – verbindliche Build-, Test- und CI-Gates
+8. `docs/HANDOFF.md` – detaillierter Implementierungs- und Verifikationsverlauf
+9. `docs/DECISIONS.md` – bestätigte Produkt-, Architektur- und Prozessentscheidungen
+10. `docs/chat-derived-requirements.md` – aus dem privaten Export abstrahierte Anforderungen
 
 ## Verbindliche Pflege
 
