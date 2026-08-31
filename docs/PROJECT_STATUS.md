@@ -9,9 +9,10 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 - GitHub: `Keen4e/KF20`
 - Arbeitsbranch: `codex/kf20-rebuild`
 - Draft-PR: `#1` gegen `main`
-- Letzter vollständig grüner funktionaler Commit: `2c4ca71d85d54d9cf580f046b4233464c3856bee`
-- Verifizierender Workflow: `33109832049`, Ergebnis: `SUCCESS`
+- Letzter vollständig grüner funktionaler Commit: `5a6e385683ccceb1292835614fd7a218636cc325`
+- Verifizierender Workflow: `33367205499`, Ergebnis: `SUCCESS`
 - Geprüfte Gates: Server-Syntax/Verträge, Android-JVM-Tests, Android-Lint, Debug-APK und Artefakt-Upload
+- Veröffentlichtes Prerelease: `g1-e1-2026-08-31` mit `KF20-g1-e1-2026-08-31.apk`
 
 ## Aktives PI-Paket
 
@@ -19,11 +20,13 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 |---|---|
 | Paket | G1-E1 – Präzisere Nahrungserfassung |
 | Entscheidung | GO |
-| Status | IN PROGRESS |
+| Status | DONE |
 | P50 / P80 | 50k / 80k Roh-Tokens |
-| Ist-Verbrauch | nach Abschluss zu erfassen; Plus-Wochenanzeige bleibt die verbindliche Kalibrierung |
+| Ist-Verbrauch | technisch nicht als Roh-Tokenwert auslesbar; P50/P80 bleibt 50k/80k, die Plus-Wochenanzeige ist die verbindliche Kalibrierung |
 | Produktänderung | KI-Portionen werden transparent über Menge und Einheit skaliert; Gramm je Einheit, Zubereitungszustand und Annahmen bleiben sichtbar |
 | Abnahme | Portion/g/Stück/EL/TL ohne erfundene Standardgewichte; Live-Neuberechnung der vier Kernwerte; Metadaten bleiben nach Neustart und im Export erhalten |
+| Commit / Workflow | `5a6e385683ccceb1292835614fd7a218636cc325` / `33367205499` – SUCCESS |
+| APK-Release | `g1-e1-2026-08-31` – https://github.com/Keen4e/KF20/releases/tag/g1-e1-2026-08-31 |
 
 ## Implementierter Produktstand
 

@@ -27,7 +27,7 @@ Stand: 2026-08-31
 | G1-D2 | Import und Restore | versionierter JSON-Restore und nutzergeführter historischer Import | G1-B3 | 45k | 75k | PROPOSED |
 | G1-D3 | Standards und Tagesroutinen | Standards bearbeiten/ordnen und kontextbezogene Erinnerungen | G1-B3 | 35k | 55k | PROPOSED |
 | G1-D4 | Fortschritt und Statistikdetails | Fotovergleich, Zieltrend und untersuchbare Diagramme | G1-B3 | 45k | 75k | PROPOSED |
-| G1-E1 | Präzisere Nahrungserfassung | Mengen/Einheiten, bestätigte Umrechnung, Zubereitungszustand und transparente Annahmen | G1-C1b | 50k | 80k | GO / IN PROGRESS |
+| G1-E1 | Präzisere Nahrungserfassung | Mengen/Einheiten, bestätigte Umrechnung, Zubereitungszustand und transparente Annahmen | G1-C1b | 50k | 80k | DONE · Release `g1-e1-2026-08-31` |
 | G1-S1 | Supplements | Inhaltsstoffe/Einheiten, Einnahmezeiten, Tagesbilanz, Doppelungswarnungen und Arztauszug | G1-B3 | 55k | 90k | PROPOSED |
 | G1-H1 | Health Connect Basis | explizite Verbindung und Leseberechtigung; aktive Kalorien und Trainingseinheiten vom Android-Gerät übernehmen, Quelle/Dubletten transparent halten | G1-B3 | 55k | 90k | PROPOSED |
 | G1-T1 | Trainingsbibliothek | Übungskatalog, Anleitungen, Bilder und Satzprotokoll | G1-B3 | 100k | 170k | DEFERRED |
@@ -40,7 +40,7 @@ Stand: 2026-08-31
 | G6 | Security und Datenschutz | Kontolöschung, Aufbewahrung, Limits und Monitoring | G2 | 170k | 270k | DEFERRED |
 | G7 | Release und Store | Realgerät, signiertes AAB, Listing, Data Safety und interner Play-Test | G3–G6 | 150k | 250k | DEFERRED |
 
-Gesamtprognose PI-1 vor weiterer Kalibrierung: ungefähr 1,10 bis 1,73 Millionen Roh-Tokens.
+Gesamtprognose PI-1 vor weiterer Kalibrierung: ungefähr 1,16 bis 1,82 Millionen Roh-Tokens.
 
 Die neuen D-Pakete schneiden Teile des bisherigen Sammelpakets G4 kleiner; G2a/G3a sind interne Teststufen innerhalb von G2/G3. Diese Zeilen sind Alternativzerlegungen und werden nicht zusätzlich zu den übergeordneten Sammelpaketen summiert.
 
