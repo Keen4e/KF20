@@ -18,7 +18,7 @@ Stand: 2026-08-31
 | G1-B1 | Reproduzierbarer Build und CI-Gates | Wrapper, Tests, Lint, CI und Agentenübergabe | G1-A | 25k | 40k | DONE |
 | G1-B2a | Fachmodelle und reine Berechnungslogik | Domänenmodelle sowie Refeed-, Ziel- und Navy-Logik aus der UI-Datei lösen | G1-B1 | 20k | 30k | DONE |
 | G1-B2b | Daten-, Netzwerk- und UI-Grenzen | Speicherung und API von Compose entkoppeln | G1-B2a | 30k | 50k | DONE |
-| G1-B3 | Migrations- und UI-Tests | Speicher-, Export-, Upgrade- und Kernflow-Tests | G1-B2b | 35k | 55k | PROPOSED |
+| G1-B3 | Migrations- und UI-Tests | Speicher-, Export-, Upgrade- und Kernflow-Tests | G1-B2b | 35k | 55k | GO / IN PROGRESS |
 | G1-C1a | Startseite und zentrale Plus-Navigation | Tagesstatistik zuerst; ein Plus für Nahrung, Morgenwerte und Tagesabschluss | G1-B2b | 20k | 35k | DONE |
 | G1-C1b | Drei Erfassungs-Popups | getrennte, kompakte Eingabepopups mit Speicherung und Tests | G1-C1a | 30k | 50k | DONE |
 | G1-C2 | Statistikdarstellung | Umschalter Tageswerte / rollierender 7-Tage-Durchschnitt für Zeitreihen | G1-C1a | 25k | 40k | DONE |

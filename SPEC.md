@@ -185,6 +185,13 @@ Provider-Capabilities werden explizit ausgewiesen. Wird etwa Web-Recherche verla
 - Bilder nur für die konkrete Analyse übertragen und nicht serverseitig speichern.
 - Serverseitiger Export, Kontolöschung und definierte Aufbewahrung sind vor Store-Release Pflicht, sobald Nutzerkonten eingeführt werden.
 
+### Kompatibilitäts- und Qualitätsgarantien
+
+- Bestehende verschlüsselte Tageslogs und Messwerte bleiben nach App-Upgrades lesbar; unbekannte oder beschädigte Einzelobjekte dürfen andere gültige Datensätze nicht verwerfen.
+- Der frühere einzelne Chatverlauf wird höchstens einmal in den benannten `Hauptchat` übernommen. Bereits vorhandene benannte Gespräche werden durch die Migration weder ersetzt noch dupliziert.
+- Export-Schema 4 enthält alle fachlichen lokalen Datenbereiche und Portionsmetadaten, aber keine API-Zugangsdaten.
+- Diese Garantien werden durch reine JVM-Vertrags- und Migrationstests sowie Android-Instrumentierungstests für Keystore, Speicher und die kritischen Erfassungs- und Navigationsflüsse abgesichert.
+
 ## Abnahmekriterien vor Play Store
 
 - Alle oben genannten Funktionen auf mindestens einem realen Android-Gerät end-to-end getestet.

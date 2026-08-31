@@ -4,6 +4,7 @@
 android/.gradle/
 android/build/
 android/local.properties
+.android-user-*/
 android/app/build/
 emulator.*.log
 server/.env

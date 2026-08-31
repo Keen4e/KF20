@@ -25,42 +25,20 @@ internal class UiPreferencesStorage(context: Context) {
 internal class ChatStorage(context: Context) {
     private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
     fun read(): List<ChatConversation> {
-        val stored = runCatching {
-            val array = JSONArray(SecureStore.decrypt(preferences.getString("conversations", null)) ?: "[]")
-            List(array.length()) { index ->
-                array.getJSONObject(index).let { item ->
-                    ChatConversation(
-                        id = item.getString("id"),
-                        title = item.optString("title", "Gespräch"),
-                        messages = decodeMessages(item.optJSONArray("messages") ?: JSONArray()),
-                        updatedAt = item.optLong("updatedAt", 0L)
-                    )
-                }
-            }
-        }.getOrDefault(emptyList())
-        if (stored.isNotEmpty()) return stored.sortedByDescending { it.updatedAt }
+        val storedJson = runCatching { SecureStore.decrypt(preferences.getString("conversations", null)) }.getOrNull()
+        val stored = Kf20DataCodec.decodeConversations(storedJson)
+        if (stored.isNotEmpty()) return stored
 
-        val legacyMessages = runCatching {
-            decodeMessages(JSONArray(SecureStore.decrypt(preferences.getString("messages", null)) ?: "[]"))
-        }.getOrDefault(emptyList())
+        val legacyJson = runCatching { SecureStore.decrypt(preferences.getString("messages", null)) }.getOrNull()
         val now = Instant.now().toEpochMilli()
-        val migrated = listOf(ChatConversation("chat-$now", "Hauptchat", legacyMessages, now))
-        write(migrated)
-        preferences.edit().remove("messages").putString("active_conversation_id", migrated.first().id).apply()
-        return migrated
+        val migration = Kf20DataCodec.planConversationMigration(null, legacyJson, now)
+        write(migration.conversations)
+        preferences.edit().remove("messages").putString("active_conversation_id", migration.activeConversationId).apply()
+        return migration.conversations
     }
 
     fun write(conversations: List<ChatConversation>) {
-        val array = JSONArray()
-        conversations.sortedByDescending { it.updatedAt }.take(50).forEach { conversation ->
-            array.put(
-                JSONObject()
-                    .put("id", conversation.id)
-                    .put("title", conversation.title)
-                    .put("updatedAt", conversation.updatedAt)
-                    .put("messages", encodeMessages(conversation.messages))
-            )
-        }
+        val array = Kf20DataCodec.encodeConversations(conversations)
         preferences.edit().putString("conversations", SecureStore.encrypt(array.toString())).remove("messages").apply()
     }
 
@@ -68,33 +46,15 @@ internal class ChatStorage(context: Context) {
     fun writeActiveId(id: String) = preferences.edit().putString("active_conversation_id", id).apply()
     fun clear() = preferences.edit().remove("conversations").remove("messages").remove("active_conversation_id").apply()
 
-    private fun decodeMessages(array: JSONArray): List<ChatMessage> = List(array.length()) { index ->
-        array.getJSONObject(index).let { ChatMessage(it.getString("role"), it.getString("content")) }
-    }
-
-    private fun encodeMessages(messages: List<ChatMessage>): JSONArray = JSONArray().apply {
-        messages.takeLast(500).forEach { message -> put(JSONObject().put("role", message.role).put("content", message.content)) }
-    }
 }
 
 internal class DailyLogStorage(context: Context) {
     private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
     fun read(): List<DailyLogEntry> = runCatching {
-        val array = JSONArray(SecureStore.decrypt(preferences.getString("daily_entries", null)) ?: "[]")
-        List(array.length()) { index ->
-            array.getJSONObject(index).let {
-                DailyLogEntry(
-                    it.optString("date", todayKey()), it.getString("type"), it.getString("title"), it.getInt("calories"),
-                    it.getDouble("protein"), it.optDouble("fat", 0.0), it.optDouble("carbs", 0.0), it.optBoolean("planned", false),
-                    decodeFoodPortion(it.optJSONObject("portion"))
-                )
-            }
-        }
+        Kf20DataCodec.decodeDailyEntries(SecureStore.decrypt(preferences.getString("daily_entries", null)))
     }.getOrDefault(emptyList())
     fun write(entries: List<DailyLogEntry>) {
-        val array = JSONArray(); entries.takeLast(500).forEach { entry ->
-            array.put(JSONObject().put("date", entry.date).put("type", entry.type).put("title", entry.title).put("calories", entry.calories).put("protein", entry.protein).put("fat", entry.fat).put("carbs", entry.carbs).put("planned", entry.planned).put("portion", encodeFoodPortion(entry.portion)))
-        }
+        val array = Kf20DataCodec.encodeDailyEntries(entries)
         preferences.edit().putString("daily_entries", SecureStore.encrypt(array.toString())).apply()
     }
 }
@@ -250,33 +210,10 @@ internal class SportStorage(context: Context) {
 internal class MeasurementStorage(context: Context) {
     private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
     fun read(): List<BodyMeasurement> = runCatching {
-        val array = JSONArray(SecureStore.decrypt(preferences.getString("body_measurements", null)) ?: "[]")
-        List(array.length()) { index ->
-            array.getJSONObject(index).let {
-                BodyMeasurement(
-                    date = it.getString("date"),
-                    weight = it.optionalDouble("weight"),
-                    scaleBodyFat = it.optionalDouble("scaleBodyFat") ?: it.optionalDouble("bodyFat"),
-                    neck = it.optionalDouble("neck"),
-                    abdomen = it.optionalDouble("abdomen") ?: it.optionalDouble("waist"),
-                    hunger = it.optionalInt("hunger"),
-                    energy = it.optionalInt("energy")
-                )
-            }
-        }
+        Kf20DataCodec.decodeMeasurements(SecureStore.decrypt(preferences.getString("body_measurements", null)))
     }.getOrDefault(emptyList())
     fun write(measurements: List<BodyMeasurement>) {
-        val array = JSONArray(); measurements.takeLast(1000).forEach { item ->
-            array.put(
-                JSONObject().put("date", item.date)
-                    .put("weight", item.weight ?: JSONObject.NULL)
-                    .put("scaleBodyFat", item.scaleBodyFat ?: JSONObject.NULL)
-                    .put("neck", item.neck ?: JSONObject.NULL)
-                    .put("abdomen", item.abdomen ?: JSONObject.NULL)
-                    .put("hunger", item.hunger ?: JSONObject.NULL)
-                    .put("energy", item.energy ?: JSONObject.NULL)
-            )
-        }
+        val array = Kf20DataCodec.encodeMeasurements(measurements)
         preferences.edit().putString("body_measurements", SecureStore.encrypt(array.toString())).apply()
     }
 }

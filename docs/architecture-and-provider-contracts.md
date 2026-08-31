@@ -15,6 +15,7 @@ Der Android-Client enthält keine Provider-SDKs, API-Schlüssel oder providerspe
 - gemeinsame Domänenmodelle liegen in `Kf20Models.kt`; Android-unabhängige Refeed-, Tagesziel- und Navy-KFA-Berechnungen liegen in `DailyTargetLogic.kt` und werden mit JVM-Tests abgesichert
 - `MainActivity.kt` enthält weiterhin den Compose-Zustand und die Bildschirmkomposition, greift aber nur noch über klar benannte Grenzen auf Infrastruktur zu
 - `Kf20Storage.kt` kapselt lokale Speicherung, Verschlüsselung, Export und Gesamtlöschung
+- `Kf20DataCodec.kt` ist die Android-unabhängig testbare JSON-Grenze für Tageslog, Messwerte und Gespräche. `Kf20Storage.kt` übernimmt nur verschlüsselte Persistenz und delegiert Schema-Lesen, -Schreiben und die idempotente Altchat-Migration an diesen Codec
 - `Kf20Services.kt` kapselt Erinnerungsplanung und Android-Systemdienste
 - `Kf20ApiClient.kt` kapselt die providerneutralen KF20-HTTP-Aufrufe für Chat und Nährwertanalyse
 - lokale sensible Daten verschlüsselt über AES-GCM und Android Keystore
@@ -27,6 +28,7 @@ Der Android-Client enthält keine Provider-SDKs, API-Schlüssel oder providerspe
 - lokaler, nutzerinitiierter JSON-Export schließt Server-Token aus; die Datei selbst ist unverschlüsselt und wird nur an einen vom Nutzer gewählten Android-Speicherort geschrieben
 - nicht-sensitive UI-Präferenzen wie der Styleguide liegen im selben lokalen Preference-Lebenszyklus, werden sofort angewendet und im JSON-Export unter `uiPreferences` ausgegeben; Schema 4 exportiert zusätzlich alle benannten Gespräche, die aktive Gesprächs-ID und Portionsmetadaten der Nahrung
 - bestätigte lokale Gesamtlöschung entfernt verschlüsselte Preferences, persistierte URI-Freigaben, Erinnerungsalarm und Android-Keystore-Schlüssel
+- JVM-Tests prüfen aktuelle und alte JSON-Schemata sowie Exportverträge; Android-Instrumentierungstests prüfen den echten Keystore-/AES-GCM-Pfad und Compose-Kernflüsse. Beide GitHub-Workflows führen diese Instrumentierung auf einem Android-Emulator aus
 
 ## Stabile KF20-API
 

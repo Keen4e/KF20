@@ -1,7 +1,7 @@
 # KF20 Qualitätsbaseline
 
 Stand: 2026-08-31
-PI-Paket: G1-E1
+PI-Paket: G1-B3
 
 ## Verbindliches Qualitätsgate
 
@@ -11,7 +11,8 @@ Jede Änderung unter `android/` oder `server/` muss in GitHub Actions folgende S
 2. Android-JVM-Unit-Tests
 3. Android-Lint
 4. Android-Debug-Build und APK-Artefakt
-5. bei Paketabschluss Veröffentlichung genau dieser geprüften APK als eindeutig versioniertes GitHub-Prerelease
+5. Android-Instrumentierungstests auf einem API-35-Emulator
+6. bei Paketabschluss Veröffentlichung genau dieser geprüften APK als eindeutig versioniertes GitHub-Prerelease
 
 Android verwendet ausschließlich den eingecheckten Gradle-Wrapper 8.11.1 mit verifizierter Distributions-Prüfsumme. Der lokale Ein-Befehl-Check steht im `README.md`.
 
@@ -57,12 +58,19 @@ Android verwendet ausschließlich den eingecheckten Gradle-Wrapper 8.11.1 mit ve
 - Ungültige oder nicht positive Mengen erzeugen keinen speicherbaren Nährwertsatz.
 - Bestehende Tageslogs ohne Portionsobjekt bleiben als eine Portion lesbar; neue Einträge werden in Export-Schema 4 vollständig ausgegeben.
 
+## Mit G1-B3 geschlossen
+
+- Reine Codec-Tests sichern aktuelle Tageslogs, alte Einträge ohne Portion, tolerantes Überspringen beschädigter Einzelobjekte sowie alte Messwert-Feldnamen.
+- Die Migration vom früheren Einzelchat in den `Hauptchat` ist als idempotenter Vertrag getestet.
+- Der Exportvertrag prüft Schema 4, alle lokalen Datenbereiche und den Ausschluss von Serverzugangsdaten.
+- Android-Instrumentierung prüft echte AES-GCM-/Keystore-Rundreisen, verschlüsselte Storage-Rundreisen und die einmalige Altchat-Migration.
+- Compose-Instrumentierung öffnet Navigation, Plus-Auswahl, Nahrungserfassung, Morgenwerte, Tagesabschluss und die Statistik-Umschaltung.
+- Branch- und Release-Workflow führen die Instrumentierung auf einem API-35-Emulator aus; ein Release entsteht erst nach allen Gates.
+
 ## Offene Qualitätsrisiken
 
-1. Speicher-, Export- und Gesprächsmigration benötigen eigene Unit-/Migrationstests.
-2. Kritische Compose-Flows benötigen Instrumentierungs- beziehungsweise UI-Tests.
-3. Compose-Zustand und Bildschirmkomposition sind weiterhin groß und sollten erst nach priorisierten Produktentscheidungen weiter zerlegt werden.
-4. Der Widerspruch bei automatisch gesetzten Nährwertzielen ist in einem eigenen Produkt-Gate zu entscheiden und zu korrigieren.
-5. Kamera, Mikrofon und Upgrade-Pfade benötigen weiterhin Realgerät-Tests.
+1. Compose-Zustand und Bildschirmkomposition sind weiterhin groß und sollten erst nach priorisierten Produktentscheidungen weiter zerlegt werden.
+2. Der Widerspruch bei automatisch gesetzten Nährwertzielen ist in einem eigenen Produkt-Gate zu entscheiden und zu korrigieren.
+3. Kamera, Mikrofon, reale Provideraufrufe und vollständige APK-zu-APK-Upgrades benötigen weiterhin Realgerät-/E2E-Tests.
 
 Diese Baseline ändert keine Produktfunktion. Jedes weitere Arbeitspaket wird vor Beginn separat priorisiert.

@@ -45,6 +45,16 @@ jobs:
         run: ./gradlew :app:lintDebug --stacktrace
       - name: Assemble installable APK
         run: ./gradlew :app:assembleDebug --stacktrace
+      - name: Enable KVM for instrumentation tests
+        run: sudo chmod 0666 /dev/kvm
+      - name: Run encrypted-storage and Compose flow tests
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: cd android && ./gradlew :app:connectedDebugAndroidTest --stacktrace
       - name: Read immutable release descriptor
         id: release
         working-directory: .

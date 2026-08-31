@@ -11,6 +11,8 @@ Stand: 2026-08-31
 
 ## Implementierter Stand
 
+- G1-B3 implementiert ein automatisiertes Sicherheitsnetz: ein reiner JSON-Codec hält alte und aktuelle Tages-, Mess- und Gesprächsdaten kompatibel, die Altchat-Migration ist idempotent, Export-Schema 4 wird vollständig geprüft, und Android-Instrumentierung deckt echten Keystore/AES-GCM-Speicher sowie die zentralen Compose-Flows ab.
+- Branch- und APK-Release-Workflow starten nun zusätzlich einen API-35-Emulator und führen `connectedDebugAndroidTest` aus. Die Paket-APK wird erst nach Serververträgen, JVM-Tests, Lint, Build und Instrumentierung veröffentlicht.
 - G1-E1 abgeschlossen: Die KI-Schätzung bleibt die Basisportion; Portion, Gramm, Stück, EL und TL skalieren Kalorien, Protein, Fett und Carbs gemeinsam. Grammangaben benötigen ein bestätigtes Basisgewicht, Stück/EL/TL zusätzlich bestätigte Gramm je Einheit. Zubereitungszustand und sichtbare Annahmen werden im verschlüsselten Tageslog und Export-Schema 4 erhalten.
 - Release-Prozess ergänzt: `release/current.json` beschreibt den eindeutigen Paket-Tag und öffentliche Notizen. `.github/workflows/release-apk.yml` wiederholt Servertests, Android-JVM-Tests, Lint und APK-Build und veröffentlicht nur danach ein GitHub-Prerelease. Der erste Release ist `g1-e1-2026-08-31`.
 - Health Connect ist als Paket G1-H1 vorgeschlagen: opt-in Lesen aktiver Kalorien und Trainingseinheiten, mit expliziter Berechtigungsverwaltung, Quellenanzeige und Dublettenkontrolle. Es wurde noch kein Health-Connect-Produktcode begonnen.
@@ -55,7 +57,7 @@ Stand: 2026-08-31
 - kein öffentliches Nutzerkonto-/Login-System
 - kein produktiv bereitgestelltes HTTPS-Backend
 - keine Datenbanksynchronisation oder Kontolöschung
-- keine vollständigen API-, UI- und Migrationstests
+- keine vollständigen KI-End-to-End-, Kamera-/Mikrofon- und Realgerät-Upgradetests; die lokalen Speicher-, Migrations- und zentralen UI-Verträge sind automatisiert abgedeckt
 - KI-End-to-End-Fluss benötigt weiterhin ein produktionsnahes Backend und einen realen API-Key
 - Kamera und Mikrofon müssen zusätzlich auf einem realen Android-Gerät geprüft werden
 - kein signiertes Release-Bundle und kein Play-Store-Upload
@@ -100,12 +102,11 @@ Stand: 2026-08-31
 
 ## Nächste konkrete Schritte
 
-1. Mit dem Nutzer fehlende Produktfeatures neu priorisieren oder alternativ G1-B3 freigeben.
-2. Nach ausdrücklichem GO Speicher-, Export- und Gesprächsmigration sowie kritische Compose-Flows automatisiert testen.
-3. Kamera und Mikrofon auf einem realen Android-Gerät testen.
-4. Einen zweiten Provideradapter als Wechseltest implementieren, sobald der Zielanbieter feststeht.
-5. Einen dauerhaften, nutzergeführten historischen Datenimport als eigenes Feature entwerfen; weiterhin keine privaten Nachrichten oder den Roh-Export ins Repository übernehmen.
-6. Konto-/Backend-Entscheidung umsetzen und danach vollständige E2E-Tests aufbauen.
+1. Nach abgeschlossenem G1-B3 mit dem Nutzer genau ein nächstes Produktpaket priorisieren; kein vorgeschlagenes Paket ohne neues GO beginnen.
+2. Kamera und Mikrofon auf einem realen Android-Gerät testen.
+3. Einen zweiten Provideradapter als Wechseltest implementieren, sobald der Zielanbieter feststeht.
+4. Einen dauerhaften, nutzergeführten historischen Datenimport als eigenes Feature entwerfen; weiterhin keine privaten Nachrichten oder den Roh-Export ins Repository übernehmen.
+5. Konto-/Backend-Entscheidung umsetzen und danach vollständige KI-End-to-End-Tests aufbauen.
 
 ## Blocker/Hinweise
 

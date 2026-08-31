@@ -18,15 +18,15 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 
 | Feld | Wert |
 |---|---|
-| Paket | G1-E1 – Präzisere Nahrungserfassung |
+| Paket | G1-B3 – Speicher-, Migration- und Compose-Tests |
 | Entscheidung | GO |
-| Status | DONE |
-| P50 / P80 | 50k / 80k Roh-Tokens |
-| Ist-Verbrauch | technisch nicht als Roh-Tokenwert auslesbar; P50/P80 bleibt 50k/80k, die Plus-Wochenanzeige ist die verbindliche Kalibrierung |
-| Produktänderung | KI-Portionen werden transparent über Menge und Einheit skaliert; Gramm je Einheit, Zubereitungszustand und Annahmen bleiben sichtbar |
-| Abnahme | Portion/g/Stück/EL/TL ohne erfundene Standardgewichte; Live-Neuberechnung der vier Kernwerte; Metadaten bleiben nach Neustart und im Export erhalten |
-| Commit / Workflow | `5a6e385683ccceb1292835614fd7a218636cc325` / `33367205499` – SUCCESS |
-| APK-Release | `g1-e1-2026-08-31` – https://github.com/Keen4e/KF20/releases/tag/g1-e1-2026-08-31 |
+| Status | IN PROGRESS |
+| P50 / P80 | 35k / 55k Roh-Tokens |
+| Ist-Verbrauch | nach Abschluss zu kalibrieren; die Plus-Wochenanzeige bleibt verbindlich |
+| Produktänderung | keine neue Nutzerfunktion; Sicherheitsnetz für verschlüsselte Speicherung, Export, Upgrade und kritische Compose-Flows |
+| Abnahme | alte und aktuelle Datenschemata bleiben lesbar; Export 4 vollständig; Gesprächsmigration idempotent; Kernflüsse automatisiert abgesichert |
+| Commit / Workflow | nach Abschluss einzutragen |
+| APK-Release | nach grünen Gates zu veröffentlichen |
 
 ## Implementierter Produktstand
 
