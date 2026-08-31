@@ -9,10 +9,10 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 - GitHub: `Keen4e/KF20`
 - Arbeitsbranch: `codex/kf20-rebuild`
 - Draft-PR: `#1` gegen `main`
-- Letzter vollständig grüner funktionaler Commit: `5a6e385683ccceb1292835614fd7a218636cc325`
-- Verifizierender Workflow: `33367205499`, Ergebnis: `SUCCESS`
-- Geprüfte Gates: Server-Syntax/Verträge, Android-JVM-Tests, Android-Lint, Debug-APK und Artefakt-Upload
-- Veröffentlichtes Prerelease: `g1-e1-2026-08-31` mit `KF20-g1-e1-2026-08-31.apk`
+- Letzter vollständig grüner funktionaler Commit: `7ebaad5ead0c2627b02331fe36e42dfd51feb135`
+- Verifizierender Branch-Workflow: `33387922930`, Ergebnis: `SUCCESS`
+- Geprüfte Gates: Server-Syntax/Verträge, Android-JVM-Tests, Android-Lint, Debug-APK, acht Android-Instrumentierungstests und Artefakt-Upload
+- Veröffentlichtes Prerelease: `g1-b3-2026-08-31` mit `KF20-g1-b3-2026-08-31.apk`; Release-Workflow `33387983797`, Ergebnis: `SUCCESS`
 
 ## Aktives PI-Paket
 
@@ -20,13 +20,13 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 |---|---|
 | Paket | G1-B3 – Speicher-, Migration- und Compose-Tests |
 | Entscheidung | GO |
-| Status | IN PROGRESS |
+| Status | DONE / AWAITING NEXT PRIORITIZATION |
 | P50 / P80 | 35k / 55k Roh-Tokens |
-| Ist-Verbrauch | nach Abschluss zu kalibrieren; die Plus-Wochenanzeige bleibt verbindlich |
+| Ist-Verbrauch | vom Agenten nicht zuverlässig als Plus-Wochenwert messbar; Kalibrierung erfolgt anhand der Nutzeranzeige |
 | Produktänderung | keine neue Nutzerfunktion; Sicherheitsnetz für verschlüsselte Speicherung, Export, Upgrade und kritische Compose-Flows |
 | Abnahme | alte und aktuelle Datenschemata bleiben lesbar; Export 4 vollständig; Gesprächsmigration idempotent; Kernflüsse automatisiert abgesichert |
-| Commit / Workflow | nach Abschluss einzutragen |
-| APK-Release | nach grünen Gates zu veröffentlichen |
+| Commit / Workflow | `7ebaad5ead0c2627b02331fe36e42dfd51feb135` / `33387922930` · SUCCESS |
+| APK-Release | `g1-b3-2026-08-31` · https://github.com/Keen4e/KF20/releases/tag/g1-b3-2026-08-31 |
 
 ## Implementierter Produktstand
 
@@ -44,7 +44,7 @@ Details und Abnahmekriterien stehen in `SPEC.md`; der technische Verlauf steht i
 
 1. keine echte Nutzeranmeldung, Nutzertrennung oder Kontolöschung
 2. kein produktives HTTPS-Backend und keine Datenbanksynchronisation
-3. Compose-UI noch weitgehend in einer Monolithdatei; Migrationen und kritische UI-Flows unzureichend getestet
+3. Compose-UI noch weitgehend in einer Monolithdatei; Kernflüsse sind automatisiert, Kamera/Mikrofon und vollständige Realgerät-Upgrades aber noch nicht abgenommen
 4. kein vollständiger KI-End-to-End-Test mit produktionsnahem Backend
 5. Kamera und Mikrofon noch nicht auf einem realen Gerät abgenommen
 6. kein signiertes Release-Bundle und keine vollständig erledigten Store-/Datenschutz-Gates
@@ -54,7 +54,7 @@ Details und Abnahmekriterien stehen in `SPEC.md`; der technische Verlauf steht i
 | Reihenfolge | Paket | Status | Voraussetzung | P50 | P80 |
 |---|---|---|---|---:|---:|
 | 1 | G1-D0 – Zielwerte und Produktwahrheit | PROPOSED / AWAITING DECISION | aktueller Stand | 12k | 20k |
-| 2 | G1-B3 – Speicher-, Migration- und Compose-Tests | PROPOSED / AWAITING DECISION | aktueller Stand | 35k | 55k |
+| 2 | G1-B3 – Speicher-, Migration- und Compose-Tests | DONE · Release `g1-b3-2026-08-31` | aktueller Stand | 35k | 55k |
 | 3 | G1-D1 – Bearbeiten und Revisionslog | PROPOSED / AWAITING DECISION | G1-B3 | 45k | 70k |
 | 4 | G1-D2 – Import und Restore | PROPOSED / AWAITING DECISION | G1-B3 | 45k | 75k |
 | 5 | G1-D3 – Standards und Tagesroutinen | PROPOSED / AWAITING DECISION | G1-B3 | 35k | 55k |

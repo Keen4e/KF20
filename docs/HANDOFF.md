@@ -64,6 +64,8 @@ Stand: 2026-08-31
 
 ## Verifikation
 
+- G1-B3 GitHub: Der funktionale Commit `7ebaad5ead0c2627b02331fe36e42dfd51feb135` bestand im Branch-Workflow `33387922930` Serververträge, JVM-Codec-/Migrations-/Exporttests, Android-Lint, Debug-Build und alle acht Instrumentierungstests auf API 35. Diese acht Tests decken echten Android-Keystore/AES-GCM-Speicher, Storage-Rundreisen, die idempotente Altchat-Migration sowie Navigation, Nahrung, Morgenwerte, Tagesabschluss und Statistikumschaltung ab. Der Release-Workflow `33387983797` wiederholte alle Gates erfolgreich und veröffentlichte https://github.com/Keen4e/KF20/releases/tag/g1-b3-2026-08-31 mit `KF20-g1-b3-2026-08-31.apk`.
+- G1-B3 lokal: Server-Syntax und alle fünf providerneutralen Vertragstests sind grün; die Kotlin-Hauptquellen kompilieren. Der vollständige Windows-Gradle-Lauf trifft weiterhin die bekannte Sandbox-Sperre auf Debug-Keystore-/Gradle-JAR-Locks, deshalb ist der erfolgreiche Linux-/Emulatorlauf der verbindliche Nachweis.
 - G1-E1 GitHub: Die regulären Runs `33366732702` (Branch) und `33366736631` (Draft-PR) sind für den funktionalen Commit `5e5c8d715c10fc47ca119770d95efdda937cbe0f` vollständig grün. Der erste Release-Lauf erreichte nach grünen Android-Gates einen Shell-Quotingfehler im reinen Veröffentlichungs-Schritt. Commit `5a6e385683ccceb1292835614fd7a218636cc325` korrigierte diesen Schritt; Run `33367205499` bestand erneut Serververträge, JVM-Tests, Lint und APK-Build und veröffentlichte erfolgreich https://github.com/Keen4e/KF20/releases/tag/g1-e1-2026-08-31 mit `KF20-g1-e1-2026-08-31.apk`.
 - G1-E1 lokal: Kotlin-Kompilierung und installierbarer Debug-APK-Build waren erfolgreich; die APK wurde auf Android 16 installiert und gestartet. Die reine Portionslogik besitzt vier neue JVM-Prüffälle. Server-Syntax und alle 5 providerneutralen Vertragstests sind grün. Der kombinierte lokale Android-Gesamtlauf trifft weiterhin die bekannte Windows-Dateisperre auf `ui-unit-api.jar`; deshalb sind GitHub Actions und der nachgelagerte Release-Workflow die verbindliche Vollprüfung.
 - G1-C1b/C2: Workflow `33109832049` ist für den funktionalen Commit `2c4ca71d85d54d9cf580f046b4233464c3856bee` vollständig grün. Serververträge, Android-JVM-Tests einschließlich der neuen Rolling-Average-Fälle, Lint, Debug-Build und Upload des Artefakts `kf20-debug-apk` (ID `9662197741`) waren erfolgreich.
@@ -102,7 +104,7 @@ Stand: 2026-08-31
 
 ## Nächste konkrete Schritte
 
-1. Nach abgeschlossenem G1-B3 mit dem Nutzer genau ein nächstes Produktpaket priorisieren; kein vorgeschlagenes Paket ohne neues GO beginnen.
+1. Mit dem Nutzer genau ein nächstes Produktpaket priorisieren; kein vorgeschlagenes Paket ohne neues GO beginnen.
 2. Kamera und Mikrofon auf einem realen Android-Gerät testen.
 3. Einen zweiten Provideradapter als Wechseltest implementieren, sobald der Zielanbieter feststeht.
 4. Einen dauerhaften, nutzergeführten historischen Datenimport als eigenes Feature entwerfen; weiterhin keine privaten Nachrichten oder den Roh-Export ins Repository übernehmen.
