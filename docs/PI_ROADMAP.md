@@ -30,7 +30,7 @@ Stand: 2026-08-31
 | G1-E1 | Präzisere Nahrungserfassung | Mengen/Einheiten, bestätigte Umrechnung, Zubereitungszustand und transparente Annahmen | G1-C1b | 50k | 80k | DONE · Release `g1-e1-2026-08-31` |
 | G1-S1 | Supplements | Inhaltsstoffe/Einheiten, Einnahmezeiten, Tagesbilanz, Doppelungswarnungen und Arztauszug | G1-B3 | 55k | 90k | PROPOSED |
 | G1-H1 | Health Connect Basis | explizite Verbindung und Leseberechtigung; aktive Kalorien und Trainingseinheiten vom Android-Gerät übernehmen, Quelle/Dubletten transparent halten | G1-B3 | 55k | 90k | PROPOSED |
-| G2-S0 | Backend-, Sync- und KI-Strategie | Local-first-Zielbild, Identität, Datenhaltung, Managed/BYOK/Plus-Modi, Secret-Lebenszyklus und umsetzbare Folgepakete | G1-B3 | 25k | 40k | IN PROGRESS · Release geplant `g2-s0-2026-08-31` |
+| G2-S0 | Backend-, Sync- und KI-Strategie | Local-first-Zielbild, Identität, Datenhaltung, Managed/BYOK/Plus-Modi, Secret-Lebenszyklus und umsetzbare Folgepakete | G1-B3 | 25k | 40k | DONE · Release `g2-s0-2026-08-31` |
 | G2-A1 | Private Backend-Basis | portables Docker-Deployment auf Homeserver, Cloudflare Tunnel, HTTPS, Healthcheck, Identität und Backup/Restore | G2-S0 | 55k | 90k | PROPOSED |
 | G2-A2 | KI-Gateway v1 | Provider-Registry, zentraler OpenAI-Projektschlüssel, Limits und Ausführungsmetadaten | G2-A1 | 55k | 90k | PROPOSED |
 | G2-A3 | BYOK und weitere Provider | Credential-Vault, OpenAI-/Anthropic-/OpenRouter-Adapter, Test/Replace/Delete und explizites Routing | G2-A2 | 75k | 120k | PROPOSED |

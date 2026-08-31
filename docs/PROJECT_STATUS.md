@@ -20,13 +20,13 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 |---|---|
 | Paket | G2-S0 – Backend-, Sync- und KI-Provider-Strategie |
 | Entscheidung | GO |
-| Status | IN PROGRESS – Strategie dokumentiert, Verifikation/Prerelease ausstehend |
+| Status | DONE / AWAITING NEXT PRIORITIZATION |
 | P50 / P80 | 25k / 40k Roh-Tokens |
 | Ist-Verbrauch | vom Agenten nicht zuverlässig als Plus-Wochenwert messbar; Kalibrierung erfolgt anhand der Nutzeranzeige |
 | Produktänderung | keine neue Nutzerfunktion; verbindliches Zielbild und getrennte Folgepakete für Local-first-Sync, Backend und KI-Zugänge |
 | Abnahme | Managed/BYOK/Plus getrennt; OpenAI/Anthropic/OpenRouter vorgesehen; private Alpha auf Homeserver/Cloudflare und externe Stufe auf Cloud Run/Supabase sowie Secret-, Sync-, Bild- und Löschgrenzen festgelegt |
-| Commit / Workflow | ausstehend |
-| APK-Release | ausstehend; geplant `g2-s0-2026-08-31` |
+| Commit / Workflow | `301fc252699eb307f3103d33d84a7415e912d8e1` / `33410290070` · SUCCESS |
+| APK-Release | `g2-s0-2026-08-31` · https://github.com/Keen4e/KF20/releases/tag/g2-s0-2026-08-31 |
 
 ## Implementierter Produktstand
 

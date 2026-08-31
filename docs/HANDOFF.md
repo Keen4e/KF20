@@ -9,7 +9,8 @@
 - Vorhandener IONOS-Webspace ist für Domain/Landingpage vorgesehen. Nur falls der Vertrag ein echter VPS/Cloud Server mit Adminzugriff ist, wird IONOS in G2-A1 als Container-Alternative zu Cloud Run geprüft.
 - Für die private Alpha ist der vorhandene Homeserver mit Docker und ausschließlich ausgehendem Cloudflare Tunnel nun die bevorzugte Laufzeit. Cloudflare Access ist Zusatzschutz und ersetzt nicht die KF20-Authentifizierung; verschlüsseltes Offsite-Backup und Restore-Test gehören zur Abnahme.
 - Das Paket enthält bewusst keinen Backend-Produktcode, kein Konto, keinen Cloud-Dienst und keinen echten Schlüssel. Die Umsetzung ist in G2-A1/A2/A3 sowie G2-B1/B2 zerlegt und benötigt jeweils ein neues GO.
-- Verifikation und Prerelease `g2-s0-2026-08-31` werden nach Commit/CI ergänzt.
+- GitHub-Commit `301fc252699eb307f3103d33d84a7415e912d8e1`; Release-Workflow `33410290070` bestand Serververträge, Android-JVM-Tests, Lint, Debug-Build und alle Instrumentierungstests auf API 35.
+- Prerelease und APK: https://github.com/Keen4e/KF20/releases/tag/g2-s0-2026-08-31 · `KF20-g2-s0-2026-08-31.apk`.
 
 Stand: 2026-08-31
 
