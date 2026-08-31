@@ -1,11 +1,14 @@
 package com.keen4e.kf20
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNode
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
@@ -60,10 +63,15 @@ class MainActivityFlowTest {
     }
 
     @Test
-    fun statisticsCanSwitchToDailyValues() {
+    fun statisticsCanSwitchBetweenRollingAverageAndDailyValues() {
         composeRule.onNodeWithText("Statistik").performClick()
-        composeRule.onNodeWithText("Tageswerte").performClick()
+        composeRule.onNodeWithText("7-Tage-Ø").performClick()
+        composeRule.onNode(hasScrollAction()).performScrollToIndex(3)
+        composeRule.onNodeWithText("Rollierender 7-Tage-Ø · Linie = Tagesziel").assertIsDisplayed()
 
+        composeRule.onNode(hasScrollAction()).performScrollToIndex(0)
+        composeRule.onNodeWithText("Tageswerte").performClick()
+        composeRule.onNode(hasScrollAction()).performScrollToIndex(3)
         composeRule.onNodeWithText("Netto pro Tag · Linie = Tagesziel").assertExists()
     }
 }
