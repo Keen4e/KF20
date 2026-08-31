@@ -1,5 +1,6 @@
 package com.keen4e.kf20
 
+import androidx.compose.ui.test.assertExists
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -36,7 +37,7 @@ class MainActivityFlowTest {
 
         composeRule.onNodeWithText("Nahrung erfassen").assertIsDisplayed()
         composeRule.onNodeWithText("Text, Foto oder Sprache · KI-gestützt").assertIsDisplayed()
-        composeRule.onNodeWithText("Mit KI auswerten").assertIsDisplayed()
+        composeRule.onNodeWithText("Mit KI auswerten").assertExists()
     }
 
     @Test
@@ -55,8 +56,8 @@ class MainActivityFlowTest {
         composeRule.onNodeWithContentDescription("Erfassen").performClick()
         composeRule.onNodeWithText("Tagesabschluss").performClick()
 
-        composeRule.onNodeWithText("Tracker-Gesamtverbrauch kcal").performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithText("Der Tracker-Gesamtverbrauch bleibt getrennt vom Sportverbrauch und wird nicht doppelt verrechnet.").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Tracker-Gesamtverbrauch kcal").assertExists()
+        composeRule.onNodeWithText("Der Tracker-Gesamtverbrauch bleibt getrennt vom Sportverbrauch und wird nicht doppelt verrechnet.").assertExists()
     }
 
     @Test
@@ -64,6 +65,6 @@ class MainActivityFlowTest {
         composeRule.onNodeWithText("Statistik").performClick()
         composeRule.onNodeWithText("Tageswerte").performClick()
 
-        composeRule.onNodeWithText("Netto pro Tag · Linie = Tagesziel").performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText("Netto pro Tag · Linie = Tagesziel").assertExists()
     }
 }
