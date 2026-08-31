@@ -1,6 +1,6 @@
 # KF20 Projektstatus
 
-Stand: 2026-08-28
+Stand: 2026-08-31
 
 Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie wird bei jedem begonnenen oder abgeschlossenen PI-Arbeitspaket aktualisiert. Frühere Chats sind für die Übernahme nicht erforderlich.
 
@@ -17,13 +17,13 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 
 | Feld | Wert |
 |---|---|
-| Paket | Feature-Lückenanalyse und Neupriorisierung |
+| Paket | G1-E1 – Präzisere Nahrungserfassung |
 | Entscheidung | GO |
-| Status | DONE |
-| P50 / P80 | 15k / 25k Roh-Tokens |
-| Ist-Verbrauch | ungefähr 14k Roh-Tokens; Plus-Wochenanzeige bleibt die verbindliche Kalibrierung |
-| Produktänderung | keine; Anforderungen, vorhandener Stand und fehlende Features werden entscheidungsreif abgeglichen |
-| Abnahme | `docs/FEATURE_GAPS.md` enthält priorisierte Lücken, vorhandenen Kern, Abhängigkeiten, Risiken, P50/P80 und klare nächste Entscheidungs-Gates |
+| Status | IN PROGRESS |
+| P50 / P80 | 50k / 80k Roh-Tokens |
+| Ist-Verbrauch | nach Abschluss zu erfassen; Plus-Wochenanzeige bleibt die verbindliche Kalibrierung |
+| Produktänderung | KI-Portionen werden transparent über Menge und Einheit skaliert; Gramm je Einheit, Zubereitungszustand und Annahmen bleiben sichtbar |
+| Abnahme | Portion/g/Stück/EL/TL ohne erfundene Standardgewichte; Live-Neuberechnung der vier Kernwerte; Metadaten bleiben nach Neustart und im Export erhalten |
 
 ## Implementierter Produktstand
 
@@ -57,7 +57,8 @@ Details und Abnahmekriterien stehen in `SPEC.md`; der technische Verlauf steht i
 | 5 | G1-D3 – Standards und Tagesroutinen | PROPOSED / AWAITING DECISION | G1-B3 | 35k | 55k |
 | 6 | G1-D4 – Fortschritt und Statistikdetails | PROPOSED / AWAITING DECISION | G1-B3 | 45k | 75k |
 | 7 | G2a – Private KI-Testumgebung | PROPOSED / AWAITING DECISION | G1-B3 | 70k | 110k |
-| 8 | G3a – KI-End-to-End-Abnahme | PROPOSED / AWAITING DECISION | G2a | 70k | 115k |
+| 8 | G1-H1 – Health Connect Basis | PROPOSED / AWAITING DECISION | G1-B3 | 55k | 90k |
+| 9 | G3a – KI-End-to-End-Abnahme | PROPOSED / AWAITING DECISION | G2a | 70k | 115k |
 
 Kein PROPOSED- oder DEFERRED-Paket darf ohne eine neue Nutzerentscheidung `GO`, `SPLIT`, `DEFER` oder `DROP` begonnen werden.
 
@@ -74,4 +75,5 @@ Vor Übergabe:
 1. Qualitätsgates aus `docs/quality-baseline.md` ausführen.
 2. Code und alle betroffenen Spezifikations-/Architekturdateien gemeinsam aktualisieren.
 3. Commit, Workflow-Run, Testergebnis, Blocker und nächstes Gate hier eintragen.
-4. Keine privaten Chattexte, Gesundheitswerte, Schlüssel oder Serveradressen in Git übernehmen.
+4. Die geprüfte APK als GitHub-Prerelease veröffentlichen und Release-Link sowie Tag hier eintragen.
+5. Keine privaten Chattexte, Gesundheitswerte, Schlüssel oder Serveradressen in Git übernehmen.

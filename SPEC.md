@@ -57,6 +57,12 @@ Ein bereits bestätigter Standard darf ohne erneute KI-Auswertung übernommen we
 
 Nach der KI-Prüfung entscheidet der Nutzer ausdrücklich zwischen **Jetzt gegessen** und **Später planen**. Geplante Einträge zeigen eine Prognose für Restkalorien und Makros. Sie können in der gemeinsamen Tagesliste als gegessen bestätigt oder gelöscht werden. Dieselbe Auswahl steht für gespeicherte Standards zur Verfügung.
 
+### Menge, Einheit und Zubereitungszustand
+
+Die korrigierte KI-Antwort gilt zunächst für **eine analysierte Portion**. Vor dem Speichern kann der Nutzer die Menge als Portion, Gramm, Stück, Esslöffel oder Teelöffel angeben. Portionen werden direkt skaliert. Für Gramm ist das Gewicht der analysierten Basisportion erforderlich; für Stück, EL und TL zusätzlich das vom Nutzer bestätigte Gewicht je Einheit. KF20 erfindet keine pauschalen Stück-, EL- oder TL-Gewichte.
+
+Kalorien, Protein, Fett und Carbs werden gemeinsam live auf die gewählte Menge skaliert und bleiben vor dem Speichern im Vordergrund. Der Nutzer kennzeichnet den Zubereitungszustand als nicht angegeben, roh oder zubereitet und kann die Annahme der KI korrigieren oder ergänzen. Menge, Einheit, bestätigte Gewichte, Zubereitungszustand und Annahme bleiben am Tageseintrag sichtbar, lokal gespeichert und im Export erhalten. Bestehende Einträge ohne diese Metadaten werden verlustfrei als eine Portion gelesen.
+
 ### Morgen-Check: Sport und Tageswerte
 
 Sport und die täglichen Körper-/Befindenswerte werden gemeinsam als **Morgenwerte** erfasst. Das zentrale Plus öffnet die Auswahl Nahrung, Morgenwerte und Tagesabschluss. Die Tagesseite zeigt unterhalb des Kalorien- und Makro-Dashboards zusätzlich den Status **Morgen-Check offen/erledigt**. Morgenwerte öffnen eine große, von unten kommende und scrollbar bleibende Erfassungsfläche im Stil eines zusammenhängenden Tagesstarts.
@@ -172,7 +178,7 @@ Provider-Capabilities werden explizit ausgewiesen. Wird etwa Web-Recherche verla
 ## Datenschutz
 
 - Gesundheits- und Chatdaten lokal AES-GCM-verschlüsselt speichern.
-- Vollständigen lokalen JSON-Export auf ausdrückliche Nutzeraktion anbieten; der Export enthält ab Schema 3 die benannten Gespräche, den aktiven Gesprächsbezug und die Designauswahl, schließt Zugangstoken aus und warnt sichtbar, dass die erzeugte Datei selbst nicht verschlüsselt ist.
+- Vollständigen lokalen JSON-Export auf ausdrückliche Nutzeraktion anbieten; Schema 4 enthält benannte Gespräche, aktiven Gesprächsbezug, Designauswahl und die transparenten Portionsmetadaten der Nahrung, schließt Zugangstoken aus und warnt sichtbar, dass die erzeugte Datei selbst nicht verschlüsselt ist.
 - Alle lokalen KF20-Daten, gespeicherten Dateizugriffe und den Android-Keystore-Schlüssel nach einer eindeutigen Bestätigung vollständig löschen können.
 - Keine Provider-Schlüssel in App, Git oder Logs.
 - Keine Chat-Inhaltslogs im Serverbetrieb.

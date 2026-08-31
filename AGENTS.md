@@ -32,6 +32,7 @@ Dieses Repository muss ohne Zugriff auf frühere Chats übernehmbar bleiben. Vor
 - Vor Beginn wird das aktive Paket in `docs/PROJECT_STATUS.md` auf `IN PROGRESS` gesetzt. Nach Abschluss werden Commit, Workflow-Run, Abnahme und nächstes Entscheidungs-Gate dort ergänzt.
 - Neue dauerhafte Produkt-, Architektur- oder Prozessentscheidungen werden in `docs/DECISIONS.md` protokolliert.
 - Tokenprognosen werden vor Beginn als P50/P80 in `docs/PI_ROADMAP.md` geführt; die Wochenplanung stoppt bei 70 Prozent des verfügbaren Kontingents.
+- Jedes abgeschlossene PI-Paket veröffentlicht nach grünen Qualitätsgates eine installierbare APK als eigenes GitHub-Prerelease. Der eindeutige Tag und die öffentlichen Release-Notizen werden mit dem Paket in `release/current.json` gepflegt; ein bloßes, kurzlebiges Actions-Artefakt genügt nicht.
 
 ## Qualitätsregeln
 
@@ -39,4 +40,5 @@ Dieses Repository muss ohne Zugriff auf frühere Chats übernehmbar bleiben. Vor
 - KI-Schätzungen sichtbar kennzeichnen und vor dem Speichern korrigierbar machen.
 - Externe Aktionen niemals still ausführen.
 - Nach Änderungen Server-Syntax-/Vertragstests sowie `:app:testDebugUnitTest`, `:app:lintDebug` und `:app:assembleDebug` über den eingecheckten Gradle-Wrapper ausführen; Ergebnis im Handoff vermerken.
+- Ein Paket erhält erst `DONE`, wenn zusätzlich der zugehörige GitHub-Release-Link und die veröffentlichte APK im Handoff und Projektstatus stehen.
 

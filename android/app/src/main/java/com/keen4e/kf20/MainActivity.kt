@@ -676,10 +676,17 @@ private fun Kf20App(context: Context) {
                     dailyEntries = dailyEntries + entry
                     dailyLogStorage.write(dailyEntries)
                 },
-                onSaveRoutine = {
+                onSaveRoutine = { portion ->
                     val title = logTitle.trim()
-                    if (title.isNotEmpty()) {
-                        val routine = DailyRoutine(title, logCalories.toIntOrNull() ?: 0, logProtein.replace(',', '.').toDoubleOrNull() ?: 0.0, logFat.replace(',', '.').toDoubleOrNull() ?: 0.0, logCarbs.replace(',', '.').toDoubleOrNull() ?: 0.0)
+                    val scaled = scaledNutrition(
+                        logCalories.toLocalizedDouble() ?: -1.0,
+                        logProtein.toLocalizedDouble() ?: -1.0,
+                        logFat.toLocalizedDouble() ?: -1.0,
+                        logCarbs.toLocalizedDouble() ?: -1.0,
+                        portion
+                    )
+                    if (title.isNotEmpty() && scaled != null) {
+                        val routine = DailyRoutine(title, scaled.calories, scaled.protein, scaled.fat, scaled.carbs)
                         routines = (routines.filterNot { it.title.equals(routine.title, ignoreCase = true) } + routine).takeLast(20)
                         routineStorage.write(routines)
                     }
@@ -720,10 +727,17 @@ private fun Kf20App(context: Context) {
                         weightStorage.write(weightEntries)
                     }
                 },
-                onAdd = { planned ->
+                onAdd = { planned, portion ->
                     val title = logTitle.trim()
-                    if (title.isNotEmpty() && nutritionAnalysisReady) {
-                        val entry = DailyLogEntry(selectedDate, "Mahlzeit", title, logCalories.toIntOrNull() ?: 0, logProtein.replace(',', '.').toDoubleOrNull() ?: 0.0, logFat.replace(',', '.').toDoubleOrNull() ?: 0.0, logCarbs.replace(',', '.').toDoubleOrNull() ?: 0.0, planned)
+                    val scaled = scaledNutrition(
+                        logCalories.toLocalizedDouble() ?: -1.0,
+                        logProtein.toLocalizedDouble() ?: -1.0,
+                        logFat.toLocalizedDouble() ?: -1.0,
+                        logCarbs.toLocalizedDouble() ?: -1.0,
+                        portion
+                    )
+                    if (title.isNotEmpty() && nutritionAnalysisReady && scaled != null) {
+                        val entry = DailyLogEntry(selectedDate, "Mahlzeit", title, scaled.calories, scaled.protein, scaled.fat, scaled.carbs, planned, portion)
                         dailyEntries = dailyEntries + entry
                         dailyLogStorage.write(dailyEntries)
                         mealDescription = ""; logTitle = ""; logCalories = ""; logProtein = ""; logFat = ""; logCarbs = ""; mealPhotoDataUrl = null; nutritionHint = null; nutritionAnalysisReady = false
@@ -1934,12 +1948,12 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
     onToday: () -> Unit,
     onNextDay: () -> Unit,
     onUseRoutine: (DailyRoutine, Boolean) -> Unit,
-    onSaveRoutine: () -> Unit,
+    onSaveRoutine: (FoodPortionDetails) -> Unit,
     onDeleteEntry: (DailyLogEntry) -> Unit,
     onMarkConsumed: (DailyLogEntry) -> Unit,
     onDeleteSport: (SportSession) -> Unit,
     onDeleteMeasurement: (BodyMeasurement) -> Unit,
-    onAdd: (Boolean) -> Unit
+    onAdd: (Boolean, FoodPortionDetails) -> Unit
 ) {
     var captureError by remember { mutableStateOf<String?>(null) }
     var showMealComposer by remember { mutableStateOf(false) }
@@ -1956,7 +1970,23 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
     var morningNeck by remember { mutableStateOf("") }
     var morningWaist by remember { mutableStateOf("") }
     var showMorningDetails by remember { mutableStateOf(false) }
+    var portionAmount by remember { mutableStateOf("1") }
+    var portionUnit by remember { mutableStateOf("Portion") }
+    var portionBasisGrams by remember { mutableStateOf("") }
+    var portionGramsPerUnit by remember { mutableStateOf("") }
+    var portionPreparation by remember { mutableStateOf("Nicht angegeben") }
+    var portionAssumption by remember { mutableStateOf("") }
     val morningSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    LaunchedEffect(analysisReady, nutritionHint) {
+        if (analysisReady) {
+            portionAmount = "1"
+            portionUnit = "Portion"
+            portionBasisGrams = ""
+            portionGramsPerUnit = ""
+            portionPreparation = "Nicht angegeben"
+            portionAssumption = nutritionHint.orEmpty().take(500)
+        }
+    }
     val mealCamera = androidx.activity.compose.rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
         if (bitmap != null) {
             captureError = null
@@ -2102,7 +2132,23 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
                     nutritionHint?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
                 }
                 if (analysisReady) item {
+                    val portion = FoodPortionDetails(
+                        amount = portionAmount.toLocalizedDouble() ?: 0.0,
+                        unit = portionUnit,
+                        basisGrams = portionBasisGrams.toLocalizedDouble(),
+                        gramsPerUnit = portionGramsPerUnit.toLocalizedDouble(),
+                        preparation = portionPreparation,
+                        assumption = portionAssumption.trim()
+                    )
+                    val scaled = scaledNutrition(
+                        calories.toLocalizedDouble() ?: -1.0,
+                        protein.toLocalizedDouble() ?: -1.0,
+                        fat.toLocalizedDouble() ?: -1.0,
+                        carbs.toLocalizedDouble() ?: -1.0,
+                        portion
+                    )
                     Text("KI-Schätzung prüfen", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    Text("Basiswerte für eine analysierte Portion. Menge und Einheit skalieren alle vier Kernwerte gemeinsam.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     OutlinedTextField(value = title, onValueChange = onTitleChange, label = { Text("Mahlzeit") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(value = calories, onValueChange = onCaloriesChange, label = { Text("Kalorien") }, modifier = Modifier.weight(1f), singleLine = true)
@@ -2112,11 +2158,73 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
                         OutlinedTextField(value = fat, onValueChange = onFatChange, label = { Text("Fett g") }, modifier = Modifier.weight(1f), singleLine = true)
                         OutlinedTextField(value = carbs, onValueChange = onCarbsChange, label = { Text("Carbs g") }, modifier = Modifier.weight(1f), singleLine = true)
                     }
-                    Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { onAdd(false); showMealComposer = false }, enabled = title.isNotBlank(), modifier = Modifier.weight(1f)) { Text("Jetzt gegessen") }
-                        OutlinedButton(onClick = { onAdd(true); showMealComposer = false }, enabled = title.isNotBlank(), modifier = Modifier.weight(1f)) { Text("Später planen") }
+                    Text("Menge & Einheit", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
+                    OutlinedTextField(
+                        value = portionAmount,
+                        onValueChange = { portionAmount = decimalInput(it) },
+                        label = { Text("Menge") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    supportedFoodUnits.chunked(3).forEach { units ->
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            units.forEach { unit ->
+                                if (portionUnit == unit) Button(onClick = { portionUnit = unit }, modifier = Modifier.weight(1f)) { Text(unit) }
+                                else OutlinedButton(onClick = { portionUnit = unit }, modifier = Modifier.weight(1f)) { Text(unit) }
+                            }
+                            repeat(3 - units.size) { Spacer(Modifier.weight(1f)) }
+                        }
                     }
-                    TextButton(onClick = onSaveRoutine, enabled = title.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Auch als Standard speichern") }
+                    if (portionUnit != "Portion") {
+                        OutlinedTextField(
+                            value = portionBasisGrams,
+                            onValueChange = { portionBasisGrams = decimalInput(it) },
+                            label = { Text("Gewicht der analysierten Portion (g)") },
+                            supportingText = { Text("Wird nicht geschätzt: bitte Verpackung, Waage oder eigene Angabe verwenden.") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    }
+                    if (portionUnit in listOf("Stück", "EL", "TL")) {
+                        OutlinedTextField(
+                            value = portionGramsPerUnit,
+                            onValueChange = { portionGramsPerUnit = decimalInput(it) },
+                            label = { Text("Gramm je $portionUnit") },
+                            supportingText = { Text("KF20 setzt dafür bewusst keinen pauschalen Standardwert.") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                    }
+                    Text("Zubereitungszustand", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 6.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        supportedPreparations.forEach { preparation ->
+                            if (portionPreparation == preparation) Button(onClick = { portionPreparation = preparation }, modifier = Modifier.weight(1f)) { Text(preparation) }
+                            else OutlinedButton(onClick = { portionPreparation = preparation }, modifier = Modifier.weight(1f)) { Text(preparation) }
+                        }
+                    }
+                    OutlinedTextField(
+                        value = portionAssumption,
+                        onValueChange = { portionAssumption = it.take(500) },
+                        label = { Text("Annahme / Hinweis (optional)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2,
+                        maxLines = 4
+                    )
+                    if (scaled == null) {
+                        Text("Für diese Einheit fehlen noch Menge oder bestätigte Grammangaben.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    } else {
+                        Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.fillMaxWidth()) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Text("Zu speichern: ${portion.summary()}", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                Text("${scaled.calories} kcal · P ${scaled.protein.de1()} g · F ${scaled.fat.de1()} g · C ${scaled.carbs.de1()} g", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            }
+                        }
+                    }
+                    Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = { onAdd(false, portion); showMealComposer = false }, enabled = title.isNotBlank() && scaled != null, modifier = Modifier.weight(1f)) { Text("Jetzt gegessen") }
+                        OutlinedButton(onClick = { onAdd(true, portion); showMealComposer = false }, enabled = title.isNotBlank() && scaled != null, modifier = Modifier.weight(1f)) { Text("Später planen") }
+                    }
+                    TextButton(onClick = { onSaveRoutine(portion) }, enabled = title.isNotBlank() && scaled != null, modifier = Modifier.fillMaxWidth()) { Text("Auch als Standard speichern") }
                 }
                 item { OutlinedButton(onClick = { showMealComposer = false }, modifier = Modifier.fillMaxWidth()) { Text("Abbrechen") } }
             }
@@ -2326,10 +2434,15 @@ private fun SportActivitySelector(selected: String, onSelect: (String) -> Unit) 
             DailyEntryCard(type = "Sport", title = session.activity, details = details, onDelete = { onDeleteSport(session) })
         }
         items(foodEntries.reversed()) { entry ->
+            val foodDetails = buildList {
+                add("${entry.calories} kcal · P ${"%.0f".format(entry.protein)} g · F ${"%.0f".format(entry.fat)} g · C ${"%.0f".format(entry.carbs)} g")
+                add(entry.portion.summary())
+                entry.portion.assumption.takeIf { it.isNotBlank() }?.let { add(it) }
+            }.joinToString("\n")
             DailyEntryCard(
                 type = if (entry.planned) "Nahrung · geplant" else "Nahrung",
                 title = entry.title,
-                details = "${entry.calories} kcal · P ${"%.0f".format(entry.protein)} g · F ${"%.0f".format(entry.fat)} g · C ${"%.0f".format(entry.carbs)} g",
+                details = foodDetails,
                 actionLabel = if (entry.planned) "Als gegessen" else null,
                 onAction = if (entry.planned) ({ onMarkConsumed(entry) }) else null,
                 onDelete = { onDeleteEntry(entry) }

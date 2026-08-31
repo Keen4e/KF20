@@ -1,7 +1,7 @@
 # KF20 Qualitätsbaseline
 
-Stand: 2026-08-27
-PI-Paket: G1-C1b + G1-C2
+Stand: 2026-08-31
+PI-Paket: G1-E1
 
 ## Verbindliches Qualitätsgate
 
@@ -11,6 +11,7 @@ Jede Änderung unter `android/` oder `server/` muss in GitHub Actions folgende S
 2. Android-JVM-Unit-Tests
 3. Android-Lint
 4. Android-Debug-Build und APK-Artefakt
+5. bei Paketabschluss Veröffentlichung genau dieser geprüften APK als eindeutig versioniertes GitHub-Prerelease
 
 Android verwendet ausschließlich den eingecheckten Gradle-Wrapper 8.11.1 mit verifizierter Distributions-Prüfsumme. Der lokale Ein-Befehl-Check steht im `README.md`.
 
@@ -47,6 +48,14 @@ Android verwendet ausschließlich den eingecheckten Gradle-Wrapper 8.11.1 mit ve
 - Der Tagesabschluss hält Tracker-Gesamtverbrauch und optionale Tagesnotiz getrennt von verbrannten Trainingskalorien.
 - Reine JVM-Tests sichern den rollierenden Durchschnitt, das Sieben-Tage-Fenster und die Behandlung fehlender Werte ohne erfundene Nullen.
 - Workflow `33109832049` bestand für Commit `2c4ca71d85d54d9cf580f046b4233464c3856bee` Serververträge, Android-JVM-Tests, Lint, Debug-Build und APK-Upload.
+
+## G1-E1-Prüffälle
+
+- Portionen skalieren die vier Kernwerte gemeinsam.
+- Gramm benötigen ein positives Basisgewicht.
+- Stück, EL und TL benötigen zusätzlich ein positives, bestätigtes Gewicht je Einheit; fehlende Werte werden nicht ersetzt.
+- Ungültige oder nicht positive Mengen erzeugen keinen speicherbaren Nährwertsatz.
+- Bestehende Tageslogs ohne Portionsobjekt bleiben als eine Portion lesbar; neue Einträge werden in Export-Schema 4 vollständig ausgegeben.
 
 ## Offene Qualitätsrisiken
 

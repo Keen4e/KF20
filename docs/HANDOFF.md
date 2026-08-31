@@ -1,6 +1,6 @@
 # KF20 Handoff
 
-Stand: 2026-08-27
+Stand: 2026-08-31
 
 ## Repository
 
@@ -11,6 +11,9 @@ Stand: 2026-08-27
 
 ## Implementierter Stand
 
+- G1-E1 in Abnahme: Die KI-Schätzung bleibt die Basisportion; Portion, Gramm, Stück, EL und TL skalieren Kalorien, Protein, Fett und Carbs gemeinsam. Grammangaben benötigen ein bestätigtes Basisgewicht, Stück/EL/TL zusätzlich bestätigte Gramm je Einheit. Zubereitungszustand und sichtbare Annahmen werden im verschlüsselten Tageslog und Export-Schema 4 erhalten.
+- Release-Prozess ergänzt: `release/current.json` beschreibt den eindeutigen Paket-Tag und öffentliche Notizen. `.github/workflows/release-apk.yml` wiederholt Servertests, Android-JVM-Tests, Lint und APK-Build und veröffentlicht nur danach ein GitHub-Prerelease. G1-E1 bleibt bis zum grünen Workflow und veröffentlichten Release `IN PROGRESS`.
+- Health Connect ist als Paket G1-H1 vorgeschlagen: opt-in Lesen aktiver Kalorien und Trainingseinheiten, mit expliziter Berechtigungsverwaltung, Quellenanzeige und Dublettenkontrolle. Es wurde noch kein Health-Connect-Produktcode begonnen.
 - Die Feature-Lückenanalyse vom 28.08.2026 liegt in `docs/FEATURE_GAPS.md`. Sie trennt vorhandenen Kern, partielle Prototypen und fehlende Produkt-/Releasefunktionen und zerlegt die nächsten Optionen in einzeln entscheidbare Pakete mit P50/P80. Es wurde dabei kein Produktcode geändert.
 - Native Android-App in Kotlin/Compose
 - vier Haupttabs im aktuellen lokalen Stand: Tag, Statistik, Chat, Einstellungen
@@ -59,6 +62,7 @@ Stand: 2026-08-27
 
 ## Verifikation
 
+- G1-E1 lokal: Kotlin-Kompilierung und installierbarer Debug-APK-Build waren erfolgreich; die APK wurde auf Android 16 installiert und gestartet. Die reine Portionslogik besitzt vier neue JVM-Prüffälle. Server-Syntax und alle 5 providerneutralen Vertragstests sind grün. Der kombinierte lokale Android-Gesamtlauf trifft weiterhin die bekannte Windows-Dateisperre auf `ui-unit-api.jar`; deshalb sind GitHub Actions und der nachgelagerte Release-Workflow die verbindliche Vollprüfung.
 - G1-C1b/C2: Workflow `33109832049` ist für den funktionalen Commit `2c4ca71d85d54d9cf580f046b4233464c3856bee` vollständig grün. Serververträge, Android-JVM-Tests einschließlich der neuen Rolling-Average-Fälle, Lint, Debug-Build und Upload des Artefakts `kf20-debug-apk` (ID `9662197741`) waren erfolgreich.
 - G1-C1b/C2 lokal: Kotlin-Kompilierung und Debug-APK-Build erfolgreich; APK auf Android 16 installiert. Nahrung, Morgenwerte und Tagesabschluss wurden als getrennte Erfassungsflächen geöffnet und die Statistik sichtbar zwischen Tageswerten und `7-Tage-Ø` umgeschaltet. Der vollständige lokale JVM-Lauf traf erneut die bekannte Windows-Sandbox-Dateisperre auf einer Gradle-JAR; GitHub Actions lief ohne Workaround vollständig grün.
 - G1-C1a: Workflow `33107141951` ist für den funktionalen Commit `8acfa952ca1ad5d7007583730157cac0524012c4` vollständig grün. Serververträge, Android-JVM-Tests, Lint, Debug-Build und Upload des Artefakts `kf20-debug-apk` (ID `9661057166`) waren erfolgreich.

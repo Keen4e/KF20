@@ -12,6 +12,15 @@ internal data class DailyLogEntry(
     val fat: Double,
     val carbs: Double,
     val planned: Boolean = false,
+    val portion: FoodPortionDetails = FoodPortionDetails(),
+)
+internal data class FoodPortionDetails(
+    val amount: Double = 1.0,
+    val unit: String = "Portion",
+    val basisGrams: Double? = null,
+    val gramsPerUnit: Double? = null,
+    val preparation: String = "Nicht angegeben",
+    val assumption: String = "",
 )
 internal data class DailyRoutine(val title: String, val calories: Int, val protein: Double, val fat: Double, val carbs: Double)
 internal data class WeightEntry(val date: String, val kilograms: Double)
@@ -53,4 +62,3 @@ internal data class HealthProfile(
     val goalWeight: Double?,
     val goalBodyFat: Double?,
 )
-

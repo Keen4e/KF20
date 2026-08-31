@@ -1,6 +1,6 @@
 # KF20 Feature-Lückenanalyse
 
-Stand: 2026-08-28
+Stand: 2026-08-31
 
 ## Ziel und Methode
 
@@ -34,6 +34,7 @@ Der aktuelle Stand ist mehr als ein UI-Mockup:
 | F-09 | Statistiken erklärbar und untersuchbar machen | Diagramme und Zeiträume existieren. Datenpunkte sind nicht antippbar; Ausreißer, fehlende Tage und Zielwechsel werden nicht erklärt. | Eine schöne Kurve allein beantwortet nicht, wodurch sich ein Trend geändert hat. | P2 |
 | F-10 | Aufgaben/Projekte/Dateien mit Agentenlogik verbinden | Diese Bereiche speichern lokale Listen bzw. Dateiverweise, sind aber nicht mit Chat, Erinnerungen oder Dateianalyse verbunden. | Aktuell wirken sie wie isolierte Zusatzprototypen und lenken vom Gesundheitskern ab. | P2 |
 | F-11 | Externe Beta-/Store-Reife | Kein Produktionskonto, serverseitige Löschung/Trennung, Realgeräteabnahme, Release-Signierung oder Store-Freigabe. | Pflicht vor einem externen Test oder Play-Store-Upload. | P0 vor externem Test |
+| F-12 | Aktivitätsdaten aus Health Connect | Sportverbrauch wird bislang manuell im Morgen-Check erfasst. Eine explizite Health-Connect-Verbindung, Berechtigungsverwaltung, Quellenanzeige und Dublettenkontrolle fehlen. | Aktive Kalorien und Trainingseinheiten können direkt vom Android-Gerät übernommen werden, ohne zusätzliche unbelegte Gesundheitsfelder einzuführen. | P1 |
 
 ## Vorgeschlagene, getrennt entscheidbare Pakete
 
@@ -45,9 +46,11 @@ Der aktuelle Stand ist mehr als ein UI-Mockup:
 | 4 | G1-D2 – Import und Restore | versionierter JSON-Restore plus nutzergeführter historischer Import mit Vorschau | G1-B3 | 45k | 75k |
 | 5 | G1-D3 – Standards und Tagesroutinen | Standards bearbeiten/ordnen; getrennte Morgen-/Tagesabschluss-Erinnerungen | G1-B3 | 35k | 55k |
 | 6 | G1-D4 – Fortschritt und Statistikdetails | Fotovergleich/-löschung, Zieltrend und antippbare Diagrammdetails | G1-B3 | 45k | 75k |
-| 7 | G2a – Private KI-Testumgebung | privates HTTPS-Backend, Secret Store, Healthcheck und einfache App-Verbindung für einen internen Tester | G1-B3 | 70k | 110k |
-| 8 | G3a – KI-End-to-End-Abnahme | Text, Foto, Mikrofon, Chat, Fehlerfälle und Provider-Wechseltest auf realem Gerät | G2a | 70k | 115k |
-| 9 | G2b/G6/G7 – Externe Beta und Store | Konten, Nutzertrennung, Kontolöschung, Monitoring, Release-AAB und Store-Gates | G2a/G3a | 420k | 650k |
+| 7 | G1-S1 – Supplements | Präparate, Inhaltsstoffe/Einheiten, Einnahmezeiten, Tagesbilanz, Doppelungswarnungen und Arztauszug | G1-B3 | 55k | 90k |
+| 8 | G1-H1 – Health Connect Basis | opt-in Verbindung, Leseberechtigung, aktive Kalorien und Trainingseinheiten; Quelle, Berechtigungsentzug und Dubletten transparent behandeln | G1-B3 | 55k | 90k |
+| 9 | G2a – Private KI-Testumgebung | privates HTTPS-Backend, Secret Store, Healthcheck und einfache App-Verbindung für einen internen Tester | G1-B3 | 70k | 110k |
+| 10 | G3a – KI-End-to-End-Abnahme | Text, Foto, Mikrofon, Chat, Fehlerfälle und Provider-Wechseltest auf realem Gerät | G2a | 70k | 115k |
+| 11 | G2b/G6/G7 – Externe Beta und Store | Konten, Nutzertrennung, Kontolöschung, Monitoring, Release-AAB und Store-Gates | G2a/G3a | 420k | 650k |
 
 ## Empfehlung für das nächste Gate
 
@@ -55,11 +58,12 @@ Der aktuelle Stand ist mehr als ein UI-Mockup:
 
 ## Bewusst nicht vorgeschlagen
 
-- Ruhepuls, Schritte oder andere nicht belegte Gesundheitsfelder
+- Ruhepuls, Schritte oder andere nicht separat bestätigte Gesundheitsfelder; G1-H1 liest zunächst nur aktive Kalorien und Trainingseinheiten
 - direkter OpenAI-Schlüssel in der APK
 - automatisches Speichern einer KI-Schätzung ohne Nutzerprüfung
 - Play-Store-Upload vor Konto-, Datenschutz-, Realgeräte- und Release-Gates
 - Ausbau der isolierten Projekt-/Dateibereiche vor dem Gesundheitskern
+- ausführliche Trainingsbibliothek im aktuellen PI; der Nutzer hat sie ausdrücklich auf später verschoben
 
 ## Entscheidungsregel
 

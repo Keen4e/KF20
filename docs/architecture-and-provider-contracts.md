@@ -23,8 +23,9 @@ Der Android-Client enthält keine Provider-SDKs, API-Schlüssel oder providerspe
 - benannte Gespräche werden als getrennte, AES-GCM-verschlüsselte lokale Verläufe gespeichert; die Volltextsuche erfolgt ausschließlich im bereits entschlüsselten In-Memory-Zustand der App
 - der bisherige einzelne `messages`-Speicher wird beim ersten Lesen in einen `Hauptchat` migriert; an die Chat-API gehen weiterhin nur Nachrichten des aktuell geöffneten Gesprächs
 - Nährwertwerte bleiben nach der KI-Antwort editierbar
+- die KI-Antwort bildet eine Basisportion; `FoodPortionLogic.kt` skaliert die vier Kernwerte nur aus bestätigter Menge und, wo erforderlich, Basisgewicht/Gramm je Einheit. Portionsmetadaten werden abwärtskompatibel mit jedem Tageslog gespeichert
 - lokaler, nutzerinitiierter JSON-Export schließt Server-Token aus; die Datei selbst ist unverschlüsselt und wird nur an einen vom Nutzer gewählten Android-Speicherort geschrieben
-- nicht-sensitive UI-Präferenzen wie der Styleguide liegen im selben lokalen Preference-Lebenszyklus, werden sofort angewendet und im JSON-Exportschema 3 unter `uiPreferences` ausgegeben; Schema 3 exportiert zusätzlich alle benannten Gespräche und die aktive Gesprächs-ID
+- nicht-sensitive UI-Präferenzen wie der Styleguide liegen im selben lokalen Preference-Lebenszyklus, werden sofort angewendet und im JSON-Export unter `uiPreferences` ausgegeben; Schema 4 exportiert zusätzlich alle benannten Gespräche, die aktive Gesprächs-ID und Portionsmetadaten der Nahrung
 - bestätigte lokale Gesamtlöschung entfernt verschlüsselte Preferences, persistierte URI-Freigaben, Erinnerungsalarm und Android-Keystore-Schlüssel
 
 ## Stabile KF20-API

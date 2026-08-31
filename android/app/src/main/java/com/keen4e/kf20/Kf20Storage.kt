@@ -83,13 +83,17 @@ internal class DailyLogStorage(context: Context) {
         val array = JSONArray(SecureStore.decrypt(preferences.getString("daily_entries", null)) ?: "[]")
         List(array.length()) { index ->
             array.getJSONObject(index).let {
-                DailyLogEntry(it.optString("date", todayKey()), it.getString("type"), it.getString("title"), it.getInt("calories"), it.getDouble("protein"), it.optDouble("fat", 0.0), it.optDouble("carbs", 0.0), it.optBoolean("planned", false))
+                DailyLogEntry(
+                    it.optString("date", todayKey()), it.getString("type"), it.getString("title"), it.getInt("calories"),
+                    it.getDouble("protein"), it.optDouble("fat", 0.0), it.optDouble("carbs", 0.0), it.optBoolean("planned", false),
+                    decodeFoodPortion(it.optJSONObject("portion"))
+                )
             }
         }
     }.getOrDefault(emptyList())
     fun write(entries: List<DailyLogEntry>) {
         val array = JSONArray(); entries.takeLast(500).forEach { entry ->
-            array.put(JSONObject().put("date", entry.date).put("type", entry.type).put("title", entry.title).put("calories", entry.calories).put("protein", entry.protein).put("fat", entry.fat).put("carbs", entry.carbs).put("planned", entry.planned))
+            array.put(JSONObject().put("date", entry.date).put("type", entry.type).put("title", entry.title).put("calories", entry.calories).put("protein", entry.protein).put("fat", entry.fat).put("carbs", entry.carbs).put("planned", entry.planned).put("portion", encodeFoodPortion(entry.portion)))
         }
         preferences.edit().putString("daily_entries", SecureStore.encrypt(array.toString())).apply()
     }
@@ -301,6 +305,23 @@ internal class HealthProfileStorage(context: Context) {
 internal fun JSONObject.optionalDouble(key: String): Double? = if (has(key) && !isNull(key)) optDouble(key).takeIf { !it.isNaN() } else null
 internal fun JSONObject.optionalInt(key: String): Int? = if (has(key) && !isNull(key)) optInt(key) else null
 
+internal fun decodeFoodPortion(value: JSONObject?): FoodPortionDetails = if (value == null) FoodPortionDetails() else FoodPortionDetails(
+    amount = value.optDouble("amount", 1.0).takeIf { it.isFinite() && it > 0 } ?: 1.0,
+    unit = value.optString("unit", "Portion").takeIf { it in supportedFoodUnits } ?: "Portion",
+    basisGrams = value.optionalDouble("basisGrams")?.takeIf { it > 0 },
+    gramsPerUnit = value.optionalDouble("gramsPerUnit")?.takeIf { it > 0 },
+    preparation = value.optString("preparation", "Nicht angegeben").takeIf { it in supportedPreparations } ?: "Nicht angegeben",
+    assumption = value.optString("assumption", "").take(500),
+)
+
+internal fun encodeFoodPortion(value: FoodPortionDetails): JSONObject = JSONObject()
+    .put("amount", value.amount)
+    .put("unit", value.unit)
+    .put("basisGrams", value.basisGrams ?: JSONObject.NULL)
+    .put("gramsPerUnit", value.gramsPerUnit ?: JSONObject.NULL)
+    .put("preparation", value.preparation)
+    .put("assumption", value.assumption)
+
 internal class TaskStorage(context: Context) {
     private val preferences = context.getSharedPreferences("kf20_private", Context.MODE_PRIVATE)
     fun read(): List<AgentTask> = runCatching {
@@ -337,7 +358,7 @@ internal object LocalDataExport {
         appStyle: AppStyle
     ): String {
         val root = JSONObject()
-            .put("schemaVersion", 3)
+            .put("schemaVersion", 4)
             .put("exportedAt", Instant.now().toString())
             .put("notice", "Sensible KF20-Gesundheitsdaten. Serverzugang und Provider-Schlüssel sind ausgeschlossen.")
         root.put("activeConversationId", activeConversationId)
@@ -358,7 +379,8 @@ internal object LocalDataExport {
         root.put("dailyEntries", JSONArray().apply {
             dailyEntries.forEach {
                 put(JSONObject().put("date", it.date).put("type", it.type).put("title", it.title).put("calories", it.calories)
-                    .put("protein", it.protein).put("fat", it.fat).put("carbs", it.carbs).put("planned", it.planned))
+                    .put("protein", it.protein).put("fat", it.fat).put("carbs", it.carbs).put("planned", it.planned)
+                    .put("portion", encodeFoodPortion(it.portion)))
             }
         })
         root.put("routines", JSONArray().apply {
@@ -435,4 +457,3 @@ internal object Kf20LocalData {
         SecureStore.deleteKey()
     }
 }
-

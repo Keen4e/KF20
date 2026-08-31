@@ -1,0 +1,5 @@
+{
+  "tag": "g1-e1-2026-08-31",
+  "title": "KF20 G1-E1 – Präzisere Nahrungserfassung",
+  "notes": "Interne Testversion. Neu: transparente Mengen- und Einheitenskalierung für Portion, Gramm, Stück, EL und TL; bestätigte Grammumrechnung ohne erfundene Standardgewichte; Zubereitungszustand; sichtbare Annahmen; Live-Vorschau für Kalorien, Protein, Fett und Carbs. Diese APK ist debug-signiert und nicht für den Play Store bestimmt."
+}
