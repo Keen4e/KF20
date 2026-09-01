@@ -8,6 +8,7 @@ android/local.properties
 android/app/build/
 emulator.*.log
 server/.env
+deploy/.env
 *.jks
 *.keystore
 *.apk

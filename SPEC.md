@@ -183,6 +183,14 @@ Eine ChatGPT-Subscription ist kein API-Zugang. KF20 fordert niemals ChatGPT-Pass
 
 Provider-Capabilities werden explizit ausgewiesen. Wird etwa Web-Recherche verlangt, aber vom konfigurierten Anbieter nicht unterstützt, liefert der Server einen klaren Capability-Fehler und erfindet keine Quellen.
 
+### Private KI-Brücke G2-K1
+
+Für den privaten Einzeltest kann die KF20-API containerisiert auf dem Homeserver laufen und ausschließlich über einen ausgehenden Cloudflare Tunnel per HTTPS erreichbar sein. Die Brücke besitzt keine Nutzerkonten, Gesundheitsdatenbank oder Synchronisation. Sie verarbeitet Chat-, Text- und Fotoanfragen nur im Arbeitsspeicher, setzt beim OpenAI-Adapter `store: false` und schreibt weder Anfrageinhalte noch Providerantworten in Logs oder Dateien. Jede Antwort enthält nicht-sensitive Ausführungsmetadaten für Provider, Zugangsart und `storage: none`; jede Anfrage erhält eine Request-ID.
+
+Der zentrale Provider-Schlüssel verbleibt auf dem Server. Android speichert nur Brückenadresse und separaten privaten Alpha-Zugangstoken verschlüsselt und bietet einen Healthcheck. Ein Essensfoto ist auf 1 MB Binärdaten begrenzt, wird als neu komprimiertes JPEG übertragen und nicht in das Tageslog übernommen. Die Nutzeroberfläche weist vor der Analyse auf die einmalige Übertragung hin.
+
+Die Anleitung für ein zentrales Backend mit MCP, Telegram, Health Bridge, Home Assistant, dauerhaften Fotos und Audit ist vollständig in `docs/MCP_BACKEND_GAP_ANALYSIS.md` erfasst. Sie ersetzt die aktuelle Local-first-Führung erst nach einer ausdrücklichen G2-D0-Entscheidung.
+
 ## Datenschutz
 
 - Gesundheits- und Chatdaten lokal AES-GCM-verschlüsselt speichern.
@@ -192,6 +200,7 @@ Provider-Capabilities werden explizit ausgewiesen. Wird etwa Web-Recherche verla
 - Alle lokalen KF20-Daten, gespeicherten Dateizugriffe und den Android-Keystore-Schlüssel nach einer eindeutigen Bestätigung vollständig löschen können.
 - Keine Provider-Schlüssel in App, Git oder Logs.
 - Keine Chat-Inhaltslogs im Serverbetrieb.
+- Die private KI-Brücke besitzt keine Fachdatenbank; ihre Antworten tragen `storage: none`. Der externe KI-Anbieter verarbeitet die übermittelten Inhalte nach seinen eigenen API-Bedingungen.
 - Bilder nur für die konkrete Analyse übertragen und nicht serverseitig speichern.
 - Serverseitiger Export, Kontolöschung und definierte Aufbewahrung sind vor Store-Release Pflicht, sobald Nutzerkonten eingeführt werden.
 - Fortschrittsbilder bleiben bis zu einem separat freigegebenen Bild-Sync lokal. KI-Fotos sind nur temporäre Anfrageinhalte und werden nicht als Sync-Objekt gespeichert.

@@ -3,8 +3,10 @@
 ## Systemgrenze
 
 ```text
-Android-App -> HTTPS KF20 API -> Identity / Sync / PostgreSQL
-                           \-> KI-Gateway -> Secret Vault -> KI-Provider
+Android-App -> HTTPS KF20 KI-Brücke -> serverseitiges Secret -> KI-Provider
+
+Späteres, noch nicht freigegebenes Ziel:
+Android / Telegram / MCP -> gemeinsame Services -> PostgreSQL / Fotospeicher
 ```
 
 Der Android-Client enthält keine Provider-SDKs, API-Schlüssel oder providerspezifischen Antworttypen. Er kennt nur die KF20-API-Verträge. Das verbindliche Betriebs-, Sync- und Secret-Zielbild steht in `BACKEND_STRATEGY.md`.
@@ -49,7 +51,8 @@ Response:
 ```json
 {
   "text": "Antwort",
-  "sources": [{ "title": "Quelle", "url": "https://..." }]
+  "sources": [{ "title": "Quelle", "url": "https://..." }],
+  "execution": { "provider": "openai", "credentialMode": "managed", "storage": "none" }
 }
 ```
 
@@ -66,7 +69,7 @@ Request:
 
 ### `GET /healthz`
 
-Der Health-Endpunkt meldet neben `status` die serverseitige Provider-ID und deren Capabilities. Er enthält keine Secrets, Modellprompts oder Nutzerdaten.
+Der Health-Endpunkt meldet neben `status` die serverseitige Provider-ID, deren Capabilities, `mode: stateless-ai-bridge` und `storage: none`. Er enthält keine Secrets, Modellprompts oder Nutzerdaten.
 
 Mindestens Beschreibung oder Bild ist erforderlich. Response:
 
@@ -80,7 +83,8 @@ Mindestens Beschreibung oder Bild ist erforderlich. Response:
     "carbs": 48,
     "confidence": "mittel",
     "note": "Portionsannahme ..."
-  }
+  },
+  "execution": { "provider": "openai", "credentialMode": "managed", "storage": "none" }
 }
 ```
 
@@ -93,7 +97,7 @@ AiProvider.chat(messages, memories, webSearch) -> { text, sources }
 AiProvider.analyzeNutrition(description, imageDataUrl) -> NutritionEstimate
 ```
 
-Im aktuellen Einzeltester-Prototyp erfolgt die Provider-Auswahl über Serverkonfiguration (`AI_PROVIDER`, `AI_MODEL` und Secret Store). `server/src/providers/openai.js` implementiert den ersten Adapter. Das Zielmodell erweitert die serverseitige Auswahl um `credentialMode`, `providerId` und `modelId`. Zulässige Provider und Modelle kommen aus einer Capability-Registry; Credentials werden ausschließlich über einen Secret-Resolver bezogen.
+Im aktuellen Einzeltester-Prototyp erfolgt die Provider-Auswahl über Serverkonfiguration (`AI_PROVIDER`, `AI_MODEL` und Host-Secret). `server/src/providers/openai.js` implementiert den ersten Adapter. Die API gibt bereits die stabilen Metadaten `provider`, `credentialMode` und `storage` zurück. Eine nutzerwählbare Capability-Registry und BYOK bleiben ein späteres Paket.
 
 Ein neuer Provider wird unter `server/src/providers/` ergänzt und muss die stabilen KF20-Responses erzeugen. Vorgesehen sind OpenAI direkt, Anthropic direkt und OpenRouter als getrennte Datenwege. Android erhält weder Provider-SDKs noch Secrets; UI-Erweiterungen zeigen lediglich die serverseitig angebotenen Modi und Fähigkeiten.
 
@@ -101,11 +105,12 @@ Web-Recherche ist eine optionale Capability. Ein Provider ohne Recherche muss ei
 
 Providerfehler werden ohne Anfrageinhalte protokolliert und in stabile, generische KF20-Fehler übersetzt. Providerantworten für Nährwerte werden vor der Rückgabe nochmals gegen den KF20-Vertrag validiert.
 
-Kein Adapter darf still von BYOK auf einen KF20-Schlüssel, zwischen direktem Provider und OpenRouter oder auf einen anderen Provider wechseln. Provider, Modell und Zugangsart werden als nicht-sensitives Ausführungsmetadatum zurückgegeben. Die konkrete API-Erweiterung dafür wird erst in G2-A2 implementiert und versioniert.
+Kein Adapter darf still von BYOK auf einen KF20-Schlüssel, zwischen direktem Provider und OpenRouter oder auf einen anderen Provider wechseln. Provider und Zugangsart werden als nicht-sensitives Ausführungsmetadatum zurückgegeben; Modellnamen werden aktuell bewusst nicht an den Client übertragen.
 
 ## Sync- und Secret-Grenze
 
-- Bevorzugte private Alpha: containerisierte KF20-API und PostgreSQL auf dem Homeserver, ausschließlich über Cloudflare Tunnel erreichbar und mit verschlüsseltem Offsite-Backup. Bevorzugte externe Stufe: API/KI-Gateway auf Cloud Run `europe-west3`, Supabase Auth/PostgreSQL in `eu-central-1` und Betreiber-Secrets in Google Secret Manager/KMS. Alpha- und Produktionsressourcen bleiben getrennt.
+- Aktuelle private Alpha: nur die containerisierte, zustandslose KF20-KI-Brücke auf dem Homeserver, ausschließlich über Cloudflare Tunnel erreichbar. Keine Gesundheitsdatenbank und kein Sync sind aktiviert.
+- Ein zentrales Backend oder optionaler Sync ist nach `MCP_BACKEND_GAP_ANALYSIS.md` neu zu entscheiden und bleibt bis G2-D0 Architekturentwurf.
 - Die lokale verschlüsselte Datenbank bleibt bei Offline-Nutzung führend; Cloud-Sync ist opt-in.
 - Synchronisierte Fachobjekte verwenden stabile IDs, Revisionen, Zeitstempel und Löschmarker. Nicht sicher zusammenführbare Konflikte werden sichtbar statt still überschrieben.
 - Nutzeridentität wird serverseitig aus der Session abgeleitet. Eine Client-Nutzer-ID erteilt keine Berechtigung.
@@ -115,7 +120,7 @@ Kein Adapter darf still von BYOK auf einen KF20-Schlüssel, zwischen direktem Pr
 
 ## Aktuelle Sicherheitsgrenze
 
-Der Prototyp verwendet einen einzelnen statischen Bearer-Token und ist nicht öffentlich betreibbar. Vor einem externen Test sind echte Nutzeridentität, Tokenrotation, Kontolöschung, Datenbanktrennung und HTTPS erforderlich. Details stehen in `security-release-gates.md`.
+Die private Alpha verwendet einen einzelnen statischen Bearer-Token hinter HTTPS/Cloudflare Tunnel und ist nur für den Einzeltest vorgesehen. Vor einem externen Test sind echte Nutzeridentität, getrennte Clients/Scopes, Tokenrotation, Kontolöschung und Autorisierung erforderlich. Details stehen in `security-release-gates.md`.
 
 ## Änderungsregel
 

@@ -1,6 +1,6 @@
 # KF20 Projektstatus
 
-Stand: 2026-08-31
+Stand: 2026-09-01
 
 Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie wird bei jedem begonnenen oder abgeschlossenen PI-Arbeitspaket aktualisiert. Frühere Chats sind für die Übernahme nicht erforderlich.
 
@@ -18,15 +18,15 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 
 | Feld | Wert |
 |---|---|
-| Paket | G2-S0 – Backend-, Sync- und KI-Provider-Strategie |
+| Paket | G2-K1 – Zustandslose KI-Brücke |
 | Entscheidung | GO |
-| Status | DONE / AWAITING NEXT PRIORITIZATION |
-| P50 / P80 | 25k / 40k Roh-Tokens |
+| Status | IN PROGRESS |
+| P50 / P80 | 40k / 65k Roh-Tokens |
 | Ist-Verbrauch | vom Agenten nicht zuverlässig als Plus-Wochenwert messbar; Kalibrierung erfolgt anhand der Nutzeranzeige |
-| Produktänderung | keine neue Nutzerfunktion; verbindliches Zielbild und getrennte Folgepakete für Local-first-Sync, Backend und KI-Zugänge |
-| Abnahme | Managed/BYOK/Plus getrennt; OpenAI/Anthropic/OpenRouter vorgesehen; private Alpha auf Homeserver/Cloudflare und externe Stufe auf Cloud Run/Supabase sowie Secret-, Sync-, Bild- und Löschgrenzen festgelegt |
-| Commit / Workflow | `301fc252699eb307f3103d33d84a7415e912d8e1` / `33410290070` · SUCCESS |
-| APK-Release | `g2-s0-2026-08-31` · https://github.com/Keen4e/KF20/releases/tag/g2-s0-2026-08-31 |
+| Produktänderung | schlanke, zustandslose KI-Brücke für Text, Foto und Chat; lokaler App-Datenbestand bleibt unverändert |
+| Abnahme | Server speichert keine Gesundheitsdaten oder Bilder, OpenAI-Schlüssel bleibt außerhalb der APK, Docker-/Cloudflare-Tunnel-Betrieb ist reproduzierbar, Ausführungsmetadaten und Tests sind vorhanden |
+| Commit / Workflow | ausstehend |
+| APK-Release | ausstehend; Ziel `g2-k1-2026-09-01` |
 
 ## Implementierter Produktstand
 
@@ -64,6 +64,9 @@ Details und Abnahmekriterien stehen in `SPEC.md`; der technische Verlauf steht i
 | 9 | G2-A3 – BYOK und weitere Provider | PROPOSED / AWAITING DECISION | G2-A2 | 75k | 120k |
 | 10 | G2-B1 – Local-first Datensync | PROPOSED / AWAITING DECISION | G2-A1 | 110k | 175k |
 | 11 | G1-H1 – Health Connect Basis | PROPOSED / AWAITING DECISION | G1-B3 | 55k | 90k |
+| 12 | G2-D0 – Führende Datenquelle und Zentraldaten-Verträge | PROPOSED / AWAITING DECISION | G2-K1 | 25k | 40k |
+
+Die neue Zentralbackend-/MCP-/Telegram-Anleitung ist in `docs/MCP_BACKEND_GAP_ANALYSIS.md` vollständig abgeglichen. Sie ist nicht Teil von G2-K1; insbesondere sind Datenbank, MCP, Telegram, Health Bridge, Home Assistant und dauerhafter Server-Fotospeicher noch nicht implementiert.
 
 Kein PROPOSED- oder DEFERRED-Paket darf ohne eine neue Nutzerentscheidung `GO`, `SPLIT`, `DEFER` oder `DROP` begonnen werden.
 

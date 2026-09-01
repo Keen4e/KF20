@@ -1,6 +1,6 @@
 # KF20 Entscheidungslog
 
-Stand: 2026-08-31
+Stand: 2026-09-01
 
 Nur bestätigte, dauerhaft relevante Entscheidungen werden hier aufgenommen. Neue Einträge erhalten eine fortlaufende ID und verändern frühere Entscheidungen nicht still; Ablösungen verweisen auf die ersetzte ID.
 
@@ -23,3 +23,5 @@ Nur bestätigte, dauerhaft relevante Entscheidungen werden hier aufgenommen. Neu
 | D-015 | ACCEPTED | Provider-Secrets werden in einem eigenen Vault-Lebenszyklus getrennt von Gesundheitsdaten gehalten. | Secrets erscheinen nicht in APK, Git, Logs, Analytics, Datenexporten oder normalen Gesundheitsdaten-Backups und werden bei Widerruf/Kontolöschung entfernt. |
 | D-016 | ACCEPTED | Die private Alpha läuft bevorzugt containerisiert auf dem Homeserver über Cloudflare Tunnel; die externe Beta nutzt bevorzugt Cloud Run `europe-west3` und Supabase `eu-central-1`. | Keine offenen Inbound-Ports in der Alpha; externe Primärsysteme später in Frankfurt. Portables Deployment und versionierte Migrationen halten Android vom Betriebsort unabhängig. |
 | D-017 | ACCEPTED | G2-S0 legt nur Strategie und Paketgrenzen fest. | Es aktiviert keinen Cloud-Dienst, erstellt kein Konto und hinterlegt keinen echten Schlüssel; jede Umsetzung benötigt ein separates GO. |
+| D-018 | ACCEPTED | G2-K1 wird als zustandslose KI-Brücke umgesetzt; Konto, Datenbank und Sync bleiben zunächst geparkt. | Gesundheitsdaten bleiben lokal in der App. Text und Fotos werden nur für die jeweilige Anfrage übertragen; die Brücke speichert sie nicht. Hermes/MCP bleibt das gesonderte Gate G2-M1. |
+| D-019 | ACCEPTED | Die Anleitung für zentrales Backend, MCP, Telegram, Health Bridge, Home Assistant, Fotos, Audit und Import wird vollständig als Folge-Backlog aufgenommen. | Weil „Backend ist zentrale Datenquelle“ D-018 widerspricht, beginnt keine Zentralisierung stillschweigend. G2-D0 muss die führende Datenquelle zuerst ausdrücklich neu entscheiden; danach folgen kleine GO-Gates gemäß `MCP_BACKEND_GAP_ANALYSIS.md`. |

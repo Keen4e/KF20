@@ -12,7 +12,9 @@ KF20 is a private daily AI companion for Android. It provides a focused text cha
 
 The Android app never contains a provider API key. It sends authenticated requests only to the KF20 server. Provider selection, model name and credentials stay behind that API boundary.
 
-The prototype selects the OpenAI adapter with `AI_PROVIDER=openai`. `AI_MODEL` chooses the model and `OPENAI_API_KEY` is supplied only through the server's secret store. A different provider is added as a server adapter implementing `chat` and `analyzeNutrition`; the Android contracts do not change. Copy `server/.env.example` only as a local configuration template and never commit real secrets.
+The private-alpha bridge selects the OpenAI adapter with `AI_PROVIDER=openai`. `AI_MODEL` chooses the model and `OPENAI_API_KEY` is supplied only through the server host. A different provider is added as a server adapter implementing `chat` and `analyzeNutrition`; the Android contracts do not change. The bridge is stateless: it has no account, health database or sync, and does not persist prompts or photos. Copy `server/.env.example` only as a local configuration template and never commit real secrets.
+
+The reproducible Docker/Cloudflare Tunnel setup is in [`deploy/compose.yaml`](deploy/compose.yaml); the exact private-alpha procedure and limitations are documented in [`docs/PRIVATE_AI_BRIDGE.md`](docs/PRIVATE_AI_BRIDGE.md). The much larger central database/MCP/Telegram proposal is deliberately split into later PI gates in [`docs/MCP_BACKEND_GAP_ANALYSIS.md`](docs/MCP_BACKEND_GAP_ANALYSIS.md).
 
 ## Authoritative project context
 
@@ -45,7 +47,7 @@ This is a new implementation. The prior GitHub repository only contained a compi
 
 ## Before first production deployment
 
-1. Configure identity/authentication and a production database. The current API accepts no public users yet and must not be exposed to the internet.
+1. Configure identity/authentication and a production database before adding external testers. The current shared-token bridge is only for the private single-user alpha.
 2. Select the provider, add its key through a secret store and deploy `server/` to a private HTTPS endpoint.
 3. Set the Android `API_BASE_URL` to that endpoint.
 4. Complete the Play Store items in `docs/play-store-checklist.md`.

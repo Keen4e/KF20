@@ -23,7 +23,8 @@ Der aktuelle Stand ist mehr als ein UI-Mockup:
 
 | ID | Lücke | Aktueller Stand | Warum relevant | Priorität |
 |---|---|---|---|---|
-| F-01 | KI ohne Entwickler-Server nutzbar machen | Android und OpenAI-Adapter existieren; URL und statischer Token müssen manuell eingerichtet werden. Es gibt kein bereitgestelltes HTTPS-Backend und keinen Nutzer-Login. | Text-, Foto-, Mikrofonanalyse und Chat sind sonst für einen normalen Tester nicht nutzbar. | P0 |
+| F-01 | KI-Brücke privat betreiben | Docker-/Cloudflare-Konfiguration, Limits, Metadaten und App-Verbindungstest sind mit G2-K1 vorhanden; ein echter Host, Domain, Tunnel-Token und API-Schlüssel sind absichtlich nicht im Repository. | Nach externer Einrichtung sind Text-, Foto-, Mikrofonanalyse und Chat für den privaten Tester nutzbar. | G2-K1 IN PROGRESS |
+| F-12 | Zentrale App-/Telegram-/MCP-Datenquelle | Vollständig abgeglichen in `MCP_BACKEND_GAP_ANALYSIS.md`; widerspricht aktuell der Local-first-Führung und ist nicht implementiert. | Ohne Richtungsentscheidung würden zwei konkurrierende Wahrheiten und hohes Migrationsrisiko entstehen. | P0 DECISION: G2-D0 |
 | F-02 | Korrekturen und Revisionsverlauf | Tageswerte können aktualisiert oder entfernt werden; Mahlzeiten werden im Wesentlichen gelöscht und neu erfasst. Ein sichtbarer Änderungsverlauf fehlt. | Der Chat verlangt nachvollziehbare Korrekturen statt stiller Überschreibung. | P0 |
 | F-03 | Backup wiederherstellen und historischen Import anbieten | JSON-Export existiert; ein Restore/Import fehlt. Der Telegram-Import war ein lokaler Einmalvorgang und die Testwoche ist Debug-only. | Gerätewechsel, Wiederherstellung und dauerhafte Übernahme alter Daten sind nicht möglich. | P0 |
 | F-04 | Zielwerte korrekt initialisieren | Die Spezifikation verlangt leere, nicht erfundene Ziele; der Code setzt aktuell 2.000 kcal, 150 g Protein, 70 g Fett und 200 g Carbs. | Das verfälscht Zielerreichung bei neuen Installationen und widerspricht der verbindlichen Spezifikation. | P0 |
@@ -57,7 +58,7 @@ Der aktuelle Stand ist mehr als ein UI-Mockup:
 
 ## Empfehlung für das nächste Gate
 
-G1-B3 ist abgeschlossen. **G1-D0** bleibt die kleinste fachliche Korrektur. Für den nun priorisierten Backendpfad folgt nach dem abgeschlossenen Strategiegate G2-S0 zunächst **G2-A1**; KI-Gateway, BYOK und Datensync bleiben getrennt entscheidbar. Eine private Testumgebung darf nicht als öffentliche Beta ausgegeben werden.
+G2-K1 ist freigegeben und wird als kleine zustandslose KI-Brücke abgeschlossen. Danach ist **G2-D0** das notwendige Richtungs-Gate, falls die neue zentrale Backend-/MCP-/Telegram-Anleitung umgesetzt werden soll. Eine private Testumgebung darf nicht als öffentliche Beta ausgegeben werden.
 
 ## Bewusst nicht vorgeschlagen
 

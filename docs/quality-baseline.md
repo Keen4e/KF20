@@ -1,7 +1,7 @@
 # KF20 Qualitätsbaseline
 
-Stand: 2026-08-31
-PI-Paket: G2-S0
+Stand: 2026-09-01
+PI-Paket: G2-K1
 
 ## Verbindliches Qualitätsgate
 
@@ -80,3 +80,13 @@ Diese Baseline ändert keine Produktfunktion. Jedes weitere Arbeitspaket wird vo
 - Das Paket ändert nur Spezifikation, Architektur, Roadmap und Agentenübergabe; es aktiviert keinen Dienst und enthält keine Secrets.
 - Dokumentverweise, Paket-IDs, P50/P80-Werte und der Release-Descriptor werden auf Konsistenz geprüft.
 - Gemäß Prozessregel wird die unveränderte App dennoch durch das vollständige Release-Workflow-Gate gebaut und als eigenes Debug-Prerelease veröffentlicht.
+
+## G2-K1-Prüffälle
+
+- Healthcheck weist den Modus `stateless-ai-bridge` und `storage: none` aus, ohne Secrets zu veröffentlichen.
+- Chat und Nährwertanalyse liefern providerneutrale Ausführungsmetadaten; Antworten tragen `Cache-Control: no-store` und eine Request-ID.
+- Fehlformatierte sowie übergroße Bilddaten werden vor dem Provideraufruf abgewiesen; Logs enthalten keine Anfrageinhalte.
+- OpenAI-Chat und -Nährwertanalyse setzen nachweislich `store: false`.
+- Docker Compose lässt sich ohne echte Secrets syntaktisch auflösen; der Normalbetrieb veröffentlicht keinen Host-Port, der lokale Override bindet nur an `127.0.0.1`.
+- Android kompiliert mit dem erweiterten Antwortvertrag und zeigt Provider/keine Serverspeicherung sowie einen Verbindungstest an.
+- Zentrale Datenbank-, MCP-, Telegram-, Health- und Fotoanforderungen sind als nicht implementierte Folgepakete kenntlich; kein Test darf deren Funktion vortäuschen.

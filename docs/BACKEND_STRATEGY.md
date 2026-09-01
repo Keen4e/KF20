@@ -8,6 +8,8 @@ Status: ACCEPTED
 
 KF20 bleibt local-first: Die Android-App funktioniert für Erfassung, Verlauf und Auswertung auch ohne Cloud. Ein Backend ergänzt Anmeldung, verschlüsselten Mehrgeräte-Sync und KI-Aufrufe, übernimmt aber nicht still die Hoheit über die Gesundheitsdaten.
 
+Aktueller Umsetzungsstand G2-K1: Konto, Fach-Datenbank und Sync sind geparkt. Implementiert wird nur eine zustandslose KI-Brücke ohne Serverspeicherung. Die spätere Nutzeranforderung eines zentralen Backends für App, Telegram und MCP ist in `MCP_BACKEND_GAP_ANALYSIS.md` erfasst; sie benötigt vor Umsetzung das explizite Richtungs-Gate G2-D0.
+
 ```text
 Android-App
   |-- lokale verschlüsselte KF20-Datenbank (führend bei Offline-Nutzung)

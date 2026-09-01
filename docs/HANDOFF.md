@@ -1,5 +1,16 @@
 # KF20 Handoff
 
+## G2-K1 – Private zustandslose KI-Brücke (2026-09-01, IN PROGRESS)
+
+- Android, Server und Dokumentation verwenden weiterhin die stabilen KF20-Endpunkte. Erfolgreiche Antworten ergänzen `execution` mit Provider, `managed` und `storage: none`; Android zeigt diese Grenze bei der Nährwertschätzung an.
+- `GET /healthz` weist `stateless-ai-bridge`/`storage: none` aus. Unter Einstellungen kann die App die konfigurierte Brücke testen, ohne einen Provider-Schlüssel zu kennen.
+- Request-IDs, No-store-Header, tatsächliche 1-MB-Bildgrößenprüfung, generische Fehlercodes und inhaltsfreie Fehlerlogs sind implementiert. Beide OpenAI-Aufrufpfade setzen `store: false`.
+- `server/Dockerfile` und `deploy/compose*.yaml` liefern den Homeserverbetrieb; der normale Stack veröffentlicht keinen Host-Port und erreicht die API nur über `cloudflared`. Reale Schlüssel, Domain und Tunnel sind nicht im Repository und wurden nicht erfunden.
+- `docs/PRIVATE_AI_BRIDGE.md` ist die Betriebsanleitung. `docs/MCP_BACKEND_GAP_ANALYSIS.md` gleicht die später eingereichte zentrale Backend-/MCP-/Telegram-Anleitung vollständig ab.
+- Die Zentralbackend-Anleitung widerspricht D-018 („Daten zunächst in der App“). Darum sind Datenbank, REST-Fachdaten, MCP, Telegram, Health Bridge, Home Assistant und dauerhafte Serverfotos nicht Bestandteil von G2-K1. G2-D0 ist das notwendige Richtungs-Gate.
+- Lokal ausgeführt: Server-Syntax und `npm test`, 5/5 erfolgreich; Docker-Compose-Konfiguration wurde ohne Interpolation erfolgreich gerendert. Der Android-Gesamtlauf ist lokal mangels Java-Runtime nicht ausführbar und wird durch GitHub Actions geprüft.
+- Commit, Workflow und APK-Prerelease werden nach dem vollständigen Gate ergänzt.
+
 ## G2-S0 – Backend-, Sync- und KI-Provider-Strategie (2026-08-31)
 
 - Nutzer-GO: `G2-S0 GO`.

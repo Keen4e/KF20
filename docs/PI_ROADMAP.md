@@ -1,6 +1,6 @@
 # KF20 PI-Roadmap
 
-Stand: 2026-08-31
+Stand: 2026-09-01
 
 ## Kapazitätsregel
 
@@ -31,10 +31,19 @@ Stand: 2026-08-31
 | G1-S1 | Supplements | Inhaltsstoffe/Einheiten, Einnahmezeiten, Tagesbilanz, Doppelungswarnungen und Arztauszug | G1-B3 | 55k | 90k | PROPOSED |
 | G1-H1 | Health Connect Basis | explizite Verbindung und Leseberechtigung; aktive Kalorien und Trainingseinheiten vom Android-Gerät übernehmen, Quelle/Dubletten transparent halten | G1-B3 | 55k | 90k | PROPOSED |
 | G2-S0 | Backend-, Sync- und KI-Strategie | Local-first-Zielbild, Identität, Datenhaltung, Managed/BYOK/Plus-Modi, Secret-Lebenszyklus und umsetzbare Folgepakete | G1-B3 | 25k | 40k | DONE · Release `g2-s0-2026-08-31` |
-| G2-A1 | Private Backend-Basis | portables Docker-Deployment auf Homeserver, Cloudflare Tunnel, HTTPS, Healthcheck, Identität und Backup/Restore | G2-S0 | 55k | 90k | PROPOSED |
-| G2-A2 | KI-Gateway v1 | Provider-Registry, zentraler OpenAI-Projektschlüssel, Limits und Ausführungsmetadaten | G2-A1 | 55k | 90k | PROPOSED |
+| G2-K1 | Zustandslose KI-Brücke | Text-, Foto- und Chatanfragen über providerneutrale API; zentraler Schlüssel, Limits, keine Konten/DB/Sync, Docker und Cloudflare Tunnel | G2-S0 | 40k | 65k | GO · IN PROGRESS |
+| G2-D0 | Führende Datenquelle und Zentraldaten-Verträge | Entscheidung App-vs.-Backend, Datenklassifikation, ER-Modell sowie REST-/MCP-Verträge | G2-K1 | 25k | 40k | PROPOSED · REQUIRED BEFORE CENTRALIZATION |
+| G2-D1 | Zentrale Fachdatenschicht | PostgreSQL, Migrationen, Services, Audit, Idempotenz, Versionierung und deterministische Bilanzen | G2-D0 | 90k | 145k | PROPOSED |
+| G2-D2 | REST und Client-Autorisierung | REST v1, getrennte Tokens/Clients, Scopes, Rotation, Limits und Autorisierungstests | G2-D1 | 80k | 130k | PROPOSED |
+| G2-M1 | MCP Streamable HTTP | 19 Tools und sieben Resources über dieselben Services, HTTPS und Scope-Prüfung | G2-D2 | 80k | 130k | PROPOSED |
+| G2-T1 | Telegram und JSON-Migration | gemeinsamer Datenbestand, Outbox/Retry, Nachrichten-/Bildidempotenz und Import | G2-M1 | 90k | 150k | PROPOSED |
+| G2-H2 | Health Bridge und Home Assistant | Uploadqueue/Dedupe, Schritte/Aktiv-/Gesamtkalorien sowie Gewicht/KFA ohne Schätzungen | G2-D2 | 90k | 150k | PROPOSED |
+| G2-P1 | Dauerhafter Fotospeicher | privater Objektspeicher, Hash/Metadaten, Zugriff, Soft Delete und Audit | G2-D2 | 55k | 90k | PROPOSED |
+| G2-E1 | Zentrales Backend E2E | gemeinsame App-/Telegram-/MCP-Sicht, Parallelität, Retry, Restore und Security-Abnahme | G2-T1, G2-H2, G2-P1 | 70k | 115k | PROPOSED |
+| G2-A1 | Private Backend-Basis | portables Docker-Deployment auf Homeserver, Cloudflare Tunnel, HTTPS, Healthcheck, Identität und Backup/Restore | G2-S0 | 55k | 90k | DEFERRED – Konto/Sync geparkt |
+| G2-A2 | KI-Gateway v1 | Provider-Registry, zentraler OpenAI-Projektschlüssel, Limits und Ausführungsmetadaten | G2-A1 | 55k | 90k | SUPERSEDED IN PART BY G2-K1 |
 | G2-A3 | BYOK und weitere Provider | Credential-Vault, OpenAI-/Anthropic-/OpenRouter-Adapter, Test/Replace/Delete und explizites Routing | G2-A2 | 75k | 120k | PROPOSED |
-| G2-B1 | Local-first Datensync | Konto, Delta-Sync, Konflikte, Export und Kontolöschung; zunächst ohne Bilder | G2-A1 | 110k | 175k | PROPOSED |
+| G2-B1 | Local-first Datensync | Konto, Delta-Sync, Konflikte, Export und Kontolöschung; zunächst ohne Bilder | G2-A1 | 110k | 175k | DEFERRED – Daten bleiben zunächst in der App |
 | G2-B2 | Fortschrittsbild-Sync | optionaler verschlüsselter Bild-Sync mit Aufbewahrung und Löschtest | G2-B1 | 55k | 90k | PROPOSED |
 | G3-A1 | KI-End-to-End-Abnahme | Text, Foto, Mikrofon, Chat, Kosten-/Fehlerfälle und Providerwechsel auf Realgerät | G2-A3 | 70k | 115k | PROPOSED |
 | G1-T1 | Trainingsbibliothek | Übungskatalog, Anleitungen, Bilder und Satzprotokoll | G1-B3 | 100k | 170k | DEFERRED |

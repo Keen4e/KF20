@@ -28,9 +28,13 @@ jobs:
       - name: Validate server syntax and contracts
         working-directory: server
         run: |
-          node --check src/server.js
-          node --check src/providers/openai.js
+          find src -name '*.js' -print0 | xargs -0 -n1 node --check
           npm test
+      - name: Validate private bridge deployment
+        working-directory: .
+        run: |
+          docker compose --env-file deploy/.env.example -f deploy/compose.yaml config --no-interpolate
+          docker build --tag kf20-api-ci server
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

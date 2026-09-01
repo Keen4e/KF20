@@ -44,18 +44,21 @@ test("KF20 API keeps chat and nutrition contracts provider-neutral", async () =>
   await withServer(provider, async (baseUrl) => {
     const health = await fetch(`${baseUrl}/healthz`);
     assert.equal(health.status, 200);
-    assert.deepEqual(await health.json(), { status: "ok", provider: "contract-test", capabilities: { webSearch: false, imageNutrition: true } });
+    assert.equal(health.headers.get("cache-control"), "no-store");
+    assert.ok(health.headers.get("x-request-id"));
+    assert.deepEqual(await health.json(), { status: "ok", provider: "contract-test", capabilities: { webSearch: false, imageNutrition: true }, mode: "stateless-ai-bridge", storage: "none" });
 
     const unauthorized = await post(baseUrl, "/v1/chat", { messages: [{ role: "user", content: "Frage" }] }, "wrong-token");
     assert.equal(unauthorized.status, 401);
 
     const chat = await post(baseUrl, "/v1/chat", { messages: [{ role: "user", content: "Frage" }], memories: [], webSearch: false });
     assert.equal(chat.status, 200);
-    assert.deepEqual(await chat.json(), { text: "Antwort", sources: [] });
+    assert.equal(chat.headers.get("cache-control"), "no-store");
+    assert.deepEqual(await chat.json(), { text: "Antwort", sources: [], execution: { provider: "contract-test", credentialMode: "managed", storage: "none" } });
 
     const nutrition = await post(baseUrl, "/v1/nutrition/analyze", { description: "Beschreibung", imageDataUrl: "" });
     assert.equal(nutrition.status, 200);
-    assert.deepEqual(await nutrition.json(), { estimate });
+    assert.deepEqual(await nutrition.json(), { estimate, execution: { provider: "contract-test", credentialMode: "managed", storage: "none" } });
 
     const unsupported = await post(baseUrl, "/v1/chat", { messages: [{ role: "user", content: "Recherche" }], memories: [], webSearch: true });
     assert.equal(unsupported.status, 422);
@@ -86,6 +89,10 @@ test("KF20 API rejects malformed requests before calling the provider", async ()
     assert.equal(chat.status, 400);
     const nutrition = await post(baseUrl, "/v1/nutrition/analyze", { description: "   ", imageDataUrl: "" });
     assert.equal(nutrition.status, 400);
+    const invalidImage = await post(baseUrl, "/v1/nutrition/analyze", { description: "", imageDataUrl: "data:image/jpeg;base64,not valid" });
+    assert.equal(invalidImage.status, 400);
+    const oversizedImage = await post(baseUrl, "/v1/nutrition/analyze", { description: "", imageDataUrl: `data:image/jpeg;base64,${Buffer.alloc(1_000_001).toString("base64")}` });
+    assert.equal(oversizedImage.status, 400);
   });
   assert.equal(called, false);
 });

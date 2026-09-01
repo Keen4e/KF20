@@ -187,6 +187,8 @@ private fun Kf20App(context: Context) {
     var showServerSettings by remember { mutableStateOf(false) }
     var serverUrlDraft by remember { mutableStateOf(apiSettings.baseUrl) }
     var serverTokenDraft by remember { mutableStateOf(apiSettings.token) }
+    var serverTestStatus by remember { mutableStateOf<String?>(null) }
+    var isTestingServer by remember { mutableStateOf(false) }
     var showReminderSettings by remember { mutableStateOf(false) }
     var reminderHourDraft by remember { mutableStateOf(reminder.hour.toString()) }
     var reminderMinuteDraft by remember { mutableStateOf(reminder.minute.toString().padStart(2, '0')) }
@@ -282,14 +284,15 @@ private fun Kf20App(context: Context) {
             val result = runCatching { NutritionApi.estimate(description, imageDataUrl, apiSettings) }
             Handler(Looper.getMainLooper()).post {
                 isEstimatingNutrition = false
-                result.onSuccess { estimate ->
+                result.onSuccess { analysis ->
+                    val estimate = analysis.estimate
                     logTitle = estimate.name
                     logCalories = estimate.calories.toString()
                     logProtein = "%.1f".format(estimate.protein)
                     logFat = "%.1f".format(estimate.fat)
                     logCarbs = "%.1f".format(estimate.carbs)
                     nutritionAnalysisReady = true
-                    nutritionHint = "KI-Schätzung (${estimate.confidence}): ${estimate.note} Bitte vor dem Loggen prüfen."
+                    nutritionHint = "KI-Schätzung (${estimate.confidence}, ${analysis.execution.provider}, keine KF20-Serverspeicherung): ${estimate.note} Bitte vor dem Loggen prüfen."
                 }.onFailure { failure -> nutritionHint = failure.message ?: "Die Nährwert-Schätzung konnte nicht geladen werden." }
             }
         }.start()
@@ -817,9 +820,24 @@ private fun Kf20App(context: Context) {
                 title = { Text("Serververbindung") },
                 text = {
                     Column {
-                        Text("Die Zugangsdaten bleiben verschlüsselt auf diesem Gerät. Für eine Veröffentlichung wird diese Testverbindung durch eine echte Anmeldung ersetzt.")
+                        Text("Die Zugangsdaten bleiben verschlüsselt auf diesem Gerät. Gesundheitsdaten bleiben lokal; nur der Inhalt einer angeforderten KI-Auswertung wird übertragen.")
                         OutlinedTextField(value = serverUrlDraft, onValueChange = { serverUrlDraft = it }, label = { Text("HTTPS-Serveradresse") }, singleLine = true)
                         OutlinedTextField(value = serverTokenDraft, onValueChange = { serverTokenDraft = it }, label = { Text("Zugangstoken") }, singleLine = true)
+                        TextButton(onClick = {
+                            isTestingServer = true
+                            serverTestStatus = null
+                            Thread {
+                                val result = runCatching { Kf20Api.health(ApiSettings(serverUrlDraft.trim(), serverTokenDraft.trim())) }
+                                Handler(Looper.getMainLooper()).post {
+                                    isTestingServer = false
+                                    serverTestStatus = result.fold(
+                                        onSuccess = { status -> if (status.ready && status.storage == "none") "Verbunden · ${status.provider} · keine KF20-Serverspeicherung" else "Brücke antwortet, ist aber nicht vollständig bereit." },
+                                        onFailure = { it.message ?: "Verbindung fehlgeschlagen." }
+                                    )
+                                }
+                            }.start()
+                        }, enabled = !isTestingServer && serverUrlDraft.startsWith("http")) { Text(if (isTestingServer) "Prüfe …" else "Verbindung testen") }
+                        serverTestStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                     }
                 },
                 confirmButton = {
