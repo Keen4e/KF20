@@ -1,0 +1,45 @@
+# KF20 – Arbeitsregeln für KI-Agenten
+
+## Richtige Arbeitsquelle zwingend prüfen
+
+- Der aktuelle baubare Quellstand liegt auf dem Branch `codex/kf20-rebuild`, nicht auf `main`.
+- Das Android-Projekt beginnt unter `android/`; erwartet werden dort `build.gradle.kts`, `settings.gradle.kts` und `app/src/main/AndroidManifest.xml`.
+- Vor jeder Analyse oder Änderung sind `git branch --show-current` und die drei genannten Dateien zu prüfen. Fehlen sie, arbeitet der Agent im falschen Branch oder in einem falschen Checkout und darf keine Ersatzdateien aus dekompilierten Artefakten erzeugen.
+- Der vollständige Android-Check wird aus `android/` mit `./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` beziehungsweise unter Windows mit `gradlew.bat` gestartet.
+
+Dieses Repository muss ohne Zugriff auf frühere Chats übernehmbar bleiben. Vor Änderungen sind diese Dateien vollständig und in dieser Reihenfolge zu lesen:
+
+1. `docs/PROJECT_STATUS.md` – einzige Quelle für Phase, aktives Paket, Blocker und nächste Entscheidungen
+2. `docs/PI_ROADMAP.md` – Featurefolge, Abhängigkeiten und P50/P80-Tokenprognosen
+3. `docs/FEATURE_GAPS.md` – letzter Anforderungsabgleich und getrennt entscheidbare Featurepakete
+4. `SPEC.md` – verbindliche Produktanforderungen und Abnahmekriterien
+5. `docs/architecture-and-provider-contracts.md` – technische Grenzen und stabile API-Verträge
+6. `docs/BACKEND_STRATEGY.md` – verbindliches Zielbild für Local-first-Sync, Identität, Secrets und KI-Provider
+7. `docs/quality-baseline.md` – verbindliche Build-, Test- und CI-Gates
+8. `docs/HANDOFF.md` – detaillierter Implementierungs- und Verifikationsverlauf
+9. `docs/DECISIONS.md` – bestätigte Produkt-, Architektur- und Prozessentscheidungen
+10. `docs/chat-derived-requirements.md` – aus dem privaten Export abstrahierte Anforderungen
+
+## Verbindliche Pflege
+
+- Jede Funktionsänderung aktualisiert im selben Branch den Code, `SPEC.md` und `docs/HANDOFF.md`.
+- Architektur- oder API-Änderungen aktualisieren zusätzlich `docs/architecture-and-provider-contracts.md`.
+- Der Handoff nennt den letzten verifizierten Commit und den exakten CI-/Teststatus. Ein grüner älterer Build belegt nicht den aktuellen Stand.
+- Persönliche Chattexte, Fotos, Tokens, Serveradressen und konkrete Gesundheitswerte dürfen nicht in Git, Spezifikation, Fixtures oder Logs gelangen.
+- Neue Gesundheitsfelder werden nur aufgenommen, wenn sie vom Nutzer bestätigt oder im abstrahierten Anforderungskatalog belegt sind.
+- Android kennt keinen konkreten KI-Anbieter. Provider-spezifischer Code bleibt hinter der Server-API.
+- Vor einem Store-Upload müssen alle Gates aus `docs/security-release-gates.md` und `docs/play-store-checklist.md` nachweislich erfüllt sein.
+- Es darf nur ein Arbeitspaket mit dem Status `GO` umgesetzt werden. Vorschläge, Analysen und Refactorings ohne GO bleiben unangetastet.
+- Vor Beginn wird das aktive Paket in `docs/PROJECT_STATUS.md` auf `IN PROGRESS` gesetzt. Nach Abschluss werden Commit, Workflow-Run, Abnahme und nächstes Entscheidungs-Gate dort ergänzt.
+- Neue dauerhafte Produkt-, Architektur- oder Prozessentscheidungen werden in `docs/DECISIONS.md` protokolliert.
+- Tokenprognosen werden vor Beginn als P50/P80 in `docs/PI_ROADMAP.md` geführt; die Wochenplanung stoppt bei 70 Prozent des verfügbaren Kontingents.
+- Jedes abgeschlossene PI-Paket veröffentlicht nach grünen Qualitätsgates eine installierbare APK als eigenes GitHub-Prerelease. Der eindeutige Tag und die öffentlichen Release-Notizen werden mit dem Paket in `release/current.json` gepflegt; ein bloßes, kurzlebiges Actions-Artefakt genügt nicht.
+
+## Qualitätsregeln
+
+- Nutzerwerte lokal verschlüsseln; Schlüssel aus Android Keystore.
+- KI-Schätzungen sichtbar kennzeichnen und vor dem Speichern korrigierbar machen.
+- Externe Aktionen niemals still ausführen.
+- Nach Änderungen Server-Syntax-/Vertragstests sowie `:app:testDebugUnitTest`, `:app:lintDebug` und `:app:assembleDebug` über den eingecheckten Gradle-Wrapper ausführen; Ergebnis im Handoff vermerken.
+- Ein Paket erhält erst `DONE`, wenn zusätzlich der zugehörige GitHub-Release-Link und die veröffentlichte APK im Handoff und Projektstatus stehen.
+

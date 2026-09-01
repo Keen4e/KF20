@@ -1,0 +1,34 @@
+services:
+  kf20-api:
+    build:
+      context: ../server
+    restart: unless-stopped
+    env_file:
+      - ../server/.env
+    expose:
+      - "8787"
+    networks:
+      - kf20-private
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.8.1
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?Set CLOUDFLARE_TUNNEL_TOKEN in deploy/.env}
+    depends_on:
+      kf20-api:
+        condition: service_healthy
+    networks:
+      - kf20-private
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  kf20-private:
+    name: kf20-private

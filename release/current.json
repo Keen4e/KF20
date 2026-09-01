@@ -1,0 +1,5 @@
+{
+  "tag": "g2-k1-2026-09-01",
+  "title": "KF20 G2-K1 – Private zustandslose KI-Brücke",
+  "notes": "Interne Einzeltester-Version. Die App kann eine private KF20-KI-Brücke prüfen und weist bei Nährwertanalysen Provider sowie fehlende KF20-Serverspeicherung aus. Die Brücke unterstützt Text, Foto und Chat, hält Provider-Schlüssel außerhalb der APK und enthält ein reproduzierbares Docker-/Cloudflare-Tunnel-Setup ohne Gesundheitsdatenbank oder Sync. Ein echter Server, Tunnel und API-Schlüssel sind nicht im Release enthalten. Die APK ist debug-signiert und nicht für den Play Store oder externe Tester bestimmt."
+}

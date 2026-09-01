@@ -1,0 +1,72 @@
+name: Android build
+
+on:
+  push:
+    branches: ["codex/kf20-rebuild"]
+    paths:
+      - "android/**"
+      - "server/**"
+      - "deploy/**"
+      - ".github/workflows/android.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "android/**"
+      - "server/**"
+      - "deploy/**"
+      - ".github/workflows/android.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate server syntax and contracts
+        working-directory: server
+        run: |
+          find src -name '*.js' -print0 | xargs -0 -n1 node --check
+          npm test
+      - name: Validate private bridge deployment
+        working-directory: .
+        run: |
+          docker compose --env-file deploy/.env.example -f deploy/compose.yaml config --no-interpolate
+          docker build --tag kf20-api-ci server
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK packages
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Run Android unit tests
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+      - name: Run Android lint
+        run: ./gradlew :app:lintDebug --stacktrace
+      - name: Assemble debug app
+        run: ./gradlew :app:assembleDebug --stacktrace
+      - name: Enable KVM for instrumentation tests
+        run: sudo chmod 0666 /dev/kvm
+      - name: Run encrypted-storage and Compose flow tests
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: cd android && ./gradlew :app:connectedDebugAndroidTest --stacktrace
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: kf20-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
