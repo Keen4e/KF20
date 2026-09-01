@@ -9,10 +9,10 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 - GitHub: `Keen4e/KF20`
 - Arbeitsbranch: `codex/kf20-rebuild`
 - Draft-PR: `#1` gegen `main`
-- Letzter vollständig grüner funktionaler Commit: `7ebaad5ead0c2627b02331fe36e42dfd51feb135`
-- Verifizierender Branch-Workflow: `33387922930`, Ergebnis: `SUCCESS`
+- Letzter vollständig grüner funktionaler Commit: `83d1ef28847c8b2198ed8e30990b6d7220f13d01`
+- Verifizierender Branch-Workflow: `33545948028`, Ergebnis: `SUCCESS`
 - Geprüfte Gates: Server-Syntax/Verträge, Android-JVM-Tests, Android-Lint, Debug-APK, acht Android-Instrumentierungstests und Artefakt-Upload
-- Veröffentlichtes Prerelease: `g1-b3-2026-08-31` mit `KF20-g1-b3-2026-08-31.apk`; Release-Workflow `33387983797`, Ergebnis: `SUCCESS`
+- Veröffentlichtes Prerelease: `g2-k1-2026-09-01` mit `KF20-g2-k1-2026-09-01.apk`; Release-Workflow `33545947984`, Ergebnis: `SUCCESS`
 
 ## Aktives PI-Paket
 
@@ -20,13 +20,13 @@ Diese Datei ist die zentrale Übergabequelle für Menschen und KI-Agenten. Sie w
 |---|---|
 | Paket | G2-K1 – Zustandslose KI-Brücke |
 | Entscheidung | GO |
-| Status | IN PROGRESS |
+| Status | DONE / AWAITING NEXT PRIORITIZATION |
 | P50 / P80 | 40k / 65k Roh-Tokens |
 | Ist-Verbrauch | vom Agenten nicht zuverlässig als Plus-Wochenwert messbar; Kalibrierung erfolgt anhand der Nutzeranzeige |
 | Produktänderung | schlanke, zustandslose KI-Brücke für Text, Foto und Chat; lokaler App-Datenbestand bleibt unverändert |
 | Abnahme | Server speichert keine Gesundheitsdaten oder Bilder, OpenAI-Schlüssel bleibt außerhalb der APK, Docker-/Cloudflare-Tunnel-Betrieb ist reproduzierbar, Ausführungsmetadaten und Tests sind vorhanden |
-| Commit / Workflow | ausstehend |
-| APK-Release | ausstehend; Ziel `g2-k1-2026-09-01` |
+| Commit / Workflow | `83d1ef28847c8b2198ed8e30990b6d7220f13d01` / Branch `33545948028` und Release `33545947984` · SUCCESS |
+| APK-Release | `g2-k1-2026-09-01` · https://github.com/Keen4e/KF20/releases/tag/g2-k1-2026-09-01 |
 
 ## Implementierter Produktstand
 

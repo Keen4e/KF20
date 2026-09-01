@@ -31,7 +31,7 @@ Stand: 2026-09-01
 | G1-S1 | Supplements | Inhaltsstoffe/Einheiten, Einnahmezeiten, Tagesbilanz, Doppelungswarnungen und Arztauszug | G1-B3 | 55k | 90k | PROPOSED |
 | G1-H1 | Health Connect Basis | explizite Verbindung und Leseberechtigung; aktive Kalorien und Trainingseinheiten vom Android-Gerät übernehmen, Quelle/Dubletten transparent halten | G1-B3 | 55k | 90k | PROPOSED |
 | G2-S0 | Backend-, Sync- und KI-Strategie | Local-first-Zielbild, Identität, Datenhaltung, Managed/BYOK/Plus-Modi, Secret-Lebenszyklus und umsetzbare Folgepakete | G1-B3 | 25k | 40k | DONE · Release `g2-s0-2026-08-31` |
-| G2-K1 | Zustandslose KI-Brücke | Text-, Foto- und Chatanfragen über providerneutrale API; zentraler Schlüssel, Limits, keine Konten/DB/Sync, Docker und Cloudflare Tunnel | G2-S0 | 40k | 65k | GO · IN PROGRESS |
+| G2-K1 | Zustandslose KI-Brücke | Text-, Foto- und Chatanfragen über providerneutrale API; zentraler Schlüssel, Limits, keine Konten/DB/Sync, Docker und Cloudflare Tunnel | G2-S0 | 40k | 65k | DONE · Release `g2-k1-2026-09-01` |
 | G2-D0 | Führende Datenquelle und Zentraldaten-Verträge | Entscheidung App-vs.-Backend, Datenklassifikation, ER-Modell sowie REST-/MCP-Verträge | G2-K1 | 25k | 40k | PROPOSED · REQUIRED BEFORE CENTRALIZATION |
 | G2-D1 | Zentrale Fachdatenschicht | PostgreSQL, Migrationen, Services, Audit, Idempotenz, Versionierung und deterministische Bilanzen | G2-D0 | 90k | 145k | PROPOSED |
 | G2-D2 | REST und Client-Autorisierung | REST v1, getrennte Tokens/Clients, Scopes, Rotation, Limits und Autorisierungstests | G2-D1 | 80k | 130k | PROPOSED |
