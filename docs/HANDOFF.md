@@ -1,5 +1,12 @@
 # KF20 Handoff
 
+## Produktentscheidung D-020 – zuerst vollständige App (2026-09-01)
+
+- Die App bleibt vorerst die führende Datenquelle. Alle Gesundheits-, Ernährungs-, Foto-, Statistik- und Chatdaten werden lokal gehalten.
+- Die G2-K1-Brücke bleibt die einzige Serverkomponente: Sie verarbeitet nur ausdrücklich angeforderte KI-Inhalte zustandslos. Der KI-Provider selbst ist extern; es wird kein lokales On-device-Modell behauptet.
+- Das zentrale Backend-/MCP-/Telegram-Zielbild bleibt vollständig dokumentiert, ist aber zurückgestellt. G2-D1/D2/M1/T1/H2/P1/E1 dürfen erst nach einem neuen ausdrücklichen Backend-GO beginnen.
+- Nächster Schritt ist wieder ein vom Nutzer priorisiertes lokales App-Paket; keine Folgearbeit ist automatisch freigegeben.
+
 ## G2-K1 – Private zustandslose KI-Brücke (2026-09-01, DONE)
 
 - Android, Server und Dokumentation verwenden weiterhin die stabilen KF20-Endpunkte. Erfolgreiche Antworten ergänzen `execution` mit Provider, `managed` und `storage: none`; Android zeigt diese Grenze bei der Nährwertschätzung an.
@@ -7,7 +14,7 @@
 - Request-IDs, No-store-Header, tatsächliche 1-MB-Bildgrößenprüfung, generische Fehlercodes und inhaltsfreie Fehlerlogs sind implementiert. Beide OpenAI-Aufrufpfade setzen `store: false`.
 - `server/Dockerfile` und `deploy/compose*.yaml` liefern den Homeserverbetrieb; der normale Stack veröffentlicht keinen Host-Port und erreicht die API nur über `cloudflared`. Reale Schlüssel, Domain und Tunnel sind nicht im Repository und wurden nicht erfunden.
 - `docs/PRIVATE_AI_BRIDGE.md` ist die Betriebsanleitung. `docs/MCP_BACKEND_GAP_ANALYSIS.md` gleicht die später eingereichte zentrale Backend-/MCP-/Telegram-Anleitung vollständig ab.
-- Die Zentralbackend-Anleitung widerspricht D-018 („Daten zunächst in der App“). Darum sind Datenbank, REST-Fachdaten, MCP, Telegram, Health Bridge, Home Assistant und dauerhafte Serverfotos nicht Bestandteil von G2-K1. G2-D0 ist das notwendige Richtungs-Gate.
+- Die Zentralbackend-Anleitung widerspricht D-018 („Daten zunächst in der App“). D-020 hat diesen Konflikt zugunsten der App entschieden; Datenbank, REST-Fachdaten, MCP, Telegram, Health Bridge, Home Assistant und dauerhafte Serverfotos bleiben bis zu einem neuen Backend-GO zurückgestellt.
 - Lokal ausgeführt: Server-Syntax und `npm test`, 5/5 erfolgreich; Docker-Compose-Konfiguration wurde ohne Interpolation erfolgreich gerendert. Der Android-Gesamtlauf ist lokal mangels Java-Runtime nicht ausführbar und wird durch GitHub Actions geprüft.
 - GitHub-Commit `83d1ef28847c8b2198ed8e30990b6d7220f13d01`; Branch-Workflow `33545948028` und Release-Workflow `33545947984` bestanden Serververträge, Docker-Build, Android-JVM-Tests, Lint, Debug-Build und Instrumentierung auf API 35.
 - Prerelease und APK: https://github.com/Keen4e/KF20/releases/tag/g2-k1-2026-09-01 · `KF20-g2-k1-2026-09-01.apk`.

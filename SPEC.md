@@ -189,7 +189,7 @@ Für den privaten Einzeltest kann die KF20-API containerisiert auf dem Homeserve
 
 Der zentrale Provider-Schlüssel verbleibt auf dem Server. Android speichert nur Brückenadresse und separaten privaten Alpha-Zugangstoken verschlüsselt und bietet einen Healthcheck. Ein Essensfoto ist auf 1 MB Binärdaten begrenzt, wird als neu komprimiertes JPEG übertragen und nicht in das Tageslog übernommen. Die Nutzeroberfläche weist vor der Analyse auf die einmalige Übertragung hin.
 
-Die Anleitung für ein zentrales Backend mit MCP, Telegram, Health Bridge, Home Assistant, dauerhaften Fotos und Audit ist vollständig in `docs/MCP_BACKEND_GAP_ANALYSIS.md` erfasst. Sie ersetzt die aktuelle Local-first-Führung erst nach einer ausdrücklichen G2-D0-Entscheidung.
+Die Anleitung für ein zentrales Backend mit MCP, Telegram, Health Bridge, Home Assistant, dauerhaften Fotos und Audit ist vollständig in `docs/MCP_BACKEND_GAP_ANALYSIS.md` erfasst. D-020 entscheidet vorerst zugunsten der Local-first-App; eine spätere Zentralisierung braucht ein neues ausdrückliches Backend-GO.
 
 ## Datenschutz
 

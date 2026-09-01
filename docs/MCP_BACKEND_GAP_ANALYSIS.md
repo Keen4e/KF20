@@ -6,7 +6,7 @@ Diese Datei überführt die Nutzeranleitung vom 1. September 2026 in prüfbare K
 
 ## Architekturkonflikt vor Umsetzung
 
-Die Anleitung verlangt das Backend als zentrale Datenquelle für App und Telegram. Die aktuell akzeptierte Entscheidung D-018 hält Gesundheitsdaten dagegen zunächst ausschließlich in der App und erlaubt nur eine zustandslose KI-Brücke. Beides kann nicht gleichzeitig die führende Datenquelle sein. Deshalb bleibt G2-K1 unverändert; die Zentralisierung beginnt erst nach dem separaten Gate G2-D0. Eine spätere Zentralisierung muss Offline-Nutzung, Datenhoheit, Löschung und Migration ausdrücklich neu entscheiden.
+Die Anleitung verlangt das Backend als zentrale Datenquelle für App und Telegram. Die Entscheidungen D-018 und D-020 halten Gesundheitsdaten dagegen zunächst ausschließlich in der App und erlauben nur eine zustandslose KI-Brücke. Damit ist die Richtungsfrage vorerst zugunsten der App entschieden: Dieses Dokument bleibt das vollständige Ziel-Backlog für eine spätere Backendstufe, startet aber keine Zentralisierung. Ein späteres Backend-GO muss Offline-Nutzung, Datenhoheit, Löschung und Migration ausdrücklich neu bestätigen.
 
 ## Funktionsabgleich
 
@@ -67,7 +67,7 @@ Die Autorisierung plant getrennte App-, Telegram- und MCP-Clients sowie die Scop
 
 | Gate | Ergebnis | Voraussetzung | P50 | P80 |
 |---|---|---|---:|---:|
-| G2-D0 | bewusste Entscheidung „Backend zentral“ vs. „App führend“, Datenklassifikation, ER-Modell und OpenAPI/MCP-Verträge | G2-K1 | 25k | 40k |
+| G2-D0 | Richtungsentscheidung ist mit D-020 auf „App führend“ gefallen; zentrale Datenklassifikation, ER-Modell und OpenAPI/MCP-Verträge bleiben zurückgestellt | G2-K1 | 25k | 40k |
 | G2-D1 | PostgreSQL, Migrationen, Service-Layer, Audit, Idempotenz, optimistic locking und deterministische Bilanzen | G2-D0 | 90k | 145k |
 | G2-D2 | REST v1, getrennte Clients, Token-Hashes/Rotation, Scopes, Limits und Autorisierungstests | G2-D1 | 80k | 130k |
 | G2-M1 | MCP Streamable HTTP mit den 19 geforderten Tools und sieben Resources auf derselben Serviceschicht | G2-D2 | 80k | 130k |
@@ -76,7 +76,7 @@ Die Autorisierung plant getrennte App-, Telegram- und MCP-Clients sowie die Scop
 | G2-P1 | privater dauerhafter Fotospeicher, Metadaten, Zugriff, Löschung und Audit | G2-D2 | 55k | 90k |
 | G2-E1 | Parallelitäts-, Wiederholungs-, Restore-, Security- und gemeinsamer App/Telegram/MCP-E2E-Test | G2-T1, G2-H2, G2-P1 | 70k | 115k |
 
-Die Anleitung ist damit vollständig als Ziel-Backlog erfasst, aber noch nicht als ein einziges unkontrolliertes Paket gestartet. Vor jedem Gate gelten weiterhin GO, SPLIT, DEFER oder DROP und die 70-Prozent-Kapazitätsregel.
+Die Anleitung ist damit vollständig als späteres Ziel-Backlog erfasst und durch D-020 zurückgestellt. Vor jedem Backend-Gate gelten weiterhin GO, SPLIT, DEFER oder DROP und die 70-Prozent-Kapazitätsregel.
 
 ## Geforderte Testmatrix für die Folgepakete
 

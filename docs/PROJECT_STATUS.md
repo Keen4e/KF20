@@ -64,9 +64,9 @@ Details und Abnahmekriterien stehen in `SPEC.md`; der technische Verlauf steht i
 | 9 | G2-A3 – BYOK und weitere Provider | PROPOSED / AWAITING DECISION | G2-A2 | 75k | 120k |
 | 10 | G2-B1 – Local-first Datensync | PROPOSED / AWAITING DECISION | G2-A1 | 110k | 175k |
 | 11 | G1-H1 – Health Connect Basis | PROPOSED / AWAITING DECISION | G1-B3 | 55k | 90k |
-| 12 | G2-D0 – Führende Datenquelle und Zentraldaten-Verträge | PROPOSED / AWAITING DECISION | G2-K1 | 25k | 40k |
+| 12 | G2-D0 – Führende Datenquelle und Zentraldaten-Verträge | DECIDED LOCAL-FIRST / CENTRAL BACKEND DEFERRED | G2-K1 | 25k | 40k |
 
-Die neue Zentralbackend-/MCP-/Telegram-Anleitung ist in `docs/MCP_BACKEND_GAP_ANALYSIS.md` vollständig abgeglichen. Sie ist nicht Teil von G2-K1; insbesondere sind Datenbank, MCP, Telegram, Health Bridge, Home Assistant und dauerhafter Server-Fotospeicher noch nicht implementiert.
+Die neue Zentralbackend-/MCP-/Telegram-Anleitung ist in `docs/MCP_BACKEND_GAP_ANALYSIS.md` vollständig abgeglichen. D-020 entscheidet jedoch verbindlich: Zuerst werden die lokalen App-Funktionen vervollständigt. Datenbank, Sync, MCP, Telegram, Health Bridge, Home Assistant und dauerhafter Server-Fotospeicher bleiben bis zu einem neuen Backend-GO zurückgestellt.
 
 Kein PROPOSED- oder DEFERRED-Paket darf ohne eine neue Nutzerentscheidung `GO`, `SPLIT`, `DEFER` oder `DROP` begonnen werden.
 

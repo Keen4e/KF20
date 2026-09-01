@@ -110,7 +110,7 @@ Kein Adapter darf still von BYOK auf einen KF20-Schlüssel, zwischen direktem Pr
 ## Sync- und Secret-Grenze
 
 - Aktuelle private Alpha: nur die containerisierte, zustandslose KF20-KI-Brücke auf dem Homeserver, ausschließlich über Cloudflare Tunnel erreichbar. Keine Gesundheitsdatenbank und kein Sync sind aktiviert.
-- Ein zentrales Backend oder optionaler Sync ist nach `MCP_BACKEND_GAP_ANALYSIS.md` neu zu entscheiden und bleibt bis G2-D0 Architekturentwurf.
+- Ein zentrales Backend oder optionaler Sync ist nach D-020 zurückgestellt und bleibt bis zu einem neuen ausdrücklichen Backend-GO Architekturentwurf.
 - Die lokale verschlüsselte Datenbank bleibt bei Offline-Nutzung führend; Cloud-Sync ist opt-in.
 - Synchronisierte Fachobjekte verwenden stabile IDs, Revisionen, Zeitstempel und Löschmarker. Nicht sicher zusammenführbare Konflikte werden sichtbar statt still überschrieben.
 - Nutzeridentität wird serverseitig aus der Session abgeleitet. Eine Client-Nutzer-ID erteilt keine Berechtigung.
